@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "39991af11256f0d32c71371945d24635"
-name = "warranty-assign"
+client_id = "e906db3ce2a9a631dc3a015634643bb0"
+name = "Meta bulk assign"
 application_url = "https://example.com"
 embedded = true
 
@@ -14,7 +14,7 @@ api_version = "2026-01"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "write_products,read_products,write_files"
 
 [auth]
 redirect_urls = [ "https://example.com/api/auth" ]

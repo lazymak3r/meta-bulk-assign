@@ -1,12 +1,17 @@
 // @ts-check
 import { join } from "path";
 import { readFileSync } from "fs";
+import multer from "multer";
 import express from "express";
 import serveStatic from "serve-static";
 
+import * as vendorRoutes from "./vendor-routes.js";
 import shopify from "./shopify.js";
+import database from "./database.js";
+import AppWebhookHandlers from "./webhooks.js";
 import productCreator from "./product-creator.js";
 import PrivacyWebhookHandlers from "./privacy.js";
+import { uploadFileToShopify } from "./file-upload.js";
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -29,7 +34,9 @@ app.get(
 );
 app.post(
   shopify.config.webhooks.path,
-  shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers })
+  shopify.processWebhooks({
+    webhookHandlers: { ...PrivacyWebhookHandlers, ...AppWebhookHandlers }
+  })
 );
 
 // If you are adding routes outside of the /api path, remember to
@@ -69,6 +76,186 @@ app.post("/api/products", async (_req, res) => {
   res.status(status).send({ success: status === 200, error });
 });
 
+// Vendor routes
+app.get("/api/vendors", vendorRoutes.getVendors);
+app.get("/api/vendors/:name", vendorRoutes.getVendorByName);
+app.get("/api/vendors/:name/products", vendorRoutes.getVendorProducts);
+app.post("/api/vendors/:name/config", vendorRoutes.saveVendorConfig);
+app.delete("/api/vendors/:name/config", vendorRoutes.deleteVendorConfig);
+app.post("/api/vendors/:name/apply", vendorRoutes.applyVendorConfig);
+app.get("/api/vendors/:name/files", async (req, res) => {
+    try {
+        const shop = res.locals.shopify.session.shop;
+        const vendorName = decodeURIComponent(req.params.name);
+
+        const vendor = await database.getVendorByName(shop, vendorName);
+        if (!vendor) {
+            return res.status(404).json({
+                success: false,
+                error: "Vendor not found",
+            });
+        }
+
+        const files = await database.getVendorFiles(vendor.id);
+
+        res.status(200).json({
+            success: true,
+            files,
+        });
+    } catch (error) {
+        console.error("Error fetching vendor files:", error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+});
+
+// Configure multer for file uploads (store in memory)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 20 * 1024 * 1024, // 20MB max file size
+  },
+});
+
+// File upload endpoint
+app.post("/api/files/upload", upload.single("file"), async (req, res) => {
+  try {
+    console.log("File upload request received");
+    console.log("Has file:", !!req.file);
+    console.log("Vendor name:", req.body.vendorName);
+
+    if (!req.file) {
+      console.error("No file in request");
+      return res.status(400).json({
+        success: false,
+        error: "No file uploaded",
+      });
+    }
+
+    const session = res.locals.shopify.session;
+    const shop = session.shop;
+    const vendorName = req.body.vendorName;
+
+    console.log("Uploading file to Shopify:", req.file.originalname);
+
+    // Upload file to Shopify
+    const fileData = await uploadFileToShopify(
+      session,
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype
+    );
+
+    console.log("File uploaded successfully:", fileData.shopifyFileId);
+
+    // Save file metadata to database if vendor name provided
+    if (vendorName) {
+      const vendor = await database.getOrCreateVendor(shop, vendorName);
+      await database.saveVendorFile(vendor.id, shop, fileData);
+      console.log("File metadata saved to database");
+    }
+
+    res.status(200).json({
+      success: true,
+      file: fileData,
+    });
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    console.error("Error stack:", error.stack);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+app.get("/api/files/metadata", async (req, res) => {
+  try {
+    const { gid } = req.query;
+
+    if (!gid || !gid.startsWith('gid://')) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid GID provided",
+      });
+    }
+
+    const session = res.locals.shopify.session;
+    const shop = session.shop;
+
+    // Query database for file metadata
+    const file = await database.getFileByGid(shop, gid);
+
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        error: "File not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      file: {
+        shopifyFileId: file.shopify_file_id,
+        filename: file.filename,
+        file_url: file.file_url,
+        file_type: file.file_type,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching file metadata:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Metafield definitions endpoint
+app.get("/api/metafield-definitions", async (_req, res) => {
+  try {
+    const client = new shopify.api.clients.Graphql({
+      session: res.locals.shopify.session,
+    });
+
+    const query = `
+      query GetMetafieldDefinitions {
+        metafieldDefinitions(first: 100, ownerType: PRODUCT) {
+          edges {
+            node {
+              id
+              name
+              namespace
+              key
+              type {
+                name
+              }
+              description
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await client.request(query);
+    const definitions = response.data.metafieldDefinitions.edges.map(
+      (edge) => edge.node
+    );
+
+    res.status(200).json({
+      definitions,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching metafield definitions:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 app.use(shopify.cspHeaders());
 app.use(serveStatic(STATIC_PATH, { index: false }));
 
@@ -83,4 +270,11 @@ app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
     );
 });
 
-app.listen(PORT);
+database.initialize().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}).catch((error) => {
+  console.error("Failed to initialize database:", error);
+  process.exit(1);
+});
