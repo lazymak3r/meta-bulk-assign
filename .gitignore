@@ -24,8 +24,10 @@ dist/
 # extensions build output
 extensions/*/build
 
-# Node library SQLite database
-web/database.sqlite
+# Database files (using PostgreSQL via DATABASE_URL)
+*.sqlite
+*.sqlite-*
+*.db
 
 # Ignore shopify files created during app dev
 .shopify/*
@@ -33,3 +35,4 @@ web/database.sqlite
 
 .idea
 CLAUDE.md
+.vercel

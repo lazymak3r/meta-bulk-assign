@@ -20,10 +20,42 @@ const PORT = parseInt(
 
 const STATIC_PATH =
   process.env.NODE_ENV === "production"
-    ? `${process.cwd()}/frontend/dist`
+    ? `${process.cwd()}/web/frontend/dist`
     : `${process.cwd()}/frontend/`;
 
 const app = express();
+
+// Initialize database before handling requests
+let dbInitialized = false;
+let dbInitPromise = null;
+
+async function initializeDatabase() {
+  if (!dbInitialized && !dbInitPromise) {
+    dbInitPromise = database.initialize().then(() => {
+      dbInitialized = true;
+      console.log("[Server] Database initialized successfully");
+    }).catch((error) => {
+      console.error("[Server] Failed to initialize database:", error);
+      dbInitPromise = null; // Allow retry
+      throw error;
+    });
+  }
+  return dbInitPromise;
+}
+
+// Middleware to ensure database is initialized before handling requests
+app.use(async (req, res, next) => {
+  try {
+    await initializeDatabase();
+    next();
+  } catch (error) {
+    console.error("[Server] Database initialization failed:", error);
+    res.status(500).json({
+      error: "Database initialization failed",
+      message: error.message,
+    });
+  }
+});
 
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
@@ -270,11 +302,12 @@ app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
     );
 });
 
-database.initialize().then(() => {
+// For Vercel serverless deployment
+export default app;
+
+// For local development
+if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`[Server] Running on port ${PORT}`);
   });
-}).catch((error) => {
-  console.error("Failed to initialize database:", error);
-  process.exit(1);
-});
+}

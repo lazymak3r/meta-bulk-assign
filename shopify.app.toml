@@ -2,12 +2,11 @@
 
 client_id = "e906db3ce2a9a631dc3a015634643bb0"
 name = "Meta bulk assign"
-application_url = "https://example.com"
+application_url = "https://meta-bulk-assign.vercel.app"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-include_config_on_deploy = true
 
 [webhooks]
 api_version = "2026-01"
@@ -17,4 +16,7 @@ api_version = "2026-01"
 scopes = "write_products,read_products,write_files"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [
+  "https://meta-bulk-assign.vercel.app/api/auth",
+  "https://meta-bulk-assign.vercel.app/api/auth/callback"
+]

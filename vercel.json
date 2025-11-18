@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "buildCommand": "cd web/frontend && npm install && npm run build",
+  "builds": [
+    {
+      "src": "web/index.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["web/frontend/dist/**"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/web/index.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}

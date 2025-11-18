@@ -1,9 +1,7 @@
-import { BillingInterval, LATEST_API_VERSION } from "@shopify/shopify-api";
 import { shopifyApp } from "@shopify/shopify-app-express";
-import { SQLiteSessionStorage } from "@shopify/shopify-app-session-storage-sqlite";
 import { restResources } from "@shopify/shopify-api/rest/admin/2024-10";
-
-const DB_PATH = `${process.cwd()}/database.sqlite`;
+import { createSessionStorage } from "./session-storage.js";
+import { BillingInterval, ApiVersion } from "@shopify/shopify-api";
 
 // The transactions with Shopify will always be marked as test transactions, unless NODE_ENV is production.
 // See the ensureBilling helper to learn more about billing in this template.
@@ -16,9 +14,36 @@ const billingConfig = {
   },
 };
 
+// Validate required environment variables
+const requiredEnvVars = {
+  SHOPIFY_API_KEY: process.env.SHOPIFY_API_KEY,
+  SHOPIFY_API_SECRET: process.env.SHOPIFY_API_SECRET,
+  HOST: process.env.HOST,
+};
+
+console.log("Environment variables check:");
+Object.entries(requiredEnvVars).forEach(([key, value]) => {
+  console.log(`${key}: ${value ? "✓ Set" : "✗ Missing"}`);
+});
+
+const hostName = process.env.HOST?.replace(/https?:\/\//, "");
+
+if (!hostName) {
+  throw new Error(
+    "Missing required environment variable: HOST. Please set it to your Vercel deployment URL (e.g., your-app.vercel.app)"
+  );
+}
+
+console.log("[Shopify] Initializing with hostName:", hostName);
+console.log("[Shopify] API Key:", process.env.SHOPIFY_API_KEY?.substring(0, 8) + "...");
+
 const shopify = shopifyApp({
   api: {
-    apiVersion: LATEST_API_VERSION,
+    apiKey: process.env.SHOPIFY_API_KEY,
+    apiSecretKey: process.env.SHOPIFY_API_SECRET,
+    scopes: process.env.SCOPES?.split(",") || ["write_products"],
+    hostName,
+    apiVersion: ApiVersion.October25,
     restResources,
     future: {
       customerAddressDefaultFix: true,
@@ -34,8 +59,8 @@ const shopify = shopifyApp({
   webhooks: {
     path: "/api/webhooks",
   },
-  // This should be replaced with your preferred storage strategy
-  sessionStorage: new SQLiteSessionStorage(DB_PATH),
+  // Automatically uses SQLite in dev, cloud storage in production
+  sessionStorage: await createSessionStorage(),
 });
 
 export default shopify;
