@@ -1,6 +1,7 @@
 import database from "./database.js";
 import shopify from "./shopify.js";
 import { bulkApplyVendorConfig } from "./metafield-apply.js";
+import * as metaobjectHandler from "./metaobject-handler.js";
 
 /**
  * Fetches all unique vendors from Shopify products
@@ -247,16 +248,85 @@ export async function getVendorProducts(req, res) {
 export async function saveVendorConfig(req, res) {
   try {
     const shop = res.locals.shopify.session.shop;
+    const session = res.locals.shopify.session;
     const vendorName = decodeURIComponent(req.params.name);
     const { metafieldConfigs, warrantyFileId } = req.body;
 
     // Get or create vendor
     const vendor = await database.getOrCreateVendor(shop, vendorName);
 
-    // Save configuration
+    // Process metafield configs - create metaobjects if needed
+    const processedConfigs = [];
+
+    for (const config of metafieldConfigs) {
+      const processedConfig = { ...config };
+
+      // Check if this is a metaobject_reference with field values to create
+      if (
+        config.type === "metaobject_reference" &&
+        config.metaobjectFieldValues &&
+        typeof config.metaobjectFieldValues === "object" &&
+        !Array.isArray(config.metaobjectFieldValues)
+      ) {
+        try {
+          // Get the metaobject definition ID from the config
+          const definitionId = config.metaobjectDefinitionId;
+
+          if (!definitionId) {
+            throw new Error(
+              `Missing metaobject definition ID for field ${config.namespace}.${config.key}`
+            );
+          }
+
+          // Fetch the metaobject definition
+          const definition = await metaobjectHandler.getMetaobjectDefinition(
+            session,
+            definitionId
+          );
+
+          let metaobjectId;
+
+          if (config.metaobjectId) {
+            // Update existing metaobject
+            metaobjectId = await metaobjectHandler.updateMetaobject(
+              session,
+              config.metaobjectId,
+              config.metaobjectFieldValues,
+              definition
+            );
+          } else {
+            // Create new metaobject
+            metaobjectId = await metaobjectHandler.createMetaobject(
+              session,
+              definition.type,
+              config.metaobjectFieldValues,
+              definition
+            );
+          }
+
+          // Update the config with the metaobject GID
+          processedConfig.value = metaobjectId;
+          processedConfig.metaobjectId = metaobjectId;
+
+          console.log(
+            `Created/Updated metaobject for ${config.namespace}.${config.key}: ${metaobjectId}`
+          );
+        } catch (error) {
+          console.error(
+            `Error creating metaobject for ${config.namespace}.${config.key}:`,
+            error
+          );
+          throw error;
+        }
+      }
+
+      processedConfigs.push(processedConfig);
+    }
+
+    // Save configuration with processed metaobject references
     await database.saveVendorConfig(
       vendor.id,
-      metafieldConfigs,
+      processedConfigs,
       warrantyFileId || null
     );
 

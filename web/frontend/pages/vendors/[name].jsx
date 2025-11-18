@@ -20,6 +20,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronDownIcon, ChevronUpIcon } from "@shopify/polaris-icons";
 import { useQuery, useMutation, useQueryClient } from "react-query";
+import MetaobjectFieldsEditor from "../../components/MetaobjectFieldsEditor";
 
 export default function VendorConfig() {
   const { name } = useParams();
@@ -184,17 +185,39 @@ export default function VendorConfig() {
     setMetafieldConfigs(newConfigs);
   };
 
+  const handleMetaobjectFieldValuesChange = (index, values) => {
+    const newConfigs = [...metafieldConfigs];
+    newConfigs[index] = {
+      ...newConfigs[index],
+      metaobjectFieldValues: values,
+    };
+    setMetafieldConfigs(newConfigs);
+  };
+
   const handleSelectDefinition = (index, definitionId) => {
     const definition = definitions.find((d) => d.id === definitionId);
     if (definition) {
       const newConfigs = [...metafieldConfigs];
-      newConfigs[index] = {
+      const baseConfig = {
         ...newConfigs[index],
         definitionId: definitionId,
         namespace: definition.namespace,
         key: definition.key,
         type: definition.type.name,
       };
+
+      // For metaobject_reference, extract the metaobject definition ID
+      if (definition.type.name === "metaobject_reference") {
+        const metaobjectDefValidation = definition.validations?.find(
+          (v) => v.name === "metaobject_definition_id"
+        );
+        if (metaobjectDefValidation) {
+          baseConfig.metaobjectDefinitionId = metaobjectDefValidation.value;
+          baseConfig.metaobjectFieldValues = baseConfig.metaobjectFieldValues || {};
+        }
+      }
+
+      newConfigs[index] = baseConfig;
       setMetafieldConfigs(newConfigs);
     }
   };
@@ -399,7 +422,24 @@ export default function VendorConfig() {
                             </p>
                           </LegacyStack>
                         )}
-                        {config.type === "file_reference" ? (
+                        {config.type === "metaobject_reference" ? (
+                          <VerticalStack gap={{ xs: "2" }}>
+                            <Banner status="info">
+                              <p>Configure the metaobject fields below. A single metaobject will be created and shared across all products from this vendor.</p>
+                            </Banner>
+                            {config.metaobjectDefinitionId ? (
+                              <MetaobjectFieldsEditor
+                                definitionId={config.metaobjectDefinitionId}
+                                initialValues={config.metaobjectFieldValues || {}}
+                                onChange={(values) => handleMetaobjectFieldValuesChange(index, values)}
+                              />
+                            ) : (
+                              <Banner status="warning">
+                                <p>Cannot determine metaobject type. Please reselect the metafield definition.</p>
+                              </Banner>
+                            )}
+                          </VerticalStack>
+                        ) : config.type === "file_reference" ? (
                           <VerticalStack>
                             <div>
                               <input

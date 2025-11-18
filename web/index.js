@@ -1,4 +1,5 @@
 // @ts-check
+import "dotenv/config";
 import { join } from "path";
 import { readFileSync } from "fs";
 import multer from "multer";
@@ -12,6 +13,7 @@ import AppWebhookHandlers from "./webhooks.js";
 import productCreator from "./product-creator.js";
 import PrivacyWebhookHandlers from "./privacy.js";
 import { uploadFileToShopify } from "./file-upload.js";
+import * as metaobjectHandler from "./metaobject-handler.js";
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -264,6 +266,10 @@ app.get("/api/metafield-definitions", async (_req, res) => {
                 name
               }
               description
+              validations {
+                name
+                value
+              }
             }
           }
         }
@@ -281,6 +287,59 @@ app.get("/api/metafield-definitions", async (_req, res) => {
     });
   } catch (error) {
     console.error("Error fetching metafield definitions:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Metaobject definition endpoint
+app.get("/api/metaobject-definitions/:id", async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const definitionId = decodeURIComponent(req.params.id);
+
+    const definition = await metaobjectHandler.getMetaobjectDefinition(session, definitionId);
+
+    res.status(200).json({
+      definition,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching metaobject definition:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Metaobject create/update endpoint
+app.post("/api/metaobjects", async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const { metaobjectType, definitionId, fieldValues, metaobjectId } = req.body;
+
+    // Fetch the metaobject definition
+    const definition = await metaobjectHandler.getMetaobjectDefinition(session, definitionId);
+
+    let resultId;
+
+    if (metaobjectId) {
+      // Update existing metaobject
+      resultId = await metaobjectHandler.updateMetaobject(session, metaobjectId, fieldValues, definition);
+    } else {
+      // Create new metaobject
+      resultId = await metaobjectHandler.createMetaobject(session, metaobjectType, fieldValues, definition);
+    }
+
+    res.status(200).json({
+      success: true,
+      metaobjectId: resultId,
+    });
+  } catch (error) {
+    console.error("Error creating/updating metaobject:", error);
     res.status(500).json({
       success: false,
       error: error.message,
