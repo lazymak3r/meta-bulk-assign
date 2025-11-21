@@ -1,0 +1,108 @@
+.rule-node-container {
+    position: relative;
+}
+
+.rule-node-card-content {
+    padding: 8px 22px 22px 8px;
+}
+
+.rule-node-card-content.vendor {
+    background-color: #EBF5FA;
+}
+
+.rule-node-card-content.collection {
+    background-color: #E3F5F0;
+}
+
+.rule-node-card-content.category {
+    background-color: #FFF4E5;
+}
+
+.rule-node-card-content.product {
+    background-color: #F3F0FF;
+}
+
+.rule-node-badge {
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.rule-node-badge.vendor {
+    background-color: #2C6ECB;
+}
+
+.rule-node-badge.collection {
+    background-color: #008060;
+}
+
+.rule-node-badge.category {
+    background-color: #FFA500;
+}
+
+.rule-node-badge.product {
+    background-color: #8B5CF6;
+}
+
+.rule-node-action-circle {
+    position: absolute;
+    z-index: 10;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.rule-node-action-circle.and {
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.rule-node-action-circle.and:hover {
+    transform: translateX(-50%) scale(1.1);
+}
+
+.rule-node-action-circle.or {
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.rule-node-action-circle.or:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+.rule-node-action-circle.vendor {
+    background-color: #2C6ECB;
+}
+
+.rule-node-action-circle.collection {
+    background-color: #008060;
+}
+
+.rule-node-action-circle.category {
+    background-color: #FFA500;
+}
+
+.rule-node-action-circle.product {
+    background-color: #8B5CF6;
+}
+
+.rule-node-select .Polaris-Select__Content,
+.rule-node-select select,
+.rule-node-autocomplete input {
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 4px 8px !important;
+}

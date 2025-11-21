@@ -1,0 +1,147 @@
+.graph-builder-tree-node {
+    display: inline-block;
+    position: relative;
+}
+
+.graph-builder-node-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.graph-builder-node-container {
+    width: 250px;
+}
+
+.graph-builder-connector-vertical {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+}
+
+.graph-builder-connector-line {
+    width: 2px;
+    height: 40px;
+    background-color: #c9cccf;
+}
+
+.graph-builder-and-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.graph-builder-or-container {
+    position: relative;
+    padding-top: 24px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.graph-builder-or-child {
+    position: relative;
+    z-index: 1;
+}
+
+.graph-builder-or-line-vertical {
+    position: absolute;
+    left: 50%;
+    top: -24px;
+    width: 2px;
+    height: 24px;
+    background-color: #c9cccf;
+    transform: translateX(-50%);
+    z-index: 0;
+}
+
+.graph-builder-or-line-horizontal-left {
+    position: absolute;
+    left: 0;
+    top: -24px;
+    width: 50%;
+    height: 2px;
+    background-color: #c9cccf;
+    z-index: 0;
+}
+
+.graph-builder-or-line-horizontal-right {
+    position: absolute;
+    right: -64px;
+    top: -24px;
+    width: calc(50% + 64px);
+    height: 2px;
+    background-color: #c9cccf;
+    z-index: 0;
+}
+
+.graph-builder-tree-area {
+    overflow-x: auto;
+    overflow-y: auto;
+    width: 100%;
+    padding: 1rem;
+}
+
+.graph-builder-tree-area.normal {
+    max-height: 70vh;
+}
+
+.graph-builder-tree-area.fullscreen {
+    max-height: calc(100vh - 148px);
+}
+
+.graph-builder-root-tree-container {
+    display: inline-block;
+}
+
+.graph-builder-add-button {
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.2s;
+}
+
+.graph-builder-add-button:hover {
+    opacity: 0.85;
+}
+
+.graph-builder-add-button.vendor {
+    background-color: #2C6ECB;
+}
+
+.graph-builder-add-button.collection {
+    background-color: #008060;
+}
+
+.graph-builder-add-button.category {
+    background-color: #FFA500;
+}
+
+.graph-builder-add-button.product {
+    background-color: #8B5CF6;
+}
+
+.graph-builder-fullscreen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #f6f6f7;
+    z-index: 1000;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.graph-builder-fullscreen-content {
+    height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+}

@@ -314,3 +314,26 @@ export async function getMetaobject(session, metaobjectId) {
     throw error;
   }
 }
+
+/**
+ * Creates or updates a metaobject based on whether metaobjectId is provided
+ * @param {Object} session - Shopify session
+ * @param {String} definitionId - The metaobject definition ID
+ * @param {Object} fieldValues - Object containing field keys and values
+ * @param {String|null} metaobjectId - The GID of existing metaobject (null for create)
+ * @returns {Object} - Object with id property
+ */
+export async function createOrUpdateMetaobject(session, definitionId, fieldValues, metaobjectId = null) {
+  // Get the metaobject definition
+  const definition = await getMetaobjectDefinition(session, definitionId);
+
+  if (metaobjectId) {
+    // Update existing metaobject
+    const resultId = await updateMetaobject(session, metaobjectId, fieldValues, definition);
+    return { id: resultId };
+  } else {
+    // Create new metaobject
+    const resultId = await createMetaobject(session, definition.type, fieldValues, definition);
+    return { id: resultId };
+  }
+}

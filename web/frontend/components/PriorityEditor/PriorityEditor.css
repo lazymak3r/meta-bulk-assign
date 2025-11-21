@@ -1,0 +1,6 @@
+.priority-editor-input .Polaris-TextField__Input,
+.priority-editor-input input {
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 4px 8px !important;
+}

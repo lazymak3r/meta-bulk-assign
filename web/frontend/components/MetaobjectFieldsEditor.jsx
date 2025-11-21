@@ -139,7 +139,7 @@ export default function MetaobjectFieldsEditor({
 
   if (error) {
     return (
-      <Banner status="critical">
+      <Banner tone="critical">
         <p>Error loading metaobject definition: {error}</p>
       </Banner>
     );
@@ -147,7 +147,7 @@ export default function MetaobjectFieldsEditor({
 
   if (!definition) {
     return (
-      <Banner status="warning">
+      <Banner tone="warning">
         <p>No metaobject definition found</p>
       </Banner>
     );
@@ -165,7 +165,7 @@ export default function MetaobjectFieldsEditor({
 
         if (!nestedDefinitionId) {
           return (
-            <Banner key={fieldKey} status="warning">
+            <Banner key={fieldKey} tone="warning">
               <p>
                 Cannot determine metaobject type for field: {fieldDef.name}
               </p>
@@ -179,7 +179,7 @@ export default function MetaobjectFieldsEditor({
               title={`${fieldDef.name}${fieldDef.required ? " *" : ""}`}
               sectioned
             >
-              <VerticalStack gap={{ xs: "2" }}>
+              <VerticalStack gap="2">
                 {fieldDef.description && <p>{fieldDef.description}</p>}
                 <MetaobjectFieldsEditor
                   definitionId={nestedDefinitionId}
@@ -249,6 +249,7 @@ export default function MetaobjectFieldsEditor({
             placeholder={fieldDef.description || `Enter ${fieldDef.name}`}
             multiline={fieldType === "multi_line_text_field"}
             requiredIndicator={fieldDef.required}
+            autoComplete="off"
           />
         );
       }

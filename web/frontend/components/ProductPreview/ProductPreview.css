@@ -1,0 +1,19 @@
+.product-preview-badge {
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.product-preview-badge.vendor {
+    background-color: #2C6ECB;
+}
+
+.product-preview-badge.collection {
+    background-color: #008060;
+}
+
+.product-preview-badge.category {
+    background-color: #FFA500;
+}

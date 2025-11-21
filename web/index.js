@@ -6,7 +6,8 @@ import multer from "multer";
 import express from "express";
 import serveStatic from "serve-static";
 
-import * as vendorRoutes from "./vendor-routes.js";
+import configurationRoutes from "./configuration-routes.js";
+import resourceRoutes from "./resource-routes.js";
 import shopify from "./shopify.js";
 import database from "./database.js";
 import AppWebhookHandlers from "./webhooks.js";
@@ -68,6 +69,13 @@ app.get(
 );
 app.post(
   shopify.config.webhooks.path,
+  (req, res, next) => {
+    console.log("[Server] ===== WEBHOOK RECEIVED =====");
+    console.log("[Server] Topic:", req.headers["x-shopify-topic"]);
+    console.log("[Server] Shop:", req.headers["x-shopify-shop-domain"]);
+    console.log("[Server] Webhook ID:", req.headers["x-shopify-webhook-id"]);
+    next();
+  },
   shopify.processWebhooks({
     webhookHandlers: { ...PrivacyWebhookHandlers, ...AppWebhookHandlers }
   })
@@ -110,40 +118,11 @@ app.post("/api/products", async (_req, res) => {
   res.status(status).send({ success: status === 200, error });
 });
 
-// Vendor routes
-app.get("/api/vendors", vendorRoutes.getVendors);
-app.get("/api/vendors/:name", vendorRoutes.getVendorByName);
-app.get("/api/vendors/:name/products", vendorRoutes.getVendorProducts);
-app.post("/api/vendors/:name/config", vendorRoutes.saveVendorConfig);
-app.delete("/api/vendors/:name/config", vendorRoutes.deleteVendorConfig);
-app.post("/api/vendors/:name/apply", vendorRoutes.applyVendorConfig);
-app.get("/api/vendors/:name/files", async (req, res) => {
-    try {
-        const shop = res.locals.shopify.session.shop;
-        const vendorName = decodeURIComponent(req.params.name);
+// Configuration routes
+app.use("/api/configurations", configurationRoutes);
 
-        const vendor = await database.getVendorByName(shop, vendorName);
-        if (!vendor) {
-            return res.status(404).json({
-                success: false,
-                error: "Vendor not found",
-            });
-        }
-
-        const files = await database.getVendorFiles(vendor.id);
-
-        res.status(200).json({
-            success: true,
-            files,
-        });
-    } catch (error) {
-        console.error("Error fetching vendor files:", error);
-        res.status(500).json({
-            success: false,
-            error: error.message,
-        });
-    }
-});
+// Resource routes (vendors, collections, categories, products)
+app.use("/api", resourceRoutes);
 
 // Configure multer for file uploads (store in memory)
 const upload = multer({
@@ -158,7 +137,6 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
   try {
     console.log("File upload request received");
     console.log("Has file:", !!req.file);
-    console.log("Vendor name:", req.body.vendorName);
 
     if (!req.file) {
       console.error("No file in request");
@@ -169,8 +147,6 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
     }
 
     const session = res.locals.shopify.session;
-    const shop = session.shop;
-    const vendorName = req.body.vendorName;
 
     console.log("Uploading file to Shopify:", req.file.originalname);
 
@@ -184,13 +160,6 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
 
     console.log("File uploaded successfully:", fileData.shopifyFileId);
 
-    // Save file metadata to database if vendor name provided
-    if (vendorName) {
-      const vendor = await database.getOrCreateVendor(shop, vendorName);
-      await database.saveVendorFile(vendor.id, shop, fileData);
-      console.log("File metadata saved to database");
-    }
-
     res.status(200).json({
       success: true,
       file: fileData,
@@ -198,47 +167,6 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
   } catch (error) {
     console.error("Error uploading file:", error);
     console.error("Error stack:", error.stack);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
-app.get("/api/files/metadata", async (req, res) => {
-  try {
-    const { gid } = req.query;
-
-    if (!gid || !gid.startsWith('gid://')) {
-      return res.status(400).json({
-        success: false,
-        error: "Invalid GID provided",
-      });
-    }
-
-    const session = res.locals.shopify.session;
-    const shop = session.shop;
-
-    // Query database for file metadata
-    const file = await database.getFileByGid(shop, gid);
-
-    if (!file) {
-      return res.status(404).json({
-        success: false,
-        error: "File not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      file: {
-        shopifyFileId: file.shopify_file_id,
-        filename: file.filename,
-        file_url: file.file_url,
-        file_type: file.file_type,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching file metadata:", error);
     res.status(500).json({
       success: false,
       error: error.message,

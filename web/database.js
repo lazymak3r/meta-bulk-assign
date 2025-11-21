@@ -36,57 +36,53 @@ class PostgreSQLDatabase {
   }
 
   async initialize() {
+    // Create configurations table
     await this.query(`
-      CREATE TABLE IF NOT EXISTS vendors (
+      CREATE TABLE IF NOT EXISTS configurations (
         id SERIAL PRIMARY KEY,
         shop TEXT NOT NULL,
-        vendor_name TEXT NOT NULL,
-        product_count INTEGER DEFAULT 0,
-        has_config BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(shop, vendor_name)
-      )
-    `);
-
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS vendor_configs (
-        id SERIAL PRIMARY KEY,
-        vendor_id INTEGER NOT NULL,
+        name TEXT,
+        type TEXT NOT NULL CHECK (type IN ('vendor', 'category', 'collection', 'product', 'combined')),
         metafield_configs TEXT NOT NULL,
-        file_id TEXT,
+        priority INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (vendor_id) REFERENCES vendors (id) ON DELETE CASCADE,
-        UNIQUE(vendor_id)
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
+    // Create configuration_rules table
     await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_vendors_shop ON vendors(shop)
-    `);
-
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_vendors_shop_name ON vendors(shop, vendor_name)
-    `);
-
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS vendor_files (
+      CREATE TABLE IF NOT EXISTS configuration_rules (
         id SERIAL PRIMARY KEY,
-        vendor_id INTEGER NOT NULL,
-        shop TEXT NOT NULL,
-        shopify_file_id TEXT NOT NULL,
-        filename TEXT NOT NULL,
-        file_type TEXT,
-        file_url TEXT,
-        file_size INTEGER,
+        configuration_id INTEGER NOT NULL,
+        parent_id INTEGER,
+        rule_type TEXT NOT NULL CHECK (rule_type IN ('vendor', 'collection', 'category', 'product')),
+        rule_value TEXT NOT NULL,
+        rule_id TEXT,
+        operator TEXT NOT NULL CHECK (operator IN ('AND', 'OR')),
+        level INTEGER NOT NULL DEFAULT 0,
+        position INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (vendor_id) REFERENCES vendors (id) ON DELETE CASCADE
+        FOREIGN KEY (configuration_id) REFERENCES configurations (id) ON DELETE CASCADE,
+        FOREIGN KEY (parent_id) REFERENCES configuration_rules (id) ON DELETE CASCADE
       )
     `);
 
+    // Create indexes
     await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_vendor_files_vendor ON vendor_files(vendor_id)
+      CREATE INDEX IF NOT EXISTS idx_configurations_shop ON configurations(shop)
+    `);
+
+    await this.query(`
+      CREATE INDEX IF NOT EXISTS idx_configurations_priority ON configurations(priority DESC)
+    `);
+
+    await this.query(`
+      CREATE INDEX IF NOT EXISTS idx_configuration_rules_config_id ON configuration_rules(configuration_id)
+    `);
+
+    await this.query(`
+      CREATE INDEX IF NOT EXISTS idx_configuration_rules_parent_id ON configuration_rules(parent_id)
     `);
 
     console.log("[Database] PostgreSQL initialized successfully");
@@ -121,94 +117,42 @@ class Database {
     return await this.db.query(sql, params);
   }
 
-  // Vendor operations
-  async getOrCreateVendor(shop, vendorName) {
+  // Configuration operations
+  async createConfiguration(shop, name, type, metafieldConfigs, priority = 0) {
     const result = await this.query(
-      "SELECT * FROM vendors WHERE shop = ? AND vendor_name = ?",
-      [shop, vendorName]
-    );
-    let vendor = result.rows[0];
-
-    if (!vendor) {
-      const insertResult = await this.query(
-        "INSERT INTO vendors (shop, vendor_name, product_count, has_config) VALUES (?, ?, 0, FALSE) RETURNING *",
-        [shop, vendorName]
-      );
-      vendor = insertResult.rows[0];
-    }
-
-    return vendor;
-  }
-
-  async getAllVendors(shop) {
-    const result = await this.query(
-      `SELECT v.*, vc.metafield_configs, vc.file_id
-       FROM vendors v
-       LEFT JOIN vendor_configs vc ON v.id = vc.vendor_id
-       WHERE v.shop = ?
-       ORDER BY v.vendor_name`,
-      [shop]
-    );
-    return result.rows;
-  }
-
-  async getVendorByName(shop, vendorName) {
-    const result = await this.query(
-      `SELECT v.*, vc.metafield_configs, vc.file_id
-       FROM vendors v
-       LEFT JOIN vendor_configs vc ON v.id = vc.vendor_id
-       WHERE v.shop = ? AND v.vendor_name = ?`,
-      [shop, vendorName]
+      `INSERT INTO configurations (shop, name, type, metafield_configs, priority)
+       VALUES (?, ?, ?, ?, ?)
+       RETURNING *`,
+      [shop, name, type, JSON.stringify(metafieldConfigs), priority]
     );
     return result.rows[0];
   }
 
-  async updateVendorProductCount(shop, vendorName, count) {
-    await this.query(
-      "UPDATE vendors SET product_count = ?, updated_at = CURRENT_TIMESTAMP WHERE shop = ? AND vendor_name = ?",
-      [count, shop, vendorName]
+  async getAllConfigurations(shop) {
+    const result = await this.query(
+      `SELECT * FROM configurations
+       WHERE shop = ?
+       ORDER BY priority DESC, created_at DESC`,
+      [shop]
     );
+
+    // Parse metafield_configs JSON
+    return result.rows.map(config => ({
+      ...config,
+      metafield_configs: typeof config.metafield_configs === 'string'
+        ? JSON.parse(config.metafield_configs)
+        : config.metafield_configs
+    }));
   }
 
-  // Vendor config operations
-  async saveVendorConfig(vendorId, metafieldConfigs, fileId = null) {
+  async getConfigurationById(id) {
     const result = await this.query(
-      "SELECT * FROM vendor_configs WHERE vendor_id = ?",
-      [vendorId]
-    );
-    const existing = result.rows[0];
-
-    if (existing) {
-      await this.query(
-        `UPDATE vendor_configs
-         SET metafield_configs = ?, file_id = ?, updated_at = CURRENT_TIMESTAMP
-         WHERE vendor_id = ?`,
-        [JSON.stringify(metafieldConfigs), fileId, vendorId]
-      );
-    } else {
-      await this.query(
-        `INSERT INTO vendor_configs (vendor_id, metafield_configs, file_id)
-         VALUES (?, ?, ?)`,
-        [vendorId, JSON.stringify(metafieldConfigs), fileId]
-      );
-    }
-
-    // Update vendor has_config flag
-    await this.query(
-      "UPDATE vendors SET has_config = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [vendorId]
-    );
-  }
-
-  async getVendorConfig(vendorId) {
-    const result = await this.query(
-      "SELECT * FROM vendor_configs WHERE vendor_id = ?",
-      [vendorId]
+      "SELECT * FROM configurations WHERE id = ?",
+      [id]
     );
     const config = result.rows[0];
 
     if (config && config.metafield_configs) {
-      // Handle both string and already-parsed JSON
       if (typeof config.metafield_configs === 'string') {
         config.metafield_configs = JSON.parse(config.metafield_configs);
       }
@@ -217,63 +161,138 @@ class Database {
     return config;
   }
 
-  async deleteVendorConfig(vendorId) {
-    await this.query("DELETE FROM vendor_configs WHERE vendor_id = ?", [
-      vendorId,
-    ]);
-
-    // Update vendor has_config flag
+  async updateConfiguration(id, name, type, metafieldConfigs) {
     await this.query(
-      "UPDATE vendors SET has_config = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [vendorId]
+      `UPDATE configurations
+       SET name = ?, type = ?, metafield_configs = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [name, type, JSON.stringify(metafieldConfigs), id]
     );
   }
 
-  // Vendor file operations
-  async saveVendorFile(vendorId, shop, fileData) {
+  async deleteConfiguration(id) {
+    await this.query("DELETE FROM configurations WHERE id = ?", [id]);
+  }
+
+  async duplicateConfiguration(id, shop) {
+    // Get original configuration
+    const original = await this.getConfigurationById(id);
+    if (!original) return null;
+
+    // Create new configuration with "Copy" suffix
+    const newName = original.name ? `${original.name} (Copy)` : null;
+    const newConfig = await this.createConfiguration(
+      shop,
+      newName,
+      original.type,
+      original.metafield_configs,
+      original.priority
+    );
+
+    // Get original rules
+    const rules = await this.getConfigurationRules(id);
+
+    // Duplicate rules with new configuration_id
+    for (const rule of rules) {
+      await this.createConfigurationRule(
+        newConfig.id,
+        rule.parent_id, // Note: This will need mapping if parent_id references are used
+        rule.rule_type,
+        rule.rule_value,
+        rule.rule_id,
+        rule.operator,
+        rule.level,
+        rule.position
+      );
+    }
+
+    return newConfig;
+  }
+
+  async updateConfigurationPriority(id, priority) {
+    console.log('[Database] Updating priority:', { id, priority, idType: typeof id, priorityType: typeof priority });
+    await this.query(
+      "UPDATE configurations SET priority = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [priority, id]
+    );
+  }
+
+  async updateAllPriorities(priorities) {
+    // priorities is an array of { id, priority }
+    for (const { id, priority } of priorities) {
+      await this.updateConfigurationPriority(id, priority);
+    }
+  }
+
+  // Configuration rules operations
+  async createConfigurationRule(configId, parentId, ruleType, ruleValue, ruleId, operator, level, position) {
     const result = await this.query(
-      `INSERT INTO vendor_files (vendor_id, shop, shopify_file_id, filename, file_type, file_url, file_size)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO configuration_rules (configuration_id, parent_id, rule_type, rule_value, rule_id, operator, level, position)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        RETURNING *`,
-      [
-        vendorId,
-        shop,
-        fileData.shopifyFileId,
-        fileData.filename,
-        fileData.fileType,
-        fileData.fileUrl,
-        fileData.fileSize,
-      ]
+      [configId, parentId, ruleType, ruleValue, ruleId, operator, level, position]
     );
     return result.rows[0];
   }
 
-  async getVendorFiles(vendorId) {
+  async getConfigurationRules(configId) {
     const result = await this.query(
-      "SELECT * FROM vendor_files WHERE vendor_id = ? ORDER BY created_at DESC",
-      [vendorId]
+      `SELECT * FROM configuration_rules
+       WHERE configuration_id = ?
+       ORDER BY level, position`,
+      [configId]
     );
     return result.rows;
   }
 
-  async getFileById(fileId) {
-    const result = await this.query(
-      "SELECT * FROM vendor_files WHERE id = ?",
-      [fileId]
+  async deleteConfigurationRules(configId) {
+    await this.query(
+      "DELETE FROM configuration_rules WHERE configuration_id = ?",
+      [configId]
     );
-    return result.rows[0];
   }
 
-  async getFileByGid(shop, shopifyFileId) {
-    const result = await this.query(
-      "SELECT * FROM vendor_files WHERE shop = ? AND shopify_file_id = ?",
-      [shop, shopifyFileId]
-    );
-    return result.rows[0];
+  async deleteConfigurationRule(ruleId) {
+    await this.query("DELETE FROM configuration_rules WHERE id = ?", [ruleId]);
   }
 
-  async deleteVendorFile(fileId) {
-    await this.query("DELETE FROM vendor_files WHERE id = ?", [fileId]);
+  async bulkCreateRules(configId, rules) {
+    // Map old IDs to new database IDs
+    const idMap = {};
+    const createdRules = [];
+
+    // Sort rules by level to ensure parents are created before children
+    const sortedRules = [...rules].sort((a, b) => {
+      const levelA = a.level || 0;
+      const levelB = b.level || 0;
+      return levelA - levelB;
+    });
+
+    for (const rule of sortedRules) {
+      // Map the parentId if it exists in the idMap
+      const mappedParentId = rule.parentId && idMap[rule.parentId]
+        ? idMap[rule.parentId]
+        : null;
+
+      const created = await this.createConfigurationRule(
+        configId,
+        mappedParentId,
+        rule.ruleType || rule.rule_type,
+        rule.ruleValue || rule.rule_value,
+        rule.ruleId || rule.rule_id || null,
+        rule.operator,
+        rule.level,
+        rule.position
+      );
+
+      // Store mapping of old ID to new database ID
+      if (rule.id) {
+        idMap[rule.id] = created.id;
+      }
+
+      createdRules.push(created);
+    }
+    return createdRules;
   }
 
   close() {

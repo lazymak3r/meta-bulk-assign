@@ -20,6 +20,15 @@ export async function applyMetafieldsToProduct(
       continue;
     }
 
+    // For metaobject_reference, ensure value is a valid GID
+    if (config.type === 'metaobject_reference') {
+      const valueStr = String(config.value);
+      if (!valueStr.startsWith('gid://shopify/Metaobject/')) {
+        console.log(`Skipping metafield ${config.namespace}.${config.key} - invalid metaobject GID: ${valueStr}`);
+        continue;
+      }
+    }
+
     const metafield = {
       namespace: config.namespace,
       key: config.key,
