@@ -45,10 +45,26 @@ class PostgreSQLDatabase {
         type TEXT NOT NULL CHECK (type IN ('vendor', 'category', 'collection', 'product', 'combined')),
         metafield_configs TEXT NOT NULL,
         priority INTEGER NOT NULL DEFAULT 0,
+        show_on_storefront BOOLEAN DEFAULT false,
+        storefront_position TEXT DEFAULT 'after_price',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Add new columns to existing table if they don't exist
+    try {
+      await this.query(`
+        ALTER TABLE configurations
+        ADD COLUMN IF NOT EXISTS show_on_storefront BOOLEAN DEFAULT false
+      `);
+      await this.query(`
+        ALTER TABLE configurations
+        ADD COLUMN IF NOT EXISTS storefront_position TEXT DEFAULT 'after_price'
+      `);
+    } catch (err) {
+      console.log('[Database] Columns may already exist:', err.message);
+    }
 
     // Create configuration_rules table
     await this.query(`
@@ -161,12 +177,12 @@ class Database {
     return config;
   }
 
-  async updateConfiguration(id, name, type, metafieldConfigs) {
+  async updateConfiguration(id, name, type, metafieldConfigs, showOnStorefront, storefrontPosition) {
     await this.query(
       `UPDATE configurations
-       SET name = ?, type = ?, metafield_configs = ?, updated_at = CURRENT_TIMESTAMP
+       SET name = ?, type = ?, metafield_configs = ?, show_on_storefront = ?, storefront_position = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [name, type, JSON.stringify(metafieldConfigs), id]
+      [name, type, JSON.stringify(metafieldConfigs), showOnStorefront, storefrontPosition, id]
     );
   }
 

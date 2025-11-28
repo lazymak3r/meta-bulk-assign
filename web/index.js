@@ -84,6 +84,322 @@ app.post(
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
+// App Proxy route for storefront (no authentication required)
+// Note: App proxy strips /apps/meta-bulk-assign prefix, so this route receives /storefront-config
+app.get("/storefront-config", async (req, res) => {
+  try {
+    const { shop, product } = req.query;
+
+    if (!shop || !product) {
+      return res.status(400).json({ error: "Missing shop or product parameter" });
+    }
+
+    // Get all configurations for this shop that should show on storefront
+    const configs = await database.query(
+      `SELECT id, metafield_configs, show_on_storefront, storefront_position
+       FROM configurations
+       WHERE shop = ? AND show_on_storefront = true
+       ORDER BY priority DESC`,
+      [shop]
+    );
+
+    if (!configs.rows || configs.rows.length === 0) {
+      return res.json({ metafields: [] });
+    }
+
+    // For each configuration, check if it applies to this product
+    const metafieldsToDisplay = [];
+
+    for (const config of configs.rows) {
+      // Parse metafield configs
+      const metafieldConfigs = typeof config.metafield_configs === 'string'
+        ? JSON.parse(config.metafield_configs)
+        : config.metafield_configs;
+
+      // Get rules for this configuration
+      const rules = await database.getConfigurationRules(config.id);
+
+      // Check if this configuration applies to the product
+      const appliesToProduct = await checkIfConfigApplies(shop, product, rules);
+
+      if (appliesToProduct) {
+        // Add each metafield from this configuration
+        for (const mf of metafieldConfigs) {
+          // Fetch the actual metafield value from Shopify
+          const value = await fetchMetafieldValue(shop, product, mf.namespace, mf.key);
+
+          if (value) {
+            // Map Shopify metafield types to display types
+            let displayType = 'text'; // default
+            if (mf.type.includes('text')) {
+              displayType = 'text';
+            } else if (mf.type === 'file_reference') {
+              // Determine if it's an image or file based on the value (URL)
+              displayType = value.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i) ? 'image' : 'file';
+            } else if (mf.type === 'metaobject_reference') {
+              displayType = 'metaobject';
+            }
+
+            metafieldsToDisplay.push({
+              namespace: mf.namespace,
+              key: mf.key,
+              displayType: displayType,
+              value: value,
+              showOnStorefront: true,
+              position: config.storefront_position || 'after_price'
+            });
+          }
+        }
+      }
+    }
+
+    res.json({ metafields: metafieldsToDisplay });
+
+  } catch (error) {
+    console.error('[Storefront API] Error:', error);
+    res.status(500).json({ error: 'Internal server error', message: error.message });
+  }
+});
+
+// Helper function to get session for shop
+async function getShopSession(shop) {
+  try {
+    // Get all sessions for this shop from session storage
+    const sessions = await shopify.config.sessionStorage.findSessionsByShop(shop);
+
+    if (!sessions || sessions.length === 0) {
+      console.error(`[Storefront API] No session found for shop: ${shop}`);
+      return null;
+    }
+
+    // Return the most recent active session
+    // Filter for online sessions first, fall back to offline
+    const onlineSession = sessions.find(s => s.isOnline);
+    const offlineSession = sessions.find(s => !s.isOnline);
+
+    return onlineSession || offlineSession || sessions[0];
+  } catch (error) {
+    console.error('[Storefront API] Error getting session:', error);
+    return null;
+  }
+}
+
+// Helper function to check if configuration applies to product
+async function checkIfConfigApplies(shop, productHandle, rules) {
+  // If no rules, apply to all products
+  if (!rules || rules.length === 0) {
+    return true;
+  }
+
+  try {
+    // Get session for this shop
+    const session = await getShopSession(shop);
+    if (!session) {
+      console.error('[Storefront API] Cannot check rules - no session available');
+      return false;
+    }
+
+    // Fetch product data to check against rules
+    const client = new shopify.api.clients.Graphql({ session });
+
+    const query = `
+      query GetProductByHandle($handle: String!) {
+        productByHandle(handle: $handle) {
+          id
+          vendor
+          productType
+          collections(first: 100) {
+            edges {
+              node {
+                id
+                handle
+                title
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await client.request(query, {
+      variables: { handle: productHandle }
+    });
+
+    const product = response.data?.productByHandle;
+    if (!product) {
+      return false;
+    }
+
+    // Check if product matches any of the rules
+    for (const rule of rules) {
+      let matches = false;
+
+      switch (rule.rule_type) {
+        case 'vendor':
+          matches = product.vendor === rule.rule_value;
+          break;
+
+        case 'product':
+          // Parse rule_id which contains JSON array of product IDs
+          try {
+            const productIds = JSON.parse(rule.rule_id);
+            matches = Array.isArray(productIds) && productIds.includes(product.id);
+          } catch (e) {
+            // Fallback for non-JSON rule_id
+            matches = product.id === rule.rule_id || productHandle === rule.rule_value;
+          }
+          break;
+
+        case 'category':
+          matches = product.productType === rule.rule_value;
+          break;
+
+        case 'collection':
+          // Parse rule_id which may contain JSON array of collection IDs
+          try {
+            const collectionIds = JSON.parse(rule.rule_id);
+            if (Array.isArray(collectionIds)) {
+              matches = product.collections.edges.some(edge => collectionIds.includes(edge.node.id));
+            } else {
+              // Single collection ID
+              matches = product.collections.edges.some(edge =>
+                edge.node.id === rule.rule_id ||
+                edge.node.handle === rule.rule_value ||
+                edge.node.title === rule.rule_value
+              );
+            }
+          } catch (e) {
+            // Fallback for non-JSON rule_id
+            matches = product.collections.edges.some(edge =>
+              edge.node.id === rule.rule_id ||
+              edge.node.handle === rule.rule_value ||
+              edge.node.title === rule.rule_value
+            );
+          }
+          break;
+      }
+
+      // If any rule matches, the configuration applies
+      if (matches) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error('[Storefront API] Error checking if config applies:', error);
+    return false;
+  }
+}
+
+// Helper function to fetch metafield value from Shopify
+async function fetchMetafieldValue(shop, productHandle, namespace, key) {
+  try {
+    // Get session for this shop
+    const session = await getShopSession(shop);
+    if (!session) {
+      console.error('[Storefront API] Cannot fetch metafield - no session available');
+      return null;
+    }
+
+    const client = new shopify.api.clients.Graphql({ session });
+
+    const query = `
+      query GetProductMetafield($handle: String!, $namespace: String!, $key: String!) {
+        productByHandle(handle: $handle) {
+          id
+          metafield(namespace: $namespace, key: $key) {
+            id
+            namespace
+            key
+            value
+            type
+            reference {
+              ... on MediaImage {
+                image {
+                  url
+                }
+              }
+              ... on GenericFile {
+                url
+              }
+              ... on Metaobject {
+                id
+                fields {
+                  key
+                  value
+                  type
+                  reference {
+                    ... on MediaImage {
+                      image {
+                        url
+                      }
+                    }
+                    ... on GenericFile {
+                      url
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await client.request(query, {
+      variables: {
+        handle: productHandle,
+        namespace: namespace,
+        key: key
+      }
+    });
+
+    const metafield = response.data?.productByHandle?.metafield;
+
+    if (!metafield) {
+      return null;
+    }
+
+    // Process value based on type
+    switch (metafield.type) {
+      case 'file_reference':
+        // Check if it's an image or a file
+        if (metafield.reference?.image) {
+          return metafield.reference.image.url;
+        } else if (metafield.reference?.url) {
+          return metafield.reference.url;
+        }
+        return metafield.value;
+
+      case 'metaobject_reference':
+        // Return structured metaobject data
+        if (metafield.reference?.fields) {
+          const metaobjectData = {};
+          for (const field of metafield.reference.fields) {
+            // Process nested references (images, files)
+            if (field.reference?.image) {
+              metaobjectData[field.key] = field.reference.image.url;
+            } else if (field.reference?.url) {
+              metaobjectData[field.key] = field.reference.url;
+            } else {
+              metaobjectData[field.key] = field.value;
+            }
+          }
+          return JSON.stringify(metaobjectData);
+        }
+        return metafield.value;
+
+      default:
+        // For text and other types, return the value directly
+        return metafield.value;
+    }
+  } catch (error) {
+    console.error('[Storefront API] Error fetching metafield:', error);
+    return null;
+  }
+}
+
 app.use("/api/*", shopify.validateAuthenticatedSession());
 
 app.use(express.json());

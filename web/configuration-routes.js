@@ -148,7 +148,7 @@ router.put("/:id", async (req, res) => {
   try {
     const session = res.locals.shopify.session;
     const { id } = req.params;
-    const { name, metafieldConfigs, rules } = req.body;
+    const { name, metafieldConfigs, rules, showOnStorefront, storefrontPosition } = req.body;
 
     const existing = await database.getConfigurationById(id);
     if (!existing) {
@@ -167,8 +167,15 @@ router.put("/:id", async (req, res) => {
     // Generate name if not provided
     const finalName = name || generateConfigurationName(rules || []);
 
-    // Update configuration
-    await database.updateConfiguration(id, finalName, type, processedConfigs);
+    // Update configuration with storefront settings
+    await database.updateConfiguration(
+      id,
+      finalName,
+      type,
+      processedConfigs,
+      showOnStorefront || false,
+      storefrontPosition || 'after_price'
+    );
 
     // Delete old rules and create new ones
     await database.deleteConfigurationRules(id);
