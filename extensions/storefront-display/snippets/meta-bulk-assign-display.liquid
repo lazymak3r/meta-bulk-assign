@@ -1,0 +1,295 @@
+{% comment %}
+  Metafield Auto Display - App Embed
+  Automatically displays metafields configured in the Meta Bulk Assign app
+{% endcomment %}
+
+<script>
+(function() {
+  'use strict';
+
+  // Configuration
+  const APP_PROXY_URL = '/apps/meta-bulk-assign';
+  const SHOP_DOMAIN = '{{ shop.permanent_domain }}';
+
+  // Only run on product pages
+  if (!window.location.pathname.includes('/products/')) {
+    return;
+  }
+
+  // Get product handle from URL
+  const pathParts = window.location.pathname.split('/');
+  const productHandle = pathParts[pathParts.indexOf('products') + 1];
+
+  if (!productHandle) {
+    return;
+  }
+
+  // Fetch configuration from app
+  async function fetchConfig() {
+    try {
+      const response = await fetch(`${APP_PROXY_URL}/storefront-config?shop=${SHOP_DOMAIN}&product=${productHandle}`);
+      if (!response.ok) {
+        return null;
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('[MBA] Error fetching config:', error);
+      return null;
+    }
+  }
+
+  // Render HTML for different metafield types
+  function renderMetafield(metafield) {
+    const { displayType, value, namespace, key } = metafield;
+
+    if (!value) return '';
+
+    const className = `mba-metafield mba-metafield--${displayType}`;
+
+    switch (displayType) {
+      case 'text':
+        return `<div class="${className}" data-mba-field="${namespace}.${key}">
+          <div class="mba-metafield__content">${escapeHtml(value)}</div>
+        </div>`;
+
+      case 'image':
+        return `<div class="${className}" data-mba-field="${namespace}.${key}">
+          <img src="${escapeHtml(value)}" alt="${namespace}.${key}" class="mba-metafield__image" loading="lazy">
+        </div>`;
+
+      case 'file':
+        const fileName = value.split('/').pop() || 'Download File';
+        return `<div class="${className}" data-mba-field="${namespace}.${key}">
+          <a href="${escapeHtml(value)}" class="mba-metafield__file-link" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M5.83331 8.33333L9.99998 12.5L14.1666 8.33333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M10 12.5V2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>${escapeHtml(fileName)}</span>
+          </a>
+        </div>`;
+
+      case 'metaobject':
+        try {
+          const metaobj = typeof value === 'string' ? JSON.parse(value) : value;
+          let html = `<div class="${className}" data-mba-field="${namespace}.${key}">
+            <div class="mba-metafield__metaobject">`;
+
+          if (metaobj && typeof metaobj === 'object') {
+            for (const [fieldKey, fieldValue] of Object.entries(metaobj)) {
+              html += `<div class="mba-metafield__metaobject-field">
+                <span class="mba-metafield__metaobject-key">${escapeHtml(fieldKey)}:</span>
+                <span class="mba-metafield__metaobject-value">${escapeHtml(String(fieldValue))}</span>
+              </div>`;
+            }
+          }
+
+          html += `</div></div>`;
+          return html;
+        } catch (e) {
+          console.error('[MBA] Error rendering metaobject:', e);
+          return '';
+        }
+
+      default:
+        return '';
+    }
+  }
+
+  // Escape HTML to prevent XSS
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Find injection point based on position
+  function findInjectionPoint(position) {
+    const selectors = {
+      'after_price': [
+        '.product__price',
+        '.product-price',
+        '[class*="price"]',
+        '.product-form__price',
+        '.price-container',
+        '.price',
+        '[data-price]',
+        '.money',
+        // Tailwind-based themes
+        'p.whitespace-nowrap',
+        'p[class*="text-["]',
+        '.flex.flex-col.flex-wrap p',
+        'p.leading-\\[1\\.5\\]'
+      ],
+      'before_cart': [
+        'form[action*="/cart/add"]',
+        '.product-form',
+        '[class*="add-to-cart"]',
+        'button[name="add"]',
+        '.product-form__submit',
+        '[type="submit"]'
+      ],
+      'after_description': [
+        '.product__description',
+        '.product-description',
+        '[class*="description"]',
+        '.rte'
+      ],
+      'after_title': [
+        '.product__title',
+        '.product-title',
+        'h1[class*="product"]',
+        '.product-single__title',
+        'h1'
+      ]
+    };
+
+    const selectorList = selectors[position] || selectors['after_price'];
+
+    for (const selector of selectorList) {
+      try {
+        const element = document.querySelector(selector);
+        if (element) {
+          return element;
+        }
+      } catch (e) {
+        // Continue to next selector
+      }
+    }
+
+    return null;
+  }
+
+  // Inject metafield display
+  function injectMetafield(metafield, position) {
+    const html = renderMetafield(metafield);
+    if (!html) return;
+
+    const target = findInjectionPoint(position);
+    if (!target) return;
+
+    // Create container
+    const container = document.createElement('div');
+    container.className = 'mba-container';
+    container.innerHTML = html;
+
+    // Insert after the target element
+    target.insertAdjacentElement('afterend', container);
+  }
+
+  // Initialize
+  async function init() {
+    const config = await fetchConfig();
+    if (!config || !config.metafields || config.metafields.length === 0) {
+      return;
+    }
+
+    // Inject each configured metafield
+    config.metafields.forEach(metafield => {
+      if (metafield.showOnStorefront) {
+        injectMetafield(metafield, metafield.position || 'after_price');
+      }
+    });
+  }
+
+  // Run when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
+{% comment %} Inline styles for metafield display {% endcomment %}
+<style>
+.mba-container {
+  margin: 1rem 0;
+}
+
+.mba-metafield {
+  margin: 0.75rem 0;
+}
+
+.mba-metafield--text .mba-metafield__content {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #333;
+}
+
+.mba-metafield--image {
+  text-align: center;
+}
+
+.mba-metafield__image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.mba-metafield__file-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #f7f7f7;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.mba-metafield__file-link:hover {
+  background: #eee;
+  border-color: #bbb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.mba-metafield__file-link svg {
+  flex-shrink: 0;
+}
+
+.mba-metafield__metaobject {
+  background: #f9f9f9;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.mba-metafield__metaobject-field {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.mba-metafield__metaobject-field:last-child {
+  border-bottom: none;
+}
+
+.mba-metafield__metaobject-key {
+  font-weight: 600;
+  color: #666;
+  min-width: 120px;
+}
+
+.mba-metafield__metaobject-value {
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .mba-metafield__metaobject-field {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .mba-metafield__metaobject-key {
+    min-width: auto;
+  }
+}
+</style>

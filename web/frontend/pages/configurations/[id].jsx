@@ -9,6 +9,8 @@ import {
     Banner,
     Spinner,
     HorizontalStack,
+    Checkbox,
+    Select,
 } from "@shopify/polaris";
 import {TitleBar} from "@shopify/app-bridge-react";
 import {useNavigate, useParams} from "react-router-dom";
@@ -31,6 +33,8 @@ export default function EditConfiguration() {
     const [isApplying, setIsApplying] = useState(false);
     const [error, setError] = useState(null);
     const [applyResult, setApplyResult] = useState(null);
+    const [showOnStorefront, setShowOnStorefront] = useState(false);
+    const [storefrontPosition, setStorefrontPosition] = useState("after_price");
 
     // Fetch configuration
     const {data: configData, isLoading: loadingConfig} = useQuery({
@@ -64,6 +68,8 @@ export default function EditConfiguration() {
             setRules(convertedRules);
 
             setMetafieldConfigs(configData.metafield_configs || []);
+            setShowOnStorefront(configData.show_on_storefront || false);
+            setStorefrontPosition(configData.storefront_position || "after_price");
         }
     }, [configData]);
 
@@ -147,6 +153,8 @@ export default function EditConfiguration() {
                     name: name || null,
                     metafieldConfigs,
                     rules,
+                    showOnStorefront,
+                    storefrontPosition,
                 }),
             });
 
@@ -165,7 +173,7 @@ export default function EditConfiguration() {
         } finally {
             setIsSaving(false);
         }
-    }, [id, name, metafieldConfigs, rules, fetch, navigate, queryClient]);
+    }, [id, name, metafieldConfigs, rules, showOnStorefront, storefrontPosition, fetch, navigate, queryClient]);
 
     const handleApply = useCallback(async () => {
         setIsApplying(true);
@@ -271,6 +279,33 @@ export default function EditConfiguration() {
                                         helpText="If left empty, a name will be auto-generated based on your rules"
                                         autoComplete="off"
                                     />
+                                </VerticalStack>
+                            </LegacyCard>
+                        </Layout.Section>
+
+                        <Layout.Section>
+                            <LegacyCard sectioned title="Storefront Display">
+                                <VerticalStack gap="4">
+                                    <Checkbox
+                                        label="Show on storefront"
+                                        checked={showOnStorefront}
+                                        onChange={setShowOnStorefront}
+                                        helpText="Automatically display these metafields on product pages"
+                                    />
+                                    {showOnStorefront && (
+                                        <Select
+                                            label="Display position"
+                                            options={[
+                                                {label: "After price", value: "after_price"},
+                                                {label: "Before add to cart button", value: "before_cart"},
+                                                {label: "After product description", value: "after_description"},
+                                                {label: "After product title", value: "after_title"},
+                                            ]}
+                                            value={storefrontPosition}
+                                            onChange={setStorefrontPosition}
+                                            helpText="Where to display the metafields on the product page"
+                                        />
+                                    )}
                                 </VerticalStack>
                             </LegacyCard>
                         </Layout.Section>
