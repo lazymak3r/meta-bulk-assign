@@ -1,0 +1,427 @@
+<style>
+  .rm-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .rm-lightbox.is-open {
+    display: flex;
+  }
+  .rm-lb-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: max(120px, calc(var(--header-height, 70px) + 50px)) 16px 100px;
+    box-sizing: border-box;
+  }
+  .rm-lb-viewport {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    max-width: min(96vw, 1400px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .rm-lb-img {
+    width: auto;
+    height: auto;
+    max-width: min(100%, 700px);
+    max-height: min(calc(100vh - max(220px, calc(var(--header-height, 70px) + 150px))), 500px);
+    object-fit: contain;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  .rm-lb-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: clamp(36px, 5vw, 52px);
+    height: clamp(36px, 5vw, 52px);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .rm-lb-prev {
+    left: clamp(8px, 2vw, 16px);
+  }
+  .rm-lb-next {
+    right: clamp(8px, 2vw, 16px);
+  }
+  .rm-lb-close {
+    position: fixed;
+    top: max(24px, calc(var(--header-height, 70px) + 25px));
+    right: clamp(12px, 2vw, 20px);
+    width: clamp(36px, 4.5vw, 44px);
+    height: clamp(36px, 4.5vw, 44px);
+    z-index: 10;
+  }
+  .rm-lb-btn svg {
+    width: clamp(18px, 2.5vw, 24px);
+    height: clamp(18px, 2.5vw, 24px);
+    stroke: #fff;
+  }
+  .rm-lb-close svg {
+    width: clamp(16px, 2.2vw, 22px);
+    height: clamp(16px, 2.2vw, 22px);
+  }
+
+  /* counter + thumbs row at bottom */
+  .rm-lb-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 12px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+  }
+  .rm-lb-counter {
+    color: #fff;
+    font: 500 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    opacity: 0.85;
+  }
+  .rm-lb-thumbs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 8px;
+    max-width: calc(100% - 80px);
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge legacy */
+    overscroll-behavior-x: contain; /* keep wheel contained */
+  }
+
+  .rm-lb-thumbs::-webkit-scrollbar {
+    display: none;
+  } /* WebKit */
+
+  .rm-lb-thumb {
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    background: #000;
+    display: block;
+    position: relative;
+    opacity: 0.9;
+    scroll-snap-align: center;
+  }
+  .rm-lb-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .rm-lb-thumb[aria-current='true'] {
+    outline: 2px solid #fff;
+    opacity: 1;
+  }
+  .rm-lb-thumb:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  /* subtle gradient masks so the rail fades at the edges */
+  .rm-lb-footer::before,
+  .rm-lb-footer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.9), transparent);
+  }
+  .rm-lb-footer::before {
+    left: 0;
+  }
+  .rm-lb-footer::after {
+    right: 0;
+    transform: scaleX(-1); /* mirror the gradient */
+  }
+
+  /* hover niceties on desktop */
+  @media (hover: hover) {
+    .rm-lb-thumb:hover {
+      opacity: 1;
+    }
+  }
+  @media (min-width: 1024px) {
+    .rm-lb-thumb {
+      width: 64px;
+      height: 64px;
+    }
+  }
+
+  @media (hover: hover) {
+    .rm-lb-btn:hover {
+      background: rgba(0, 0, 0, 0.6);
+    }
+    .rm-lb-thumb:hover {
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    if (window.RoomioLightbox) return;
+
+    const $root = document.createElement('div');
+    $root.className = 'rm-lightbox';
+    $root.innerHTML = `
+    <div class="rm-lb-stage" role="dialog" aria-modal="true" aria-label="Bildbetrachter">
+      <button class="rm-lb-btn rm-lb-close" aria-label="Schließen">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+
+      <div class="rm-lb-viewport">
+        <img class="rm-lb-img" alt="">
+        <button class="rm-lb-btn rm-lb-prev" aria-label="Vorheriges Bild">
+         <svg viewBox="0 0 24 24" fill="none"><path d="M15 19 8 12l7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="rm-lb-btn rm-lb-next" aria-label="Nächstes Bild">
+          <svg viewBox="0 0 24 24" fill="none"><path d="m9 5 7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <div class="rm-lb-footer">
+        <div class="rm-lb-counter" aria-live="polite"></div>
+        <div class="rm-lb-thumbs" role="list"></div>
+      </div> 
+    </div>
+  `;
+    document.addEventListener('DOMContentLoaded', () => document.body.appendChild($root));
+
+    const $img = () => $root.querySelector('.rm-lb-img');
+    const $counter = () => $root.querySelector('.rm-lb-counter');
+    const $thumbs = () => $root.querySelector('.rm-lb-thumbs');
+
+    let list = []; // full-size URLs
+    let thumbs = []; // thumb URLs (optional)
+    let idx = 0;
+    let lastFocus = null;
+
+    const clamp = (i) => (i + list.length) % list.length;
+
+    const ensureThumbUrl = (url) => {
+      // If your product image URLs are Shopify CDN, you can swap to a small size variant.
+      // e.g., .../files/xxx.jpg -> .../files/xxx_110x.jpg . If not, just reuse the full URL.
+      try {
+        if (!url) return url;
+        if (/_\d+x\./.test(url)) return url; // already sized
+        return url.replace(/(\.[a-zA-Z0-9]+)(\?.*)?$/, '_110x$1'); // cheap best-effort
+      } catch {
+        return url;
+      }
+    };
+
+    const renderThumbs = () => {
+      const rail = $thumbs();
+      rail.innerHTML = '';
+      list.forEach((src, i) => {
+        const t = document.createElement('button');
+        t.type = 'button';
+        t.className = 'rm-lb-thumb';
+        t.setAttribute('role', 'listitem');
+        t.setAttribute('aria-label', `Bild ${i + 1}`);
+        t.setAttribute('aria-current', i === idx ? 'true' : 'false');
+        // lazy thumb
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.src = thumbs[i] || ensureThumbUrl(src);
+        t.appendChild(img);
+        t.addEventListener(
+          'click',
+          () => {
+            idx = i;
+            render();
+          },
+          { capture: true }
+        );
+        rail.appendChild(t);
+      });
+      // keep active thumb in view
+      requestAnimationFrame(() => {
+        const active = rail.querySelector('[aria-current="true"]');
+        if (active) {
+          const l = active.offsetLeft,
+            r = l + active.offsetWidth;
+          if (l < rail.scrollLeft || r > rail.scrollLeft + rail.clientWidth) {
+            rail.scrollTo({ left: l - 8, behavior: 'smooth' });
+          }
+        }
+      });
+    };
+
+    const render = () => {
+      if (!list.length) return;
+      $img().src = list[idx];
+      $counter().textContent = `${idx + 1} / ${list.length}`;
+      // update aria-current on thumbs
+      $thumbs()
+        .querySelectorAll('.rm-lb-thumb')
+        .forEach((el, i) => {
+          el.setAttribute('aria-current', i === idx ? 'true' : 'false');
+        });
+    };
+
+    const open = (sources, start = 0, thumbSources = null) => {
+      if (!sources?.length) return;
+      list = sources.slice();
+      thumbs =
+        Array.isArray(thumbSources) && thumbSources.length === sources.length
+          ? thumbSources.slice()
+          : sources.map(ensureThumbUrl);
+      idx = Math.max(0, Math.min(start, list.length - 1));
+      lastFocus = document.activeElement;
+      $root.classList.add('is-open');
+      document.documentElement.style.overflow = 'hidden';
+      renderThumbs();
+      // enable click-drag scroll & horizontal wheel for the thumb rail (desktop nicety)
+      (() => {
+        const rail = $thumbs();
+        let dragging = false,
+          sx = 0,
+          sl = 0;
+
+        rail.addEventListener('mousedown', (e) => {
+          dragging = true;
+          sx = e.clientX;
+          sl = rail.scrollLeft;
+          rail.style.cursor = 'grabbing';
+          e.preventDefault();
+        });
+        window.addEventListener('mouseup', () => {
+          dragging = false;
+          rail.style.cursor = '';
+        });
+        window.addEventListener('mousemove', (e) => {
+          if (!dragging) return;
+          rail.scrollLeft = sl - (e.clientX - sx);
+        });
+
+        // vertical wheel -> horizontal scroll
+        rail.addEventListener(
+          'wheel',
+          (e) => {
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+              rail.scrollLeft += e.deltaY;
+              e.preventDefault();
+            }
+          },
+          { passive: false }
+        );
+      })();
+
+      render();
+
+      const updateHeaderHeight = () => {
+        const header = document.querySelector('header');
+        const headerHeight = header ? header.getBoundingClientRect().height : 70;
+        $root.style.setProperty('--header-height', `${headerHeight}px`);
+      };
+
+      // Initial positioning
+      updateHeaderHeight();
+
+      // Update on resize
+      let resizeRAF;
+      window.addEventListener('resize', () => {
+        cancelAnimationFrame(resizeRAF);
+        resizeRAF = requestAnimationFrame(updateHeaderHeight);
+      });
+
+      $root.querySelector('.rm-lb-close').focus({ preventScroll: true });
+    };
+
+    const close = () => {
+      $root.classList.remove('is-open');
+      document.documentElement.style.overflow = '';
+      lastFocus?.focus?.({ preventScroll: true });
+    };
+
+    const next = () => {
+      idx = clamp(idx + 1);
+      render();
+    };
+    const prev = () => {
+      idx = clamp(idx - 1);
+      render();
+    };
+
+    // clicks
+    $root.addEventListener('click', (e) => {
+      if (e.target === $root) close();
+    });
+    $root.addEventListener('click', (e) => e.target.closest('.rm-lb-next') && next());
+    $root.addEventListener('click', (e) => e.target.closest('.rm-lb-prev') && prev());
+    $root.addEventListener('click', (e) => e.target.closest('.rm-lb-close') && close());
+
+    // keys
+    document.addEventListener('keydown', (e) => {
+      if (!$root.classList.contains('is-open')) return;
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowRight') next();
+      else if (e.key === 'ArrowLeft') prev();
+    });
+
+    // swipe
+    let sx = 0,
+      sy = 0,
+      dx = 0,
+      dy = 0,
+      touching = false;
+    const start = (ev) => {
+      touching = true;
+      const t = ev.touches ? ev.touches[0] : ev;
+      sx = t.clientX;
+      sy = t.clientY;
+    };
+    const move = (ev) => {
+      if (!touching) return;
+      const t = ev.touches ? ev.touches[0] : ev;
+      dx = t.clientX - sx;
+      dy = t.clientY - sy;
+    };
+    const end = () => {
+      if (!touching) return;
+      touching = false;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        dx < 0 ? next() : prev();
+      }
+      dx = dy = 0;
+    };
+    $root.addEventListener('touchstart', start, { passive: true });
+    $root.addEventListener('touchmove', move, { passive: true });
+    $root.addEventListener('touchend', end, { passive: true });
+
+    // public API: still backwards compatible
+    window.RoomioLightbox = { open, close };
+  })();
+</script>

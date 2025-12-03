@@ -1,0 +1,39 @@
+{% layout none %}
+
+{% assign path_parts = request.path | split: '/' %}
+{% assign handles_string = path_parts.last %}
+{% assign handles = handles_string | split: ',' %}
+
+{% comment %} reserved for future: {% assign wishlist_products = all_products %} {% endcomment %}
+
+[
+{% for handle in handles %}
+  {% assign product = all_products[handle] %}
+  {% assign first_variant = product.selected_or_first_available_variant %}
+  {% capture price_html %}{% render 'formatted-price', price: product.price %}{% endcapture %}
+  {% assign attributes = product.metafields.attributes %}
+  {% capture specs_html %}
+      {% for item in attributes %}
+        {% assign key = item[0] %}
+        {% assign val = item[1].value %}
+        {% if val != blank %}
+          {% if val.first != null %} 
+            {% assign val_str = val | join: ', ' %}
+          {% else %}
+            {% assign val_str = val | replace: ';', ',' | replace: ',', ', ' | replace: '  ', ' ' | strip %}
+          {% endif %}
+          {% unless key == 'Title' and val_str == 'Default Title' %}
+            <dt>{{ key | replace: '_', ' ' | capitalize }}</dt>
+            <dd>{{ val_str }}</dd>
+          {% endunless %}
+        {% endif %}
+      {% endfor %}
+    {% endcapture %}
+  { "title": "{{ product.title | escape }}", "handle": "{{ product.handle }}", "url": "{{ product.url }}", "price": "
+  {{- product.price | money -}}
+  ", "price_html": {{ price_html | strip_newlines | json }}, "variant_id": {{ first_variant.id | json }}, "available":
+  {{ first_variant.available | json }}, "image": "{{ product.featured_image | image_url: width: 220 }}", "specs_html":
+  {{ specs_html | strip | strip_newlines | json }} }
+  {%- unless forloop.last %},{% endunless %}
+{% endfor %}
+]

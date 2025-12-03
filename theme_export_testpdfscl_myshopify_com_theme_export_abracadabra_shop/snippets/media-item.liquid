@@ -1,0 +1,79 @@
+{% comment %}
+  KORRIGIERTE VERSION (Finaler Syntax-Fix):
+  - Behebt den Liquid-Parser-Fehler, indem die gesamte Logik in einem
+    einzigen, sauberen liquid-Block zusammengefasst wird.
+  - Alle Performance-Fixes und vorherigen Korrekturen bleiben erhalten.
+{% endcomment %}
+
+{%- liquid
+  assign d_image = section.settings['image_' | append: media_id]
+  assign m_image = section.settings['mobile_image_' | append: media_id]
+  assign image_to_show = m_image | default: d_image
+  
+  assign video_hosted_key = 'video_hosted_' | append: media_id
+  assign video_url_external_key = 'video_url_external_' | append: media_id
+  assign cover_image_key = 'cover_image_' | append: media_id
+  
+  assign video_hosted = section.settings[video_hosted_key]
+  assign video_url_external = section.settings[video_url_external_key]
+  assign cover_image = section.settings[cover_image_key]
+  assign play_icon = section.settings.play_icon
+
+  assign has_video = false
+  if cover_image != blank
+    if video_hosted != blank or video_url_external != blank
+      assign has_video = true
+    endif
+  endif
+
+  if has_video
+    assign final_desktop_image = cover_image
+    assign final_mobile_image = cover_image
+  else
+    assign final_desktop_image = d_image
+    assign final_mobile_image = image_to_show
+  endif
+-%}
+
+{%- if final_desktop_image != blank -%}
+  <div class="media-item-wrapper" style="padding-bottom: {{ 100 | divided_by: final_desktop_image.aspect_ratio }}%;">
+    {%- if has_video -%}
+      <img 
+        src="{{ final_desktop_image | image_url: width: 1200 }}" 
+        alt="{{ final_desktop_image.alt | default: 'Video Cover' | escape }}" 
+        loading="lazy" 
+        width="1200" 
+        height="{{ 1200 | divided_by: final_desktop_image.aspect_ratio | round }}">
+      <div class="video-trigger" data-modal-id="modal-{{ section.id }}-{{ media_id }}">
+        {%- if play_icon != blank -%}
+          <img 
+            class="play-icon" 
+            src="{{ play_icon | image_url: width: 120 }}" 
+            alt="Play Video"
+            loading="lazy"
+            width="120"
+            height="{{ 120 | divided_by: play_icon.aspect_ratio | round }}">
+        {%- endif -%}
+      </div>
+    {%- else -%}
+      {%- if final_desktop_image != blank -%}
+        <img 
+          class="hidden md:block" 
+          src="{{ final_desktop_image | image_url: width: 1200 }}" 
+          alt="{{ final_desktop_image.alt | default: 'Media image' | escape }}" 
+          loading="lazy" 
+          width="1200" 
+          height="{{ 1200 | divided_by: final_desktop_image.aspect_ratio | round }}">
+      {%- endif -%}
+      {%- if final_mobile_image != blank -%}
+        <img 
+          class="block md:hidden" 
+          src="{{ final_mobile_image | image_url: width: 800 }}" 
+          alt="{{ final_mobile_image.alt | default: 'Media image' | escape }}" 
+          loading="lazy" 
+          width="800" 
+          height="{{ 800 | divided_by: final_mobile_image.aspect_ratio | round }}">
+      {%- endif -%}
+    {%- endif -%}
+  </div>
+{%- endif -%}

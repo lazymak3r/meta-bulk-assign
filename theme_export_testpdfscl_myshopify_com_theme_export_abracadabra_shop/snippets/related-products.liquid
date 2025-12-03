@@ -1,0 +1,14 @@
+{% assign related = product.metafields.related_products.products.value %}
+
+{% if related.count > 0 %}
+<section class="products">
+    <div class="container">
+    <h2>Verwandte Produkte</h2>
+    <div class="product-grid" data-columns="4">
+    {% for related_product in related %}
+      {% render 'product-card', product: related_product %}
+    {% endfor %}
+    </div>
+    </div>
+</section>
+{% endif %}

@@ -19,6 +19,7 @@ export default function MetaobjectFieldsEditor({
   initialValues = {},
   onChange,
   level = 0,
+  entryKey = "",
 }) {
   const shopify = useAppBridge();
   const [definition, setDefinition] = useState(null);
@@ -27,6 +28,11 @@ export default function MetaobjectFieldsEditor({
   const [fieldValues, setFieldValues] = useState(initialValues);
   const [nestedDefinitions, setNestedDefinitions] = useState({});
   const [uploadingFiles, setUploadingFiles] = useState({});
+
+  // Reset field values when initialValues or entryKey changes
+  useEffect(() => {
+    setFieldValues(initialValues);
+  }, [entryKey, JSON.stringify(initialValues)]);
 
   // Fetch metaobject definition
   useEffect(() => {
@@ -190,6 +196,7 @@ export default function MetaobjectFieldsEditor({
                     handleFieldChange(fieldKey, nestedValues)
                   }
                   level={level + 1}
+                  entryKey={`${entryKey}-${fieldKey}`}
                 />
               </VerticalStack>
             </LegacyCard>
@@ -198,6 +205,7 @@ export default function MetaobjectFieldsEditor({
       }
 
       case "file_reference": {
+        const uploadId = `file-upload-${entryKey}-${fieldKey}`;
         return (
           <div key={fieldKey}>
             <label style={{ fontWeight: 500, marginBottom: "8px", display: "block" }}>
@@ -210,7 +218,7 @@ export default function MetaobjectFieldsEditor({
               </p>
             )}
             <input
-              id={`file-upload-${fieldKey}`}
+              id={uploadId}
               type="file"
               style={{ display: "none" }}
               onChange={(e) => handleFileUpload(fieldKey, e)}
@@ -219,7 +227,7 @@ export default function MetaobjectFieldsEditor({
             <Button
               loading={uploadingFiles[fieldKey]}
               onClick={() =>
-                document.getElementById(`file-upload-${fieldKey}`).click()
+                document.getElementById(uploadId).click()
               }
             >
               {uploadingFiles[fieldKey]

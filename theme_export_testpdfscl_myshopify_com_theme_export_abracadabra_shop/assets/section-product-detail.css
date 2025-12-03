@@ -1,0 +1,382 @@
+/* .pdp-grid > .shopify-section {
+  display: contents; 
+} */
+
+/* =========================
+   Product info tabs (DE)
+   ========================= */
+
+/* Theme variables (fallbacks) */
+:root {
+    --brand: #2e2e2d;
+    --muted: #4b5563; /* gray-600-ish */
+    --muted-2: #6b7280; /* gray-500-ish */
+    --border: #e5e7eb; /* gray-200 */
+    --hover-bg: #f8f9fa; /* subtle hover */
+}
+
+/* Buttons row (the container that already has a bottom border in markup) */
+.tabs-row {
+    display: flex;
+    gap: 0; /* we’ll rely on button padding so the underline is continuous */
+    border-bottom: 1px solid var(--border);
+}
+
+/* Base tab button */
+.tab-btn {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    border: none;
+    margin: 0;
+    padding: 0 0px 15px 0px;
+    font: inherit;
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1.2;
+    color: var(--muted);
+    cursor: pointer;
+    position: relative;
+    /* underline track so height doesn't jump */
+    border-bottom: 1px solid transparent; /* keep track at 1px */
+    transition: color 0.2s ease, background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+/* Hover / focus */
+.tab-btn:hover {
+    color: var(--brand);
+    background: var(--hover-bg);
+}
+.tab-btn:focus {
+    outline: none;
+}
+.tab-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--brand) 35%, transparent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Active state (selected tab) */
+.tab-btn.is-active,
+.tab-btn[aria-selected="true"] {
+    color: var(--brand);
+    border-color: var(--muted-2); /* bottom underline */
+    background: transparent;
+    font-weight: 400;
+}
+
+/* Disabled tab (optional) */
+.tab-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tab-panel {
+    margin-top: 40px;
+    display: grid;
+    gap: 22px;
+    grid-template-columns: 1fr;
+}
+
+/* Panels */
+.tab-panel.is-active {
+    display: block;
+}
+
+/* Optional: reduce motion */
+@media (prefers-reduced-motion: reduce) {
+    .tab-btn {
+        transition: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .tab-btn:first-child {
+        padding-left: 0px;
+    }
+    .tab-btn {
+        font-size: 16px;
+    }
+
+    /* Product safety: ensure previews never overflow container on mobile */
+    #tab-product-safety .pdf-card {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    #tab-product-safety .pdf-card .pdf-embed {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: 500px;
+    }
+}
+
+/* If you want the buttons to stretch on small screens, enable this: */
+/*
+@media (max-width: 768px) {
+  .tabs-row { flex-wrap: wrap; }
+  .tab-btn { flex: 1 1 33.333%; text-align: center; }
+}
+*/
+
+.section-product-badges .badges-grid {
+    /* spacing + theme */
+    --gap-x: clamp(16px, 5vw, 64px); /* space between columns */
+    --edge-pad: clamp(24px, 4vw, 40px); /* left/right gutter on wider screens */
+    --rule: #d5cfc4; /* divider color */
+
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: var(--gap-x);
+    row-gap: 1rem;
+    text-align: center;
+    padding-inline: 0;
+}
+
+.section-product-badges .badge {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px !important;
+    padding: 0;
+}
+
+.section-product-badges .badge p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.2;
+}
+@media (min-width: 768px) {
+    .section-product-badges .badge p {
+        font-size: 12px;
+    }
+}
+
+/* ≥640px: 2 columns + one full-height divider between col 1 & 2 */
+@media (min-width: 640px) {
+    .section-product-badges .badges-grid {
+        grid-template-columns: repeat(2, 1fr);
+        padding-inline: var(--edge-pad);
+    }
+
+    /* draw the vertical rule on the left edge of every 2nd cell */
+    .section-product-badges .badge:nth-child(2n)::before {
+        content: "";
+        position: absolute;
+        left: calc(-0.5 * var(--gap-x)); /* middle of the column gap */
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--rule);
+        pointer-events: none;
+    }
+}
+
+/* ≥768px: inline icon/text sizes */
+@media (min-width: 768px) {
+    .section-product-badges .badge {
+        flex-direction: row;
+        gap: 10px !important;
+    }
+    .section-product-badges .badge p {
+        font-size: 24px;
+        line-height: 1.1;
+    }
+}
+
+/* ≥1024px: 4 columns + three full-height dividers */
+@media (min-width: 1024px) {
+    .section-product-badges .badges-grid {
+        grid-template-columns: repeat(4, 1fr);
+        text-align: left;
+        padding-inline: var(--edge-pad);
+    }
+
+    .section-product-badges .badge {
+        padding-left: clamp(
+            12px,
+            1.5vw,
+            24px
+        ); /* breathing room from the rule */
+    }
+
+    /* kill the 2-col rule pattern at lg */
+    .section-product-badges .badge:nth-child(2n)::before {
+        content: none;
+    }
+
+    /* draw a rule before every cell except the first in each row (i.e., cols 2,3,4) */
+    .section-product-badges .badge:not(:nth-child(4n + 1))::before {
+        content: "";
+        position: absolute;
+        left: calc(-0.5 * var(--gap-x));
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--rule);
+        pointer-events: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .section-product-badges .badge {
+        gap: 10px !important;
+    }
+}
+
+.pdp-grid > .section-product-badges {
+    grid-column: 1 / -1;
+}
+
+.pdp-grid {
+    overflow: visible;
+    align-items: start;
+}
+
+.swatch.cursor-not-allowed,
+.inline-flex.cursor-not-allowed {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(80%);
+}
+
+/* prevent the tab row from creating page-wide overflow */
+.tabs-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+}
+
+.no-scrollbar {
+    scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+#pt .rte ul,
+#pt-bullets ul,
+#pt .rte [role="list"] {
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Item layout (survives DOM rewrites) */
+#pt .rte ul li,
+#pt-bullets li,
+#pt .rte [role="listitem"],
+#pt .rte li[data-asw-org-font-size],
+#pt-bullets li[data-asw-org-font-size] {
+    position: relative;
+    padding-left: 30px;
+    margin-top: 12px;
+    line-height: 1.7;
+    color: var(--brand, #2e2e2d);
+    font-weight: 400;
+}
+#pt .rte ul li:first-child,
+#pt-bullets li:first-child,
+#pt .rte [role="listitem"]:first-child,
+#pt .rte li[data-asw-org-font-size]:first-child,
+#pt-bullets li[data-asw-org-font-size]:first-child {
+    margin-top: 0;
+}
+
+/* small default (phones) */
+#pt .rte ul li::before,
+#pt-bullets li::before,
+#pt .rte [role="listitem"]::before,
+#pt .rte li[data-asw-org-font-size]::before,
+#pt-bullets li[data-asw-org-font-size]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    background-color: var(--primary, #647167); /* use background-color */
+    -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 20"><path fill="black" d="M16.4831 2.91211L6.80232 11.893L2.70826 7.52396L0 10.0618L6.61417 17.1202L19 5.64037L16.4831 2.91211Z"/></svg>')
+        no-repeat center / contain;
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 20"><path fill="black" d="M16.4831 2.91211L6.80232 11.893L2.70826 7.52396L0 10.0618L6.61417 17.1202L19 5.64037L16.4831 2.91211Z"/></svg>')
+        no-repeat center / contain;
+}
+
+/* scale up on tablet/desktop */
+@media (min-width: 768px) {
+    #pt .rte ul li::before,
+    #pt-bullets li::before,
+    #pt .rte [role="listitem"]::before,
+    #pt .rte li[data-asw-org-font-size]::before,
+    #pt-bullets li[data-asw-org-font-size]::before {
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Base reset for Shopify rich text */
+.rte-desc > * {
+    margin: 0;
+}
+
+/* Default vertical rhythm between blocks */
+.rte-desc > * + * {
+    margin-top: 8px;
+}
+@media (min-width: 768px) {
+    .rte-desc > * + * {
+        margin-top: 10px;
+    }
+}
+
+/* Lists */
+.rte-desc ul,
+.rte-desc ol {
+    padding-left: 1.25rem;
+}
+.rte-desc li + li {
+    margin-top: 4px;
+}
+
+/* Real headings if present */
+.rte-desc h3,
+.rte-desc h4 {
+    margin-top: 20px;
+    font-weight: 600;
+    color: var(--brand);
+}
+
+/* Common Shopify pattern: <p><strong>Heading</strong></p> */
+.rte-desc p:has(> strong:only-child) {
+    font-weight: 600;
+    color: var(--brand);
+}
+/* Normal gap after those titles */
+.rte-desc p:has(> strong:only-child) + * {
+    margin-top: 8px;
+}
+
+#faq-toggle-all:hover {
+    text-decoration: underline;
+}
+
+@media (min-width: 768px) {
+    .tab-panel {
+        margin-top: 40px;
+        gap: 16px;
+        grid-template-columns: minmax(0, 1fr) 420px;
+    }
+}
+
+@media (max-width: 768px) {
+    .tab-panel {
+        margin-top: 24px;
+        gap: 12px;
+    }
+}

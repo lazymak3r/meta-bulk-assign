@@ -1,0 +1,27 @@
+<div class="customer activate-account page-width">
+  <h1>Konto aktivieren</h1>
+
+  {% form 'activate_customer_password' %}
+    {% if form.errors %}
+      <div class="errors">
+        {{ form.errors | default_errors }}
+      </div>
+    {% endif %}
+
+    <div class="field">
+      <label for="password">Passwort</label>
+      <input type="password" name="customer[password]" id="password" required>
+    </div>
+
+    <div class="field">
+      <label for="password_confirmation">Passwort bestätigen</label>
+      <input type="password" name="customer[password_confirmation]" id="password_confirmation" required>
+    </div>
+
+    <button type="submit" class="button">Konto aktivieren</button>
+  {% endform %}
+
+  <p>
+    <a href="{{ routes.account_login_url }}">Zurück zum Eingang</a>
+  </p>
+</div>

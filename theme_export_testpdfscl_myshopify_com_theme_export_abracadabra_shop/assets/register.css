@@ -1,0 +1,133 @@
+.register-breadcrumbs {
+    padding: 20px 0;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fff;
+}
+
+.register-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.register-main {
+    background: #fff;
+    padding: 36px 0;
+}
+
+.register-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.register-title {
+    font-size: 40px;
+    font-weight: 400;
+    margin: 0 0 26px;
+    color: #2e2e2d;
+    text-align: center;
+}
+
+.wk-card {
+    background: #f3f3f3;
+    border: 1px solid #e7e5e0;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 600px;
+    margin: auto;
+}
+
+
+.customer-register .wk-card input[type="text"],
+.customer-register .wk-card input[type="email"],
+.customer-register .wk-card input[type="password"] {
+    border: 1px solid #d5cfc4 !important; 
+    background-color: #ffffff; 
+    transition: border-color 0.2s ease, background-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.customer-register .wk-card input[type="text"]:focus,
+.customer-register .wk-card input[type="email"]:focus,
+.customer-register .wk-card input[type="password"]:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+/* Success (valid) */
+.customer-register .wk-card input[type="email"]:valid,
+.customer-register .wk-card input[type="password"]:valid,
+.customer-register .wk-card input[type="text"]:valid {
+    border-color: #95b57c !important; 
+    background-color: #f2fee9 !important;
+}
+
+/* Failure (invalid but not empty) */
+.customer-register
+    .wk-card
+    input[type="email"]:required:invalid:not(:placeholder-shown),
+.customer-register
+    .wk-card
+    input[type="password"]:required:invalid:not(:placeholder-shown),
+.customer-register
+    .wk-card
+    input[type="text"]:required:invalid:not(:placeholder-shown) {
+    border-color: #d79b9b !important; 
+    background-color: #fee9e9 !important; 
+    box-shadow: none !important;
+}
+
+/* Inline register email invalid helper */
+.register-error {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: #d23126;
+    font-size: 12px;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.customer-register
+    .wk-card
+    input[type="email"]:required:invalid:not(:placeholder-shown)
+    ~ .register-error {
+    display: flex;
+    align-items: center;
+}
+
+/* Reduce gap under email input when inline error is visible */
+.customer-register
+    .wk-card
+    input[type="email"]:required:invalid:not(:placeholder-shown) {
+    margin-bottom: 4px !important;
+}
+
+/* Remove any vendor autofill background that may alter design */
+.customer-register .wk-card input[type="email"]:-webkit-autofill,
+.customer-register .wk-card input[type="password"]:-webkit-autofill,
+.customer-register .wk-card input[type="text"]:-webkit-autofill,
+.customer-register .wk-card input[type="email"]:-webkit-autofill:hover,
+.customer-register .wk-card input[type="password"]:-webkit-autofill:hover,
+.customer-register .wk-card input[type="text"]:-webkit-autofill:hover,
+.customer-register .wk-card input[type="email"]:-webkit-autofill:focus,
+.customer-register .wk-card input[type="password"]:-webkit-autofill:focus,
+.customer-register .wk-card input[type="text"]:-webkit-autofill:focus,
+.customer-register .wk-card input[type="email"]:-webkit-autofill:active,
+.customer-register .wk-card input[type="password"]:-webkit-autofill:active,
+.customer-register .wk-card input[type="text"]:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    box-shadow: 0 0 0px 1000px #ffffff inset;
+    -webkit-text-fill-color: inherit;
+}
+
+@media (max-width: 768px) {
+    .register-main {
+        padding: 10px 0;
+    }
+
+    .register-title {
+        font-size: 26px !important;
+    }
+}

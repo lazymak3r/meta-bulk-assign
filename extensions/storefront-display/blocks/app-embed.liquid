@@ -1,0 +1,22 @@
+{% comment %}
+  App Embed Block - Enables automatic metafield display
+  Merchants enable this once in Theme Settings > App Embeds
+{% endcomment %}
+
+{% render 'meta-bulk-assign-display' %}
+
+{% schema %}
+{
+  "name": "Metafield Auto Display",
+  "target": "body",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "This app automatically displays metafields configured in the Meta Bulk Assign app. Enable this embed to show your metafields on product pages."
+    }
+  ]
+}
+{% endschema %}

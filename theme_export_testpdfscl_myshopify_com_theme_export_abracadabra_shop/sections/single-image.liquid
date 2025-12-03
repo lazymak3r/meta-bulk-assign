@@ -1,0 +1,24 @@
+<section class="pt-[60px]">
+  <div class="max-w-[var(--container)] mx-auto">
+    <div class="relative overflow-hidden">
+      <img
+        src="{{ 'home-after-our.jpg' | asset_url }}"
+        alt="Home after our products"
+        width="2400"
+        height="1600"
+        loading="lazy"
+        class="w-full h-full"
+      >
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Single Image",
+  "tag": "section",
+  "class": "section",
+  "settings": [],
+  "presets": [{ "name": "Single Image" }]
+}
+{% endschema %}

@@ -1,0 +1,16 @@
+<!-- mobile header row -->
+<div
+  class="col-span-12 flex items-center lg:hidden mb-[24px] text-[18px] 2xl:text-[20px] font-medium text-[#2E2E2D] flex-wrap">
+  {% render 'product-detail-navigation' %}
+</div>
+
+<!-- mobile h1 + bullets -->
+<div class="col-span-12 lg:hidden">
+  <h1 class="text-[28px] leading-[1.5] font-[400] text-brand">
+    {{ product.title }}
+  </h1>
+
+  <h2 class="text-[16px] md:text-[20px] mt-[12px] font-[300]">
+    {{ product.metafields.attributes.subtitle }}
+  </h2>
+</div>

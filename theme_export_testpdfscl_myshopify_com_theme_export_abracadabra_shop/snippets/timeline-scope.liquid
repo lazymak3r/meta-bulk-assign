@@ -1,0 +1,10 @@
+{% comment %}
+  Renders timeline scope for slideshow components
+
+  @param {number} count - The number of items
+  @param {string} prefix - The prefix for the timeline items
+{% endcomment %}
+
+{%- for i in (1..count) -%}
+  --{{ prefix }}-{{ i }}-timeline: {{ i }};
+{%- endfor -%}

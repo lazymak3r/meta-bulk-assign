@@ -1,0 +1,104 @@
+<div class="product-card" data-product-id="{{ product.id }}">
+  <div class="product-image">
+    <div class="product-images-container">
+      <div class="product-images-slider" data-product-id="{{ product.id }}">
+        {% if product.featured_image %}
+          <img
+            src="{{ product.featured_image | img_url: '400x400', crop: 'center' }}"
+            class="product-image-slide"
+            data-slide="0"
+            alt="{{ product.featured_image.alt | escape }}"
+            loading="lazy"
+            width="400"
+            height="400"
+          >
+        {% endif %}
+        {% for image in product.images limit: 4 %}
+          {% if forloop.first == false %}
+            <img
+              src="{{ image | img_url: '400x400', crop: 'center' }}"
+              class="product-image-slide"
+              data-slide="{{ forloop.index }}"
+              alt="{{ image.alt | escape }}"
+              loading="lazy"
+              width="400"
+              height="400"
+            >
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Dots Navigation -->
+    <div class="product-slider-dots">
+      <div class="product-dots-container">
+        {% assign total_images = product.images.size %}
+        {% if total_images > 1 %}
+          {% for image in product.images limit: 5 %}
+            <button
+              class="product-dot {% if forloop.first %}active{% endif %}"
+              data-slide="{{ forloop.index0 }}"
+              data-product-id="{{ product.id }}"
+              aria-label="Go to image {{ forloop.index }} of {{ total_images }}"
+            ></button>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Product Badges -->
+    <div class="product-badges">
+      {% if product.compare_at_price > product.price %}
+        <div class="badge discount-badge">
+          -
+          {{-
+            product.compare_at_price
+            | minus: product.price
+            | times: 100.0
+            | divided_by: product.compare_at_price
+            | round
+          -}}
+          %
+        </div>
+      {% endif %}
+      {% if product.tags contains 'new' %}
+        <div class="badge new-badge">New</div>
+      {% endif %}
+    </div>
+
+    <!-- Favorite Button -->
+    <button class="favorite-btn" data-product-id="{{ product.id }}" aria-label="Add to favorites">
+      <i class="far fa-heart"></i>
+    </button>
+  </div>
+
+  <div class="product-info">
+    <h3 class="product-title">
+      <a href="{{ product.url | within: collection }}">{{ product.title }}</a>
+    </h3>
+
+    <div class="product-pricing">
+      {% if product.compare_at_price > product.price %}
+        <span class="product-price-old">{{ product.compare_at_price | money }}</span>
+      {% endif %}
+      <span class="product-price">{{ product.price | money }}</span>
+    </div>
+
+    <form class="product-form" action="/cart/add" method="post">
+      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+      <button
+        type="submit"
+        class="add-to-cart"
+        {% unless product.available %}
+          disabled
+        {% endunless %}
+      >
+        {% if product.available %}
+          Add to Cart
+        {% else %}
+          Sold Out
+        {% endif %}
+      </button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,197 @@
+{% comment %}
+  =====================================================================================
+  "ELEMENTOR-LIGHT" PAGE BUILDER SECTION (V5.6 - Finale, Syntax korrigiert)
+  - KORRIGIERT: Der fehlerhafte `liquid`-Tag wurde durch klassische,
+    separate `assign`-Tags ersetzt, um die Kompatibilität zu gewährleisten.
+  - Alle Funktionen bleiben erhalten.
+  =====================================================================================
+{% endcomment %}
+
+{%- assign visibility_class = '' -%}
+{%- if block.settings.visibility == 'desktop' -%}
+  {%- assign visibility_class = 'hide-on-mobile' -%}
+{%- elsif block.settings.visibility == 'mobile' -%}
+  {%- assign visibility_class = 'hide-on-desktop' -%}
+{%- endif -%}
+
+<style>
+  #shopify-section-{{ section.id }} .page-builder-container {
+    max-width: {{ section.settings.content_width }}px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+  .hide-on-mobile { display: block; }
+  .hide-on-desktop { display: none; }
+  @media (max-width: 768px) {
+    .hide-on-mobile { display: none; }
+    .hide-on-desktop { display: block; }
+  }
+  .builder-block { margin-bottom: 24px; }
+  .builder-block:last-child { margin-bottom: 0; }
+  .builder-heading { line-height: 1.2; font-weight: bold; }
+  .builder-text { line-height: 1.6; }
+  .builder-button { display: inline-block; padding: 12px 28px; text-decoration: none; border-radius: 5px; transition: opacity 0.3s ease; border: 2px solid transparent; }
+  .builder-button:hover { opacity: 0.85; }
+  .builder-spacer { display: block; }
+  .builder-image-wrapper { position: relative; height: 0; overflow: hidden; }
+  .builder-image-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .builder-image { width: 100%; height: 100%; object-fit: cover; }
+</style>
+
+<div style="background-color: {{ section.settings.background_color }};">
+  <div class="page-builder-container">
+    {%- for block in section.blocks -%}
+      {%- assign visibility_class = '' -%}
+      {%- if block.settings.visibility == 'desktop' -%}
+        {%- assign visibility_class = 'hide-on-mobile' -%}
+      {%- elsif block.settings.visibility == 'mobile' -%}
+        {%- assign visibility_class = 'hide-on-desktop' -%}
+      {%- endif -%}
+
+      <div class="builder-block {{ visibility_class }}" {{ block.shopify_attributes }}>
+        {%- case block.type -%}
+          {%- when 'heading' -%}
+            <div id="block-{{ block.id }}">
+              {%- style -%}
+                #block-{{ block.id }} .builder-heading {
+                  font-size: {{ block.settings.font_size_desktop }}px; text-align: {{ block.settings.alignment }}; color: {{ block.settings.color }};
+                }
+                @media (max-width: 768px) { #block-{{ block.id }} .builder-heading { font-size: {{ block.settings.font_size_mobile }}px; } }
+              {%- endstyle -%}
+              {%- case block.settings.heading_tag -%}
+                {%- when 'h1' -%}<h1 class="builder-heading">{{ block.settings.text }}</h1>
+                {%- when 'h2' -%}<h2 class="builder-heading">{{ block.settings.text }}</h2>
+                {%- when 'h3' -%}<h3 class="builder-heading">{{ block.settings.text }}</h3>
+              {%- endcase -%}
+            </div>
+          {%- when 'text' -%}
+            <div id="block-{{ block.id }}" class="builder-text rte" style="text-align: {{ block.settings.alignment }}; color: {{ block.settings.color }};">
+              {{ block.settings.text }}
+            </div>
+          {%- when 'image' -%}
+            {%- if block.settings.image != blank -%}
+              {%- liquid
+                case block.settings.aspect_ratio
+                  when '16:9'
+                    assign padding_percentage = 56.25
+                  when '4:3'
+                    assign padding_percentage = 75
+                  when '3:4'
+                    assign padding_percentage = 133.33
+                  when '1:1'
+                    assign padding_percentage = 100
+                  else
+                    assign padding_percentage = 100 | divided_by: block.settings.image.aspect_ratio
+                endcase
+              -%}
+              <div class="builder-image-wrapper" style="padding-bottom: {{ padding_percentage }}%;">
+                <div class="builder-image-inner">
+                  <img class="builder-image" src="{{ block.settings.image | image_url: width: 1200 }}" alt="{{ block.settings.image.alt | default: 'Builder image' | escape }}" width="{{ block.settings.image.width }}" height="{{ block.settings.image.height }}" loading="lazy">
+                </div>
+              </div>
+            {%- endif -%}
+          {%- when 'button' -%}
+            <div class="builder-button-wrapper" style="text-align: {{ block.settings.alignment }};">
+              <a href="{{ block.settings.link }}" class="builder-button" style="background-color: {{ block.settings.bg_color }}; color: {{ block.settings.text_color }}; border-color: {{ block.settings.border_color }};">
+                {{ block.settings.text }}
+              </a>
+            </div>
+          {%- when 'spacer' -%}
+            <div class="builder-spacer" id="block-{{ block.id }}">
+              {%- style -%}
+                #block-{{ block.id }} { height: {{ block.settings.height_desktop }}px; }
+                @media (max-width: 768px) { #block-{{ block.id }} { height: {{ block.settings.height_mobile }}px; } }
+              {%- endstyle -%}
+            </div>
+        {%- endcase -%}
+      </div>
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Baukasten ",
+  "settings": [
+    { "type": "header", "content": "Sektions-Layout" },
+    { "type": "color", "id": "background_color", "label": "Hintergrundfarbe", "default": "rgba(0,0,0,0)" },
+    { "type": "range", "id": "content_width", "min": 600, "max": 1400, "step": 50, "unit": "px", "label": "Maximale Inhaltsbreite", "default": 1200 }
+  ],
+  "blocks": [
+    {
+      "type": "heading",
+      "name": "Überschrift",
+      "settings": [
+        { "type": "header", "content": "Sichtbarkeit" },
+        { "type": "select", "id": "visibility", "label": "Anzeigen auf", "options": [ { "value": "all", "label": "Allen Geräten" }, { "value": "desktop", "label": "Nur Desktop" }, { "value": "mobile", "label": "Nur Mobile" } ], "default": "all" },
+        { "type": "header", "content": "Inhalt & Stil" },
+        { "type": "text", "id": "text", "label": "Text", "default": "Meine Überschrift" },
+        { "type": "select", "id": "heading_tag", "label": "Typ", "options": [ { "value": "h1", "label": "H1 (Haupttitel)" }, { "value": "h2", "label": "H2 (Unterüberschrift)" }, { "value": "h3", "label": "H3 (Kleiner Titel)" } ], "default": "h2" },
+        { "type": "range", "id": "font_size_desktop", "label": "Schriftgröße (Desktop)", "min": 20, "max": 80, "step": 2, "unit": "px", "default": 40 },
+        { "type": "range", "id": "font_size_mobile", "label": "Schriftgröße (Mobile)", "min": 18, "max": 50, "step": 2, "unit": "px", "default": 28 },
+        { "type": "color", "id": "color", "label": "Farbe", "default": "#333333" },
+        { "type": "select", "id": "alignment", "label": "Ausrichtung", "options": [ { "value": "left", "label": "Links" }, { "value": "center", "label": "Zentriert" }, { "value": "right", "label": "Rechts" } ], "default": "center" }
+      ]
+    },
+    {
+      "type": "text",
+      "name": "Text",
+      "settings": [
+        { "type": "header", "content": "Sichtbarkeit" },
+        { "type": "select", "id": "visibility", "label": "Anzeigen auf", "options": [ { "value": "all", "label": "Allen Geräten" }, { "value": "desktop", "label": "Nur Desktop" }, { "value": "mobile", "label": "Nur Mobile" } ], "default": "all" },
+        { "type": "header", "content": "Inhalt & Stil" },
+        { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Beschreiben Sie hier Ihr Produkt oder Ihre Botschaft.</p>" },
+        { "type": "color", "id": "color", "label": "Farbe", "default": "#555555" },
+        { "type": "select", "id": "alignment", "label": "Ausrichtung", "options": [ { "value": "left", "label": "Links" }, { "value": "center", "label": "Zentriert" }, { "value": "right", "label": "Rechts" } ], "default": "center" }
+      ]
+    },
+    {
+      "type": "image",
+      "name": "Bild",
+      "settings": [
+        { "type": "header", "content": "Sichtbarkeit" },
+        { "type": "select", "id": "visibility", "label": "Anzeigen auf", "options": [ { "value": "all", "label": "Allen Geräten" }, { "value": "desktop", "label": "Nur Desktop" }, { "value": "mobile", "label": "Nur Mobile" } ], "default": "all" },
+        { "type": "header", "content": "Inhalt & Stil" },
+        { "type": "image_picker", "id": "image", "label": "Bild" },
+        { "type": "select", "id": "aspect_ratio", "label": "Seitenverhältnis", "options": [ { "value": "original", "label": "Original" }, { "value": "16:9", "label": "16:9 (Breitbild)" }, { "value": "4:3", "label": "4:3" }, { "value": "1:1", "label": "1:1 (Quadratisch)" }, { "value": "3:4", "label": "3:4 (Hochformat)" } ], "default": "original" }
+      ]
+    },
+    {
+      "type": "button",
+      "name": "Button",
+      "settings": [
+        { "type": "header", "content": "Sichtbarkeit" },
+        { "type": "select", "id": "visibility", "label": "Anzeigen auf", "options": [ { "value": "all", "label": "Allen Geräten" }, { "value": "desktop", "label": "Nur Desktop" }, { "value": "mobile", "label": "Nur Mobile" } ], "default": "all" },
+        { "type": "header", "content": "Inhalt & Stil" },
+        { "type": "text", "id": "text", "label": "Text", "default": "Mehr erfahren" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "color", "id": "bg_color", "label": "Hintergrundfarbe", "default": "#333333" },
+        { "type": "color", "id": "text_color", "label": "Textfarbe", "default": "#FFFFFF" },
+        { "type": "color", "id": "border_color", "label": "Randfarbe (für Outline-Stil)", "default": "#333333" },
+        { "type": "select", "id": "alignment", "label": "Ausrichtung", "options": [ { "value": "left", "label": "Links" }, { "value": "center", "label": "Zentriert" }, { "value": "right", "label": "Rechts" } ], "default": "center" }
+      ]
+    },
+    {
+      "type": "spacer",
+      "name": "Abstand",
+      "settings": [
+        { "type": "header", "content": "Sichtbarkeit" },
+        { "type": "select", "id": "visibility", "label": "Anzeigen auf", "options": [ { "value": "all", "label": "Allen Geräten" }, { "value": "desktop", "label": "Nur Desktop" }, { "value": "mobile", "label": "Nur Mobile" } ], "default": "all" },
+        { "type": "header", "content": "Höhe" },
+        { "type": "range", "id": "height_desktop", "label": "Höhe (Desktop)", "min": 0, "max": 200, "step": 10, "unit": "px", "default": 40 },
+        { "type": "range", "id": "height_mobile", "label": "Höhe (Mobile)", "min": 0, "max": 100, "step": 10, "unit": "px", "default": 20 }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Baukasten",
+      "blocks": [
+        { "type": "heading" },
+        { "type": "text" },
+        { "type": "button" }
+      ]
+    }
+  ]
+}
+{% endschema %}

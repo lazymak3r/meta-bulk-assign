@@ -1,0 +1,84 @@
+/* Delivery Form component - shared styles */
+
+.discount-form {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    overflow: hidden;
+    align-items: center;
+    margin: 0;
+    gap: 8px;
+}
+
+.discount-input {
+    width: 256px;
+    height: 60px;
+    padding-left: 24px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    font-size: 16px !important;
+}
+
+/* Product page delivery tab: align with design */
+#product-delivery-form .btn-primary-cta {
+    width: 50%;
+    padding-left: 8px;
+    padding-right: 8px;
+    height: 60px;
+}
+#product-delivery-form {
+    justify-content: space-between;
+}
+
+.discount-input:focus {
+    outline: none;
+}
+
+.btn-primary-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    line-height: 1;
+    font-size: 20px;
+    height: 60px;
+    border: none;
+    background: #5f6f67;
+    color: #fff;
+    font-weight: 400;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.5s ease, border-color 0.5s ease;
+}
+
+.btn-primary-cta:hover {
+    background: #4e5c55;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1372px) {
+    .discount-form .btn-primary-cta {
+        width: 256px;
+        flex: 0 0 auto;
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .discount-form {
+        flex-direction: column;
+        gap: 12px;
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    .discount-form .discount-input,
+    .discount-form .btn-primary-cta {
+        width: 100% !important;
+    }
+
+    .discount-input {
+        height: 52px !important;
+        font-size: 14px !important;
+    }
+}

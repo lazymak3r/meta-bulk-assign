@@ -1,0 +1,74 @@
+/* assets/custom-collection-list.css */
+
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        2,
+        1fr
+    ); /* 2 Spalten auf kleinen Bildschirmen */
+    gap: 2rem; /* Abstand zwischen den Elementen */
+    padding: 2rem 0;
+}
+
+/* Ab Tablet-Größe werden es 3 Spalten */
+@media screen and (min-width: 750px) {
+  .collection-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Ab Desktop-Größe werden es 4 Spalten */
+@media screen and (min-width: 990px) {
+  .collection-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.collection-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.collection-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.collection-card__image-wrapper {
+    position: relative;
+    /* Konsistentes Seitenverhältnis */
+    aspect-ratio: 16 / 9;
+    background-color: #f7f7f7; /* Hintergrund für Platzhalter */
+}
+
+.collection-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Stellt sicher, dass das Bild den Container füllt, ohne sich zu verzerren */
+}
+
+.placeholder-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.collection-card__info {
+  padding: 1rem;
+  text-align: center;
+}
+
+.collection-card__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.collection-card__product-count {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}

@@ -1,0 +1,4 @@
+(function initMegaMenu() {
+    "use strict";
+
+})();

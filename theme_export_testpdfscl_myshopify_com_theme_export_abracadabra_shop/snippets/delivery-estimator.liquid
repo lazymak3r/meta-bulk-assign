@@ -1,0 +1,52 @@
+{%- assign form_id = form_id | default: 'delivery-form' -%}
+
+<div id="{{ root_id | default: 'delivery-estimator' }}" class="delivery-estimator">
+  {{ 'delivery-estimator.css' | asset_url | stylesheet_tag }}
+  <a href="#" class="sr-promo-link delivery-link" aria-controls="{{ form_id }}" aria-expanded="false">
+    <span class="flex flex-row gap-[13px] items-center">
+      <img src="{{ 'delivery.svg' | asset_url }}" alt="Lieferzeit berechnen" width="40" height="25">
+      <span class="text-[18px] md:text-[24px]">Lieferzeit berechnen</span>
+      <span class="sr-caret">
+        <img src="{{ 'chevron-down.svg' | asset_url }}" width="16" height="9" alt="" aria-hidden="true">
+      </span>
+    </span>
+  </a>
+  {% render 'delivery-form', form_id: form_id %}
+</div>
+
+<script>
+  (function(){
+    var root = document.getElementById('{{ root_id | default: 'delivery-estimator' }}');
+    if(!root) return;
+    root.addEventListener('click', function(e){
+      var trigger = e.target.closest('.delivery-link');
+      if(!trigger || !root.contains(trigger)) return;
+      e.preventDefault();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      e.stopPropagation();
+
+      var panel = root.querySelector('#{{ form_id | default: 'delivery-form' }}');
+      if(!panel) return;
+      var isOpen = panel.classList.toggle('collapsed') === false;
+      trigger.setAttribute('aria-expanded', String(isOpen));
+
+      // Close any other open discount forms on the page
+      if (isOpen) {
+        document.querySelectorAll('.discount-form').forEach(function(form){
+          if (form !== panel) {
+            form.classList.add('collapsed');
+            var otherId = form.id;
+            if (otherId) {
+              document.querySelectorAll('[aria-controls="' + otherId + '"]').forEach(function(t){
+                t.setAttribute('aria-expanded', 'false');
+              });
+            }
+          }
+        });
+
+        var focusEl = panel.querySelector('input, select, textarea, button');
+        if(focusEl) focusEl.focus();
+      }
+    }, true);
+  })();
+</script>

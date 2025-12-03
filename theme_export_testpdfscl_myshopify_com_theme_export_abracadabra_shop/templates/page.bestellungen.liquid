@@ -1,0 +1,233 @@
+<!-- Bestellformular: Magazin & Katalog -->
+{{ 'section-product-detail.css' | asset_url | stylesheet_tag }}
+{{ 'section-kontaktformular.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs' %}
+
+<section class="pt-[20px] md:pt-[30px]">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <h1 class="text-[28px] md:text-[40px] font-[700] mb-[20px] text-center">
+      {{ page.title | default: 'Interliving Magazin und Katalog bestellen' }}
+    </h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-[24px] md:gap-[80px]">
+      <!-- Linke Spalte: Formular -->
+      <div class="kl-card">
+        <p class="text-[24px] md:text-[32px] md:mb-[20px] font-[700]">Bestellformular</p>
+        <p class="text-[16px] mb-8">
+          Bitte wählen Sie die gewünschten Magazine und Kataloge aus, die wir Ihnen an Ihre Adresse senden dürfen.
+        </p>
+
+        {% form 'contact', id: 'OrderForm' %}
+          {% if form.posted_successfully? %}
+            <div class="p-4 mb-6 rounded bg-green-50 text-green-800" role="status">
+              Danke! Ihre Anfrage wurde erfolgreich übermittelt.
+            </div>
+          {% endif %}
+
+          {% if form.errors %}
+            <div class="p-4 mb-6 rounded bg-red-50 text-red-800" role="alert">
+              Bitte prüfen Sie die markierten Felder.
+            </div>
+          {% endif %}
+
+          <input type="hidden" name="contact[tags]" value="bestellungen, katalog-bestellung">
+
+          <!-- Produktauswahl -->
+          <div class="mb-[16px]">
+            <p class="text-[16px] font-[700] mb-2">Bitte wählen Sie die gewünschten Produkte aus:</p>
+            <div class="flex items-start gap-2 mb-2">
+              <input
+                id="OrderMagazin10"
+                type="checkbox"
+                name="contact[order_partner_magazin_10]"
+                class="mt-[5px]"
+              >
+              <label for="OrderMagazin10" class="text-[16px] font-bold">Interliving Partner Magazin Nr. 10</label>
+            </div>
+            <div class="flex items-start gap-2">
+              <input id="OrderKatalog6" type="checkbox" name="contact[order_katalog_6]" class="mt-[5px]">
+              <label for="OrderKatalog6" class="text-[16px] font-bold">Interliving Katalog Nr. 6</label>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-[16px]">
+            <div>
+              <label for="OrderFirstName" class="kontakt-label"
+                >Vorname<span
+                  aria-hidden="true"
+                  >*</span
+                ></label
+              >
+              <input
+                id="OrderFirstName"
+                type="text"
+                name="contact[first_name]"
+                value="{{ form.first_name | default: customer.first_name }}"
+                class="kontakt-input"
+                autocomplete="given-name"
+                required
+                aria-required="true"
+              >
+            </div>
+
+            <div>
+              <label for="OrderLastName" class="kontakt-label"
+                >Nachname<span
+                  aria-hidden="true"
+                  >*</span
+                ></label
+              >
+              <input
+                id="OrderLastName"
+                type="text"
+                name="contact[last_name]"
+                value="{{ form.last_name | default: customer.last_name }}"
+                class="kontakt-input"
+                autocomplete="family-name"
+                required
+                aria-required="true"
+              >
+            </div>
+
+            <div>
+              <label for="OrderEmail" class="kontakt-label">E‑Mail<span aria-hidden="true">*</span></label>
+              <input
+                id="OrderEmail"
+                type="email"
+                name="contact[email]"
+                value="{{ form.email | default: customer.email }}"
+                class="kontakt-input {% if form.errors contains 'email' %}border-red-500{% endif %}"
+                autocomplete="email"
+                required
+                aria-required="true"
+              >
+            </div>
+
+            <div>
+              <label for="OrderStreet" class="kontakt-label"
+                >Straße und Hausnummer<span
+                  aria-hidden="true"
+                  >*</span
+                ></label
+              >
+              <input
+                id="OrderStreet"
+                type="text"
+                name="contact[address1]"
+                value="{{ form.address1 | default: customer.default_address.address1 }}"
+                class="kontakt-input"
+                autocomplete="address-line1"
+                required
+                aria-required="true"
+              >
+            </div>
+
+            <div>
+              <label for="OrderZip" class="kontakt-label"
+                >Postleitzahl<span
+                  aria-hidden="true"
+                  >*</span
+                ></label
+              >
+              <input
+                id="OrderZip"
+                type="text"
+                name="contact[zip]"
+                value="{{ form.zip | default: customer.default_address.zip }}"
+                class="kontakt-input"
+                autocomplete="postal-code"
+                required
+                aria-required="true"
+              >
+            </div>
+
+            <div>
+              <label for="OrderCity" class="kontakt-label">Stadt<span aria-hidden="true">*</span></label>
+              <input
+                id="OrderCity"
+                type="text"
+                name="contact[city]"
+                value="{{ form.city | default: customer.default_address.city }}"
+                class="kontakt-input"
+                autocomplete="address-level2"
+                required
+                aria-required="true"
+              >
+            </div>
+
+            <!-- Einwilligungen (gekürzt, gleiches Styling wie Kontaktformular) -->
+            <div class="kontakt-consent">
+              <h2 class="font-[700]">In persönliche Kommunikation einwilligen:</h2>
+              <div class="flex items-start gap-2">
+                <input
+                  id="OrderConsentNewsletter"
+                  type="checkbox"
+                  name="contact[consent_newsletter]"
+                  class="mt-1.5"
+                >
+                <label for="OrderConsentNewsletter"
+                  ><span class="font-[700]">Roomio Newsletter abonnieren:</span> Ja, ich möchte Informationen per E‑Mail
+                  erhalten (optional).</label
+                >
+              </div>
+              <div class="flex items-start gap-2">
+                <input id="OrderConsentStore" type="checkbox" name="contact[consent_store]" class="mt-1.5">
+                <label for="OrderConsentStore"
+                  ><span class="font-[700]">Meine Daten aufbewahren:</span> Ich bin einverstanden, dass meine Daten zur
+                  Bearbeitung gespeichert werden (optional).</label
+                >
+              </div>
+              <p class="mt-2">
+                Weitere Informationen finden Sie in unserer
+                <a
+                  class="underline kontakt-link"
+                  href="/pages/catalogs"
+                  target="_blank"
+                  rel="noopener"
+                  >Datenschutzrichtlinie</a
+                >.
+              </p>
+            </div>
+
+            <div class="mt-2">
+              <button type="submit" class="btn-primary">Einsenden</button>
+            </div>
+          </div>
+        {% endform %}
+      </div>
+
+      <!-- Rechte Spalte: Infokarten -->
+      <div class="flex flex-col gap-[20px]">
+        <div class="kl-card">
+          <div class="w-full overflow-hidden bg-white">
+            <img
+              src="{{ 'motiv1.jpg' | asset_url }}"
+              alt="Interliving Partner Magazin"
+              class="w-full h-auto block"
+            >
+          </div>
+
+          <h3 class="text-[18px] md:text-[32px] font-[700] mt-[28px]">Interliving Partner Magazin</h3>
+          <p class="text-[16px] mt-4 mb-8">
+            Erleben Sie auf 52 Seiten, wie Sie mit
+            <strong>Tipps unserer Wohnexperten und aktuellen Wohntrends Ihr Zuhause noch schöner machen.</strong>
+            Entdecken Sie jetzt die zehnte Ausgabe des exklusiven Interliving Partner Magazins und lassen Sie sich von
+            dem <strong>erstklassigen Service der Interliving Partner</strong> überzeugen.
+          </p>
+        </div>
+
+        <div class="kl-card">
+          <div class="w-full overflow-hidden bg-white">
+            <img src="{{ 'motiv2.jpg' | asset_url }}" alt="Interliving Katalog" class="w-full h-auto block">
+          </div>
+          <h3 class="text-[18px] md:text-[32px] font-[700] mt-[28px]">Interliving Katalog</h3>
+          <p class="text-[16px] mt-4 mb-8">
+            Entdecken Sie die <strong>Welt von Interliving</strong>, mit aktuellen Trendthemen, exklusiven Einblicken
+            der aktuellen Interliving Kampagne mit Samu Haber und vielen weiteren spannenden Themen!
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

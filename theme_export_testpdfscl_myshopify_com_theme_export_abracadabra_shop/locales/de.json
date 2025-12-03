@@ -1,0 +1,224 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+    "general": {
+        "404": {
+            "title": "Nicht gefunden",
+            "body": "Die von Ihnen gesuchte Seite konnte nicht gefunden werden."
+        },
+        "search": {
+            "placeholder": "Suchen...",
+            "submit": "Suchen",
+            "search_results_for": "Suchergebnisse für",
+            "no_products_found": "Keine Produkte gefunden"
+        },
+        "cart": {
+            "title": "Warenkorb",
+            "empty": "Ihr Warenkorb ist leer.",
+            "subtotal": "Zwischensumme",
+            "checkout": "Zur Kasse"
+        },
+        "breadcrumbs": {
+            "home": "Home"
+        },
+        "back-to-top": "Zurück nach oben",
+        "pagination": {
+            "label": "Seitennavigation",
+            "page": "Seite {{ number }}",
+            "next": "Nächste Seite",
+            "previous": "Vorherige Seite",
+            "showing": "Zeige",
+            "of": "von"
+        }
+    },
+    "products": {
+        "product": {
+            "add_to_cart": "In den Warenkorb",
+            "sold_out": "Ausverkauft",
+            "care_instructions": "Pflegehinweise",
+            "material": "Material",
+            "next_product": "Nächstes Produkt",
+            "previous_product": "Vorheriges Produkt",
+            "media": {
+                "loading": "Laden..."
+            },
+            "price": {
+                "regular_price": "Regulärer Preis",
+                "sale_price": "Verkaufspreis",
+                "unit_price": "Einheitspreis",
+                "from_price_html": "Ab {{ price }}",
+                "regular_price_html": "{{ price }}",
+                "sale_price_html": "{{ price }}",
+                "unit_price_html": "{{ price }} pro {{ unit }}"
+            },
+            "on_sale": "Im Angebot"
+        },
+        "tabs": {
+            "title": "Produktinformationen",
+            "description": "Beschreibung",
+            "details": "Details",
+            "delivery": "Lieferbedingungen",
+            "product-safety": "Produktsicherheit",
+            "downloads": "Herunterladen",
+            "no_documents": "Keine Produktsicherheitsdokumente verfügbar."
+        },
+        "facets": {
+            "product_count_simple": "{{ count }} Produkt",
+            "sort_by_label": "Sortieren nach"
+        },
+        "navigation": {
+            "previous": "Vorheriges",
+            "back": "Übersicht",
+            "next": "Nächstes"
+        }
+    },
+    "collections": {
+        "collection": {
+            "title": "Kollektion"
+        }
+    },
+    "blogs": {
+        "blog": {
+            "title": "Blog"
+        }
+    },
+    "customer": {
+        "account": {
+            "title": "Profil",
+            "login": "Anmelden",
+            "logout": "Abmelden",
+            "register": "Registrieren",
+            "forgot_password": "Passwort vergessen?"
+        },
+        "login_page": {
+            "title": "Login ins Kundenkonto"
+        },
+        "orders": {
+            "title": "Bestellverlauf",
+            "order_number": "Bestellung",
+            "order_number_link": "Bestellnummer {{ number }}",
+            "date": "Datum",
+            "payment_status": "Zahlungsstatus",
+            "fulfillment_status": "Versandstatus",
+            "total": "Summe",
+            "fulfilled": "Geliefert",
+            "partial_fulfilled": "Teilweise geliefert",
+            "unfulfilled": "Nicht geliefert",
+            "in_progress": "In Bearbeitung",
+            "none": "Sie haben noch keine Bestellungen aufgegeben."
+        },
+        "profile": {
+            "title": "Profilangaben",
+            "none": "Keine Adresse gespeichert."
+        },
+        "addresses": {
+            "title": "Adressen verwalten",
+            "add_new": "Neue Adresse hinzufügen",
+            "default": "Standardadresse",
+            "preferred": "Bevorzugte Adresse",
+            "edit": "Bearbeiten",
+            "delete": "Löschen",
+            "delete_confirm": "Sind Sie sicher, dass Sie diese Adresse löschen möchten?"
+        },
+        "login_page": {
+            "breadcrumb": "Login",
+            "title": "Login ins Kundenkonto"
+        },
+        "register_page": {
+            "breadcrumb": "Ein Konto erstellen",
+            "title": "Ein Konto erstellen"
+        },
+        "login": {
+            "title": "Anmelden",
+            "email": "E-Mail",
+            "password": "Passwort",
+            "forgot_password": "Passwort vergessen?",
+            "sign_in": "Anmelden"
+        },
+        "register": {
+            "title": "Registrieren",
+            "first_name": "Vorname",
+            "last_name": "Nachname",
+            "email": "E-Mail",
+            "password": "Passwort",
+            "create": "Erstellen"
+        }
+    },
+    "accessibility": {
+        "skip_to_text": "Zum Inhalt springen",
+        "unit_price_separator": " / "
+    },
+    "sections": {
+        "catalogs": {
+            "title": "Katalog",
+            "download": "Herunterladen",
+            "browse": "Durchstöbern"
+        },
+        "all": {
+            "colors": {
+                "label": "Farben",
+                "accent_1": {
+                    "label": "Akzent 1"
+                },
+                "accent_2": {
+                    "label": "Akzent 2"
+                },
+                "background_1": {
+                    "label": "Hintergrund 1"
+                },
+                "background_2": {
+                    "label": "Hintergrund 2"
+                },
+                "inverse": {
+                    "label": "Invers"
+                }
+            }
+        },
+        "wishlist": {
+            "title": "Wunschliste"
+        },
+
+        "category_products_grid": {
+            "load_more": "Mehr laden",
+            "show_less": "Weniger anzeigen",
+            "loading_text": "Wird geladen..."
+        },
+        "featured_products": {
+            "title": "Empfohlene Produkte",
+            "subtitle": "Entdecken Sie unsere beliebtesten und angesagtesten Möbelstücke.",
+            "no_products": "Keine Produkte gefunden"
+        },
+        "gift_card": {
+            "title": "Geschenkkarte",
+            "description": "Schenken Sie die Wahl mit unserer exklusiven Geschenkkarte!",
+            "learn_more": "Erfahren Sie mehr"
+        },
+        "product_badges": {
+            "handmade": "Handgefertigt in Deutschland",
+            "worldwide_shipping": "Weltweiter Versand",
+            "returns_30": "30-tägiges Rückgaberecht",
+            "warranty_10y": "10 Jahre Garantie"
+        },
+        "recommendations": {
+            "title": "Unsere Empfehlungen"
+        },
+        "completed_with": {
+            "addons_sum": "Summe der Zusatzprodukte",
+            "total": "Gesamt"
+        },
+        "category_top": {
+            "sort": {
+                "price_ascending": "Preis (niedrigster zuerst)",
+                "price_descending": "Preis (höchster zuerst)",
+                "discount_descending": "Rabatt (höchster zuerst)"
+            }
+        }
+    }
+}

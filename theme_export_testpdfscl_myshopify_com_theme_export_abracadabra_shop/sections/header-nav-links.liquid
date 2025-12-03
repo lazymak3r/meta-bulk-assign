@@ -1,0 +1,55 @@
+<button
+  id="menuBtn"
+  class="md:hidden justify-self-start p-2 -ml-2"
+  aria-expanded="false"
+  data-open-mega
+  data-mm-open
+  aria-controls="megaMenu"
+>
+  <span class="sr-only">Open menu</span>
+  <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 1.4C21 0.626828 20.3732 0 19.6 0H1.4C0.626829 0 0 0.626828 0 1.4C0 2.17317 0.626829 2.8 1.4 2.8H19.6C20.3732 2.8 21 2.17312 21 1.4ZM1.4 8.4H26.6C27.3732 8.4 28 9.02688 28 9.8C28 10.5732 27.3732 11.2 26.6 11.2H1.4C0.626829 11.2 0 10.5732 0 9.8C0 9.02688 0.626829 8.4 1.4 8.4ZM1.4 16.8H14C14.7731 16.8 15.4 17.4268 15.4 18.2C15.4 18.9731 14.7731 19.6 14 19.6H1.4C0.626829 19.6 0 18.9731 0 18.2C0 17.4268 0.626829 16.8 1.4 16.8Z" fill="black"/>
+    </svg>
+    
+</button>
+
+{%- assign mobel_collection = collections[section.settings.mobel_collection] -%}
+
+{%- comment -%}
+  The desktop inline nav is intentionally removed here to avoid duplicating
+  the new mega-menu's own desktop navigation. The burger above opens the
+  mega-menu overlay on mobile; desktop navigation is rendered inside the
+  `mega-menu` section.
+{%- endcomment -%}
+
+{%- comment -%}
+  Mobile popup nav removed in favor of opening the mega menu directly via the burger button.
+{%- endcomment -%}
+
+{% schema %}
+{
+  "name": "Navigation: Sammlungen",
+  "settings": [
+    {
+      "type": "collection",
+      "id": "mobel_collection",
+      "label": "Möbel-Kollektion auswählen"
+    },
+    {
+      "type": "text",
+      "id": "mobel_label",
+      "label": "Link-Text für Möbel (optional)",
+      "default": "Möbel"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Header - Startseite & Möbel",
+      "settings": {
+        "mobel_collection": "furniture",
+        "mobel_label": "Möbel"
+      }
+    }
+  ]
+}
+{% endschema %}

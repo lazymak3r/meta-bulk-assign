@@ -1,0 +1,521 @@
+:root {
+    --gc-pill: #d9d9d9;
+    --gc-text: #2e2e2d;
+    --gc-text-2: #647167;
+}
+
+.gc-card {
+    position: relative;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+/* When modal is open, remove stacking-context from card so the fixed modal can escape */
+.gc-card.gc-open {
+    transform: none !important;
+    position: relative;
+}
+
+.gc-card .favorite-btn {
+    line-height: 0;
+    border-width: 1px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+.gc-card .favorite-btn svg {
+    display: block;
+    pointer-events: none;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+/* Keep visual states but never alter geometry */
+/* .gc-card .favorite-btn:focus,
+.gc-card .favorite-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(100, 113, 103, 0.6);
+} */
+
+.gc-card .gc-amounts {
+    min-height: 34px;
+}
+/* Apply selected pill styles both on card and inside modal */
+.gc-card .gc-amount.is-selected,
+.gc-modal .gc-amount.is-selected {
+    border-color: transparent !important;
+    background: #d5cfc4;
+    color: var(--gc-text);
+}
+
+/* =========================
+     Media
+     ========================= */
+.gc-media {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    margin: 16px 16px 0 16px;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+@supports (-webkit-touch-callout: none) {
+    .gc-media {
+        aspect-ratio: auto !important;
+        max-height: 200px !important;
+        height: min(200px, 44vw) !important;
+        min-height: 0 !important;
+    }
+}
+
+.grid-cols-2 .gc-card .gc-media {
+    aspect-ratio: 16 / 9 !important;
+    height: auto !important;
+    max-height: 200px !important;
+    min-height: 0 !important;
+}
+
+.gc-media-fallback {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.gc-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* =========================
+     Ribbon
+     ========================= */
+.gc-ribbon {
+    position: absolute !important;
+    top: 0;
+    right: 0;
+    width: clamp(90px, 9vw, 222px);
+    aspect-ratio: 222 / 277;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Bigger ribbon on mobile */
+@media (max-width: 768px) {
+    .gc-ribbon {
+        width: clamp(120px, 50vw, 222px);
+    }
+}
+.gc-ribbon img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+/* =========================
+     Body
+     ========================= */
+.gc-body {
+    padding: 24px 9px 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.gc-brand {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gc-brand);
+    letter-spacing: 0.02em;
+    margin-left: -12px;
+}
+
+.gc-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--gc-text);
+    margin: 0;
+    word-break: break-word;
+}
+
+.gc-desc {
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--gc-text);
+    margin: 4px 0 20px;
+}
+
+/* =========================
+     Amounts (Pills)
+     ========================= */
+.gc-amounts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 34px;
+}
+
+.gc-amount {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    color: var(--gc-text);
+    font-size: 16px;
+    font-weight: 400;
+    padding: 5px 8px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease,
+        background-color 0.15s ease, color 0.15s ease;
+    min-width: 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transform-origin: center;
+}
+
+.gc-amount::-moz-focus-inner {
+    border: 0;
+}
+.gc-amount:-moz-focusring {
+    outline: none;
+}
+
+.gc-amount:focus:not(:focus-visible),
+button.gc-amount:focus,
+button.gc-amount:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    outline-offset: 0 !important;
+}
+
+.gc-amount::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    transition: left 0.3s ease;
+}
+
+.gc-card.is-hovered .gc-amount:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gc-amount.is-selected::before {
+    left: 100%;
+}
+
+/* =========================
+     Footer
+     ========================= */
+.gc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.gc-price-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gc-text);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    position: relative;
+}
+.gc-modal__price .gc-price-prefix {
+    font-size: 20px;
+    font-weight: 400;
+    margin-right: 3px;
+}
+
+.gc-price-value.updating {
+    opacity: 0.7;
+    transform: scale(0.95);
+}
+
+.gc-price-value.updated {
+    animation: priceUpdate 0.4s ease;
+}
+
+@keyframes priceUpdate {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* =========================
+     Actions (Wishlist / Add to Cart)
+     ========================= */
+.gc-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Lock button box metrics so hover/focus never changes size */
+.favorite-btn,
+.icon-btn {
+    display: grid;
+    place-items: center;
+
+    border: 1px solid #647167;
+    border-radius: 999px;
+
+    background: transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+        box-shadow 0.2s ease;
+
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+.favorite-btn svg,
+.icon-btn svg {
+    display: block; /* remove inline-gap */
+    pointer-events: none; /* stable hover hitbox */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Keep states purely visual; don’t change geometry */
+.favorite-btn:hover,
+.icon-btn:hover {
+    background: #ececec;
+}
+
+/* Accessible focus ring without affecting layout */
+.favorite-btn:focus,
+.favorite-btn:focus-visible,
+.icon-btn:focus,
+.icon-btn:focus-visible {
+    outline: none;
+}
+
+/* If global CSS scales buttons on hover, neutralize it here */
+.favorite-btn:hover,
+.favorite-btn:active,
+.icon-btn:hover,
+.icon-btn:active {
+    transform: translateZ(0) !important; /* no scale/translate changes */
+}
+
+/* =========================
+     Learn More Link
+     ========================= */
+.gc-link {
+    color: var(--gc-text);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.2;
+    margin-top: 20px;
+    text-decoration: underline;
+}
+
+.gc-link:hover {
+    color: var(--gc-text-2);
+}
+
+.gc-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 2147483606; /* above header & any sticky elements */
+}
+
+.gc-modal[aria-hidden="false"] {
+    display: block;
+}
+
+.gc-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.gc-modal__dialog {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(795px, 92vw);
+    background: #fff;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.18);
+    padding: 50px;
+    z-index: 2147483607;
+}
+
+.gc-modal__close {
+    position: absolute;
+    top: 30px;
+    right: 31px;
+    background: transparent;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.gc-modal__title {
+    font-size: 48px;
+    font-weight: 400;
+    color: #2e2e2d;
+}
+
+.gc-modal__pills {
+    margin: 30px 0 60px;
+}
+
+.gc-modal__pills-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2e2e2d;
+    margin-bottom: 18px;
+}
+
+.gc-modal__bar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding-top: 24px;
+    border-top: 1px solid #c2c2c2;
+}
+
+.gc-modal__price .gc-price-value {
+    font-size: 48px;
+    font-weight: 400;
+}
+
+.gc-modal__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gc-modal__actions .icon-btn {
+    background: #2b9b5a;
+    border-color: #2b9b5a;
+    color: #fff;
+}
+
+/* Make modal favorite button match product-detail (not rounded-full) */
+.gc-modal .gc-modal__actions .favorite-btn {
+    width: auto !important;
+    height: 50px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    border-radius: 0px !important;
+    border: 1px solid #d1d5db;
+    background: transparent !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+    place-items: center !important;
+    transform: none !important;
+    backface-visibility: visible !important;
+    -webkit-backface-visibility: visible !important;
+    line-height: 1.25 !important;
+    font-size: 16px !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+.gc-modal .gc-modal__actions .favorite-btn:hover {
+    background: #f3f4f6 !important;
+}
+
+/* Mobile: show heart-only like product details */
+@media (max-width: 767.98px) {
+    .gc-modal .gc-modal__actions .favorite-btn {
+        width: 50px !important;
+        height: 50px !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        font-size: 0 !important; /* visually hide text, keep aria-label */
+    }
+}
+
+@media (max-width: 767.98px) {
+    .gc-modal__dialog {
+        top: 12vh;
+        transform: translate(-50%, 0);
+        width: min(92vw, 350px);
+        padding: 20px 16px 16px;
+    }
+    .gc-modal__title {
+        font-size: 32px !important;
+        line-height: 1.2 !important;
+    }
+    .gc-modal__pills {
+        margin: 16px 0 20px;
+    }
+    .gc-modal__pills-title {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+    .gc-modal__bar {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        padding-top: 16px !important;
+    }
+    .gc-modal__price .gc-price-value {
+        font-size: 32px !important;
+    }
+    .gc-modal__actions {
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .gc-modal__actions .icon-btn {
+        height: 44px;
+        width: auto;
+        padding: 0 16px;
+        border-radius: 8px;
+    }
+
+    .gc-modal .gc-modal__actions .js-gc-form {
+        flex: 1 1 auto;
+    }
+
+    .gc-modal .gc-modal__actions .favorite-btn img {
+        width: 24px !important;
+        height: 22px !important;
+        display: block !important;
+    }
+
+    .gc-modal__pills {
+        margin: 30px 0 30px !important;
+    }
+}
+
+.grid-cols-2 > .gc-grid-item {
+    grid-column: 1 / -1 !important; /* span all columns */
+}

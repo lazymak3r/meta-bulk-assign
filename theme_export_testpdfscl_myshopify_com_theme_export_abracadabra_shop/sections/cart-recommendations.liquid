@@ -1,0 +1,24 @@
+{%- comment -%}
+  Cart recommendations: pick products from a selected collection or Shopify's automatic recommendations.
+{%- endcomment -%}
+
+{%- assign products = null -%}
+{%- if section.settings.collection != blank -%}
+  {%- assign products = section.settings.collection.products -%}
+{%- elsif collections.all and collections.all.products_count > 0 -%}
+  {%- assign products = collections.all.products -%}
+{%- endif -%}
+
+{%- if products and products.size > 0 -%}
+  {% render 'product-slider', title: section.settings.title, products: products, id_suffix: 'cart' %}
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Warenkorb Empfehlungen",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Titel", "default": "Unsere Empfehlungen" },
+    { "type": "collection", "id": "collection", "label": "Quelle: Kollektion" }
+  ]
+}
+{% endschema %}

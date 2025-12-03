@@ -1,0 +1,161 @@
+<!-- FAQ / Accordion -->
+<section class="mt-[30px] md:mt-[90px]">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <h2 class="text-center text-[32px] md:text-[48px] font-[400] text-[#2e2e2d] leading-none">
+      {{ section.settings.title }}
+    </h2>
+
+    <div class="mt-[20px] text-center">
+      <button
+        id="faq-toggle-all"
+        class="text-[#2e2e2d] text-[14px] font-[400] md:text-[16px] hover:opacity-80 hover:underline"
+      >
+        Alle Antworten anzeigen
+      </button>
+    </div>
+
+    <div class="mt-[20px] bg-white rounded max-w-[1089px] mx-auto w-full">
+      {% for block in section.blocks %}
+        <div class="divide-gray-200">
+          <div class="mb-[20px] border">
+            <button
+              type="button"
+              class="faq-btn group w-full flex items-center justify-between px-4 md:px-6 py-4 text-left"
+              aria-expanded="false"
+              aria-controls="faq-{{ forloop.index }}"
+              data-target="faq-{{ forloop.index }}"
+            >
+              <span class="text-[18px] md:text-[24px] font-[400] text-[#2e2e2d]">
+                {{ block.settings.question }}
+              </span>
+              <span class="ml-4 inline-flex items-center justify-center">
+                <!-- minus -->
+                <svg
+                  class="icon-minus h-[20px] w-[20px] text-[#2e2e2d] hidden"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M5 12h14" stroke-linecap="round" />
+                </svg>
+                <!-- plus -->
+                <svg
+                  class="icon-plus h-[20px] w-[20px] text-[#2e2e2d] "
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+                </svg>
+              </span>
+            </button>
+            <div
+              id="faq-{{ forloop.index }}"
+              class="px-4 md:px-6 pb-4 text-[14px] md:text-[16px] font-[400] leading-6 text-[#2e2e2d] hidden"
+            >
+              {{ block.settings.answer }}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<script>
+  // Single-open accordion behavior
+  const faqButtons = document.querySelectorAll('.faq-btn');
+  const toggleAllBtn = document.getElementById('faq-toggle-all');
+
+  function setOpen(btn, open) {
+    const panel = document.getElementById(btn.dataset.target);
+    const minus = btn.querySelector('.icon-minus');
+    const plus = btn.querySelector('.icon-plus');
+
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    panel.classList.toggle('hidden', !open);
+    minus.classList.toggle('hidden', !open);
+    plus.classList.toggle('hidden', open);
+  }
+
+  function updateToggleLabel() {
+    const anyOpen = Array.from(faqButtons).some((b) => b.getAttribute('aria-expanded') === 'true');
+    if (toggleAllBtn) {
+      toggleAllBtn.textContent = anyOpen ? 'Alle Antworten ausblenden' : 'Alle Antworten anzeigen';
+      toggleAllBtn.style.color = anyOpen ? '#647167' : '';
+    }
+  }
+
+  faqButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      // close all
+      faqButtons.forEach((b) => setOpen(b, false));
+      // open clicked if it was closed
+      setOpen(btn, !isOpen);
+      updateToggleLabel();
+    });
+  });
+
+  if (toggleAllBtn) {
+    toggleAllBtn.addEventListener('click', () => {
+      const isOpen = Array.from(faqButtons).some((b) => b.getAttribute('aria-expanded') === 'true');
+      if (isOpen) {
+        faqButtons.forEach((b) => setOpen(b, false));
+      } else {
+        faqButtons.forEach((b) => setOpen(b, true));
+      }
+
+      updateToggleLabel();
+    });
+  }
+
+  // Initialize label on load
+  updateToggleLabel();
+</script>
+
+<style>
+  .faq-btn[aria-expanded='true'] {
+    padding-bottom: 12px !important;
+  }
+</style>
+
+{% schema %}
+{
+  "name": "Häufig gestellte Fragen",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titel",
+      "default": "Häufig gestellte Fragen"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "faq_item",
+      "name": "Frage/Antwort",
+      "settings": [
+        {
+          "type": "text",
+          "id": "question",
+          "label": "Frage"
+        },
+        {
+          "type": "textarea",
+          "id": "answer",
+          "label": "Antwort"
+        }
+      ]
+    }
+  ],
+  "max_blocks": 20,
+  "presets": [
+    {
+      "name": "Häufig gestellte Fragen"
+    }
+  ]
+}
+{% endschema %}

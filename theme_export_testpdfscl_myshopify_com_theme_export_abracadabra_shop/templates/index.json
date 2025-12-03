@@ -1,0 +1,325 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+ {
+  "sections": {
+    "hero": {
+      "type": "hero-slideshow",
+      "settings": {
+        "aspect_ratio_desktop": "16 / 9",
+        "aspect_ratio_mobile": "3 / 4",
+        "text_box_base_color": "#ffffff",
+        "text_box_opacity_percent": 35,
+        "text_box_blur": 3,
+        "title": "Dein Sofa, dein Stil",
+        "summary": "Egal, wie du wohnst oder welchen Stil du liebst – eines unserer Roomio-Sofas fügt sich garantiert perfekt in dein Wohnzimmer ein. Mit Roomio wird dein Zuhause nicht nur außergewöhnlich schön und stilvoll, sondern spiegelt auch zu 100 Prozent deine Persönlichkeit wider!",
+        "buttonText": "Roomio Möbel",
+        "buttonUrl": "",
+        "catalogId": "43",
+        "mobileCatalogId": "44"
+      }
+    },
+    "custom_slider_mJHrk3": {
+      "type": "custom-slider",
+      "blocks": {
+        "desktop_slide_icmVYT": {
+          "type": "desktop_slide",
+          "settings": {
+            "image": "shopify://shop_images/Lampen-und-Leuchten-A-Z-ALLE-Lampen-und-Leuchten-IL-SP-Motiv-06-Wohnzimmer-2031-16-6-HLB-2560x960.jpg",
+            "button_text": "Jetzt entdecken",
+            "button_link": "",
+            "video_url_external": "",
+            "heading": "",
+            "subheading": "",
+            "text_alignment": "center",
+            "text_color": "#3ce1ae",
+            "button_bg_color": "#ffffff",
+            "button_text_color": "#ffffff"
+          }
+        },
+        "desktop_slide_Wp8ggT": {
+          "type": "desktop_slide",
+          "settings": {
+            "image": "shopify://shop_images/Lampen-und-Leuchten-A-Z-ALLE-Lampen-und-Leuchten-Lampen-und-Leuchten-A-Z-Interliving-Ambientebeleuchtung-aus-Kunststoff-in-Weiss-1031-1030-Neustadt-Landau-Karlsruhe-HF-HL-16zu6.jpg",
+            "button_text": "Jetzt entdecken",
+            "button_link": "",
+            "video_url_external": "",
+            "heading": "",
+            "subheading": "",
+            "text_alignment": "left",
+            "text_color": "#d71324",
+            "button_bg_color": "#333333",
+            "button_text_color": "#ffffff"
+          }
+        },
+        "mobile_slide_UBitLh": {
+          "type": "mobile_slide",
+          "settings": {
+            "image": "shopify://shop_images/Lampen-und-Leuchten-A-Z-ALLE-Lampen-und-Leuchten-IL-SP-Motiv-06-Wohnzimmer-2031-1-1-1200x1200.jpg",
+            "button_text": "Jetzt entdecken",
+            "button_link": "",
+            "video_url_external": "",
+            "heading": "",
+            "subheading": "",
+            "text_alignment": "center",
+            "text_color": "#ffffff",
+            "button_bg_color": "#333333",
+            "button_text_color": "#ffffff"
+          }
+        },
+        "mobile_slide_hQbFhA": {
+          "type": "mobile_slide",
+          "settings": {
+            "image": "shopify://shop_images/Lampen-und-Leuchten-A-Z-ALLE-Lampen-und-Leuchten-Lampen-und-Leuchten-A-Z-Interliving-Ambientebeleuchtung-aus-Kunststoff-in-Weiss-1030-Neustadt-Landau-Karlsruhe-HF-HL-1zu1.jpg",
+            "button_text": "Jetzt entdecken",
+            "button_link": "",
+            "video_url_external": "",
+            "heading": "",
+            "subheading": "",
+            "text_alignment": "center",
+            "text_color": "#ffffff",
+            "button_bg_color": "#333333",
+            "button_text_color": "#ffffff"
+          }
+        }
+      },
+      "block_order": [
+        "desktop_slide_icmVYT",
+        "desktop_slide_Wp8ggT",
+        "mobile_slide_UBitLh",
+        "mobile_slide_hQbFhA"
+      ],
+      "disabled": true,
+      "name": "HF Slider",
+      "settings": {
+        "show_desktop_slider": true,
+        "show_mobile_slider": true,
+        "desktop_aspect_ratio": "16:6",
+        "mobile_aspect_ratio": "1:1",
+        "transition_effect": "fade",
+        "autoplay": true,
+        "autoplay_speed": 4000,
+        "transition_speed": 800,
+        "show_arrows": true,
+        "show_pagination": true
+      }
+    },
+    "featured_categories": {
+      "type": "featured-categories",
+      "settings": {
+        "collections": [
+          "schlafzimmer",
+          "sofa",
+          "tisch",
+          "leuchte",
+          "kuche",
+          "stuhl",
+          "bett",
+          "deckenleuchte"
+        ],
+        "title": "Kategorien"
+      }
+    },
+    "featured_category_right": {
+      "type": "featured-category-right",
+      "settings": {
+        "image1": "shopify://shop_images/Rectangle_31.png",
+        "image2": "shopify://shop_images/Rectangle_30.png",
+        "title": "Mehr als Möbel – dein Zuhause, neu definiert",
+        "button": "Roomio entdecken",
+        "description": "Roomio bringt nicht nur mit Sofas unverwechselbaren Stil in deine vier Wände – bei uns findest du alles, was deinen Raum in ein hyggeliges Zuhause verwandelt. Von eleganten Couchtischen für entspannte Wohnzimmermomente bis hin zu stilvollen Regalen, Sideboards, Vitrinen, Lowboards und Highboards.",
+        "collection": "sideboard"
+      }
+    },
+    "featured_category_left": {
+      "type": "featured-category-left",
+      "settings": {
+        "image": "shopify://shop_images/358182126_11444619_1_1.png",
+        "title": "Dein Wohnzimmer, neu gedacht – mit Roomio Accessoires",
+        "button": "Jetzt einkaufen",
+        "description": "Roomio Accessoires verwandeln dein Wohnzimmer ganz nach deinen Vorstellungen. Kuschelige Kissen und Decken machen aus deinem Roomio Sofa eine wahre Wohlfühlinsel."
+      }
+    },
+    "featured_products": {
+      "type": "featured-products",
+      "settings": {
+        "title": "Unsere beste Kollektion",
+        "title_all_products": "Alle Produkte ansehen",
+        "collection": "sofa",
+        "limited_image": "shopify://shop_images/Roomio_Raum-Sofa-No4105_16zu6_HF_markenshop_moebel-weber.jpg",
+        "promo_image": "shopify://shop_images/28724ed6a6e9c465b9698cde5cd725ceaa8c4426.png",
+        "show_promo": true,
+        "limit": 20
+      }
+    },
+    "single_image": {
+      "type": "single-image",
+      "settings": {}
+    },
+    "featured_category_hero": {
+      "type": "featured-category-hero",
+      "settings": {
+        "image": "shopify://shop_images/a56854e1c862a31c663a537b5cf044015a343811.jpg",
+        "title": "Produkttransparenz",
+        "button": "Alle Kollektionen ansehen",
+        "description": "<p>Unsere Vision, Veränderungen zum Besseren zu bewirken, beginnt mit Transparenz entlang der gesamten Wertschöpfungskette, um gesunde Arbeitsbedingungen zu schaffen, die Umweltbelastung zu reduzieren und eine verantwortungsvolle Produktion zu fördern. Hier finden Sie Details zur Herkunft des Produkts und einzelner Teile – vom Polsterstoff oder Leder bis hin zu bestimmten Komponenten.</p><p></p><ul><li>lose Rücken- und Sitzkissen</li><li>nach Wunsch kombinierbar</li><li>mit Stoffauswahl</li></ul>",
+        "mobile_intro": "<p>Unsere Roomio Regale und Sideboards schaffen den perfekten Platz für alles, was dir wichtig ist.</p><p></p><ul><li>lose Rücken- und Sitzkissen</li><li>nach Wunsch kombinierbar</li><li>mit Stoffauswahl</li></ul>",
+        "collection": ""
+      }
+    },
+    "featured_category_banner": {
+      "type": "featured-category-banner",
+      "settings": {
+        "image": "shopify://shop_images/29808f3c62eaacf7dc030e650dc1b70308b654a3_1.jpg",
+        "title": "Die Designs dieser Saison",
+        "button": "Jetzt erkunden",
+        "description": "Frische Looks, inspiriert von der Wärme der Natur",
+        "collection": "2-5-sitzer"
+      }
+    },
+    "promo_images": {
+      "type": "promo-images",
+      "settings": {
+        "image1": "shopify://shop_images/Rectangle_12.png",
+        "alt1": "",
+        "image2": "shopify://shop_images/Rectangle_13.png",
+        "alt2": "",
+        "image3": "shopify://shop_images/Rectangle_14.png",
+        "alt3": "",
+        "image4": "shopify://shop_images/Rectangle_15.png",
+        "alt4": ""
+      }
+    },
+    "features": {
+      "type": "features",
+      "blocks": {
+        "block_pTgWGw": {
+          "type": "block",
+          "settings": {
+            "image": "shopify://shop_images/path132.svg",
+            "title": "Nachhaltige Materialien",
+            "subtitle": "Umweltfreundliche Beschaffung"
+          }
+        },
+        "block_TtteN3": {
+          "type": "block",
+          "settings": {
+            "image": "shopify://shop_images/Vector.svg",
+            "title": "Handgefertigte Qualität",
+            "subtitle": "Hergestellt von erfahrenen Handwerkern"
+          }
+        },
+        "block_KPi6kx": {
+          "type": "block",
+          "settings": {
+            "image": "shopify://shop_images/Group.svg",
+            "title": "Zeitlose Haltbarkeit",
+            "subtitle": "Bleibende Qualität"
+          }
+        },
+        "block_3DBCBn": {
+          "type": "block",
+          "settings": {
+            "image": "shopify://shop_images/express-delivery_1.svg",
+            "title": "Kostenlose Lieferung & Rücksendung",
+            "subtitle": "Risikofrei einkaufen"
+          }
+        }
+      },
+      "block_order": [
+        "block_pTgWGw",
+        "block_TtteN3",
+        "block_KPi6kx",
+        "block_3DBCBn"
+      ],
+      "settings": {}
+    },
+    "page_builder_section_KfVMTw": {
+      "type": "page-builder-section",
+      "blocks": {
+        "heading_U6T8bL": {
+          "type": "heading",
+          "settings": {
+            "visibility": "all",
+            "text": "Meine Überschrift",
+            "heading_tag": "h2",
+            "font_size_desktop": 40,
+            "font_size_mobile": 28,
+            "color": "#333333",
+            "alignment": "center"
+          }
+        },
+        "text_bWjjJE": {
+          "type": "text",
+          "settings": {
+            "visibility": "all",
+            "text": "<p>Beschreiben Sie hier Ihr Produkt oder Ihre Botschaft.</p>",
+            "color": "#555555",
+            "alignment": "center"
+          }
+        },
+        "image_yCw7RR": {
+          "type": "image",
+          "settings": {
+            "visibility": "all",
+            "aspect_ratio": "original"
+          }
+        },
+        "text_fe3HKp": {
+          "type": "text",
+          "settings": {
+            "visibility": "all",
+            "text": "<p>Beschreiben Sie hier Ihr Produkt oder Ihre Botschaft.</p>",
+            "color": "#555555",
+            "alignment": "center"
+          }
+        },
+        "button_wyUAbD": {
+          "type": "button",
+          "settings": {
+            "visibility": "all",
+            "text": "Mehr erfahren",
+            "link": "",
+            "bg_color": "#333333",
+            "text_color": "#ffffff",
+            "border_color": "#333333",
+            "alignment": "center"
+          }
+        }
+      },
+      "block_order": [
+        "heading_U6T8bL",
+        "text_bWjjJE",
+        "image_yCw7RR",
+        "text_fe3HKp",
+        "button_wyUAbD"
+      ],
+      "disabled": true,
+      "name": "Baukasten",
+      "settings": {
+        "background_color": "rgba(0,0,0,0)",
+        "content_width": 1200
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "custom_slider_mJHrk3",
+    "featured_categories",
+    "featured_category_right",
+    "featured_category_left",
+    "featured_products",
+    "single_image",
+    "featured_category_hero",
+    "featured_category_banner",
+    "promo_images",
+    "features",
+    "page_builder_section_KfVMTw"
+  ]
+}

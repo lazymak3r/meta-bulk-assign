@@ -1,0 +1,73 @@
+{% render 'custom-slider', section: section %}
+
+{% schema %}
+{
+  "name": "HF Slider",
+  "tag": "section",
+  "class": "custom-slider-section-wrapper",
+  "settings": [
+    { "type": "header", "content": "Sichtbarkeit" },
+    { "type": "checkbox", "id": "show_desktop_slider", "label": "Desktop Slider anzeigen", "default": true },
+    { "type": "checkbox", "id": "show_mobile_slider", "label": "Mobile Slider anzeigen", "default": true },
+    { "type": "header", "content": "Layout" },
+    { "type": "select", "id": "desktop_aspect_ratio", "label": "Seitenverhältnis (Desktop)", "options": [ { "value": "16:9", "label": "16:9" }, { "value": "16:8", "label": "16:8" }, { "value": "16:7", "label": "16:7" }, { "value": "16:6", "label": "16:6" } ], "default": "16:9" },
+    { "type": "select", "id": "mobile_aspect_ratio", "label": "Seitenverhältnis (Mobile)", "options": [ { "value": "9:16", "label": "9:16" }, { "value": "1:1", "label": "1:1" } ], "default": "9:16" },
+    { "type": "header", "content": "Slider-Steuerung" },
+    { "type": "select", "id": "transition_effect", "label": "Übergangseffekt", "options": [ { "value": "slide", "label": "Slide (Gleiten)" }, { "value": "fade", "label": "Fade (Überblenden)" } ], "default": "slide" },
+    { "type": "checkbox", "id": "autoplay", "label": "Autoplay aktivieren", "default": true },
+    { "type": "range", "id": "autoplay_speed", "min": 2000, "max": 9000, "step": 500, "unit": "ms", "label": "Dauer pro Slide", "default": 4000 },
+    { "type": "range", "id": "transition_speed", "min": 400, "max": 2000, "step": 100, "unit": "ms", "label": "Übergangsgeschwindigkeit", "default": 800 },
+    { "type": "checkbox", "id": "show_arrows", "label": "Navigationspfeile anzeigen", "default": true },
+    { "type": "checkbox", "id": "show_pagination", "label": "Paginierung (Punkte) anzeigen", "default": true }
+  ],
+  "blocks": [
+    {
+      "type": "desktop_slide",
+      "name": "Desktop-Slide",
+      "limit": 8,
+      "settings": [
+        { "type": "header", "content": "Inhalt: Standard-Bild" },
+        { "type": "image_picker", "id": "image", "label": "Bild" },
+        { "type": "text", "id": "button_text", "label": "Button-Text", "default": "Jetzt entdecken" },
+        { "type": "url", "id": "button_link", "label": "Button-Link" },
+        { "type": "header", "content": "Inhalt: Video (überschreibt Bild)" },
+        { "type": "video_url", "id": "video_url_external", "label": "Externes Video (YouTube, Vimeo)", "accept": ["youtube", "vimeo"] },
+        { "type": "video", "id": "video_hosted", "label": "Shopify Video-Upload", "info": "Hat Vorrang vor externem Video." },
+        { "type": "image_picker", "id": "video_cover_image", "label": "Cover-Bild für Video" },
+        { "type": "image_picker", "id": "video_play_icon", "label": "Play-Icon Overlay" },
+        { "type": "header", "content": "Text-Overlay (für Bild & Video)" },
+        { "type": "text", "id": "heading", "label": "Überschrift", "default": "Dein überzeugender Titel" },
+        { "type": "textarea", "id": "subheading", "label": "Unterüberschrift / Text" },
+        { "type": "select", "id": "text_alignment", "label": "Textausrichtung", "options": [ { "value": "left", "label": "Links" }, { "value": "center", "label": "Zentriert" }, { "value": "right", "label": "Rechts" } ], "default": "center" },
+        { "type": "color", "id": "text_color", "label": "Textfarbe", "default": "#FFFFFF" },
+        { "type": "color", "id": "button_bg_color", "label": "Button Hintergrund", "default": "#333333" },
+        { "type": "color", "id": "button_text_color", "label": "Button Textfarbe", "default": "#FFFFFF" }
+      ]
+    },
+    {
+      "type": "mobile_slide",
+      "name": "Mobile-Slide",
+      "limit": 8,
+      "settings": [
+        { "type": "header", "content": "Inhalt: Standard-Bild" },
+        { "type": "image_picker", "id": "image", "label": "Bild" },
+        { "type": "text", "id": "button_text", "label": "Button-Text", "default": "Jetzt entdecken" },
+        { "type": "url", "id": "button_link", "label": "Button-Link" },
+        { "type": "header", "content": "Inhalt: Video (überschreibt Bild)" },
+        { "type": "video_url", "id": "video_url_external", "label": "Externes Video (YouTube, Vimeo)", "accept": ["youtube", "vimeo"] },
+        { "type": "video", "id": "video_hosted", "label": "Shopify Video-Upload" },
+        { "type": "image_picker", "id": "video_cover_image", "label": "Cover-Bild für Video" },
+        { "type": "image_picker", "id": "video_play_icon", "label": "Play-Icon Overlay" },
+        { "type": "header", "content": "Text-Overlay (für Bild & Video)" },
+        { "type": "text", "id": "heading", "label": "Überschrift", "default": "Titel für Mobile" },
+        { "type": "textarea", "id": "subheading", "label": "Unterüberschrift / Text" },
+        { "type": "select", "id": "text_alignment", "label": "Textausrichtung", "options": [ { "value": "left", "label": "Links" }, { "value": "center", "label": "Zentriert" }, { "value": "right", "label": "Rechts" } ], "default": "center" },
+        { "type": "color", "id": "text_color", "label": "Textfarbe", "default": "#FFFFFF" },
+        { "type": "color", "id": "button_bg_color", "label": "Button Hintergrund", "default": "#333333" },
+        { "type": "color", "id": "button_text_color", "label": "Button Textfarbe", "default": "#FFFFFF" }
+      ]
+    }
+  ],
+  "presets": [ { "name": "HF Slider", "blocks": [ { "type": "desktop_slide" }, { "type": "mobile_slide" } ] } ]
+}
+{% endschema %}

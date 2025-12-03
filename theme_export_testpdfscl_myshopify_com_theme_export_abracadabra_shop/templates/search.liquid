@@ -1,0 +1,67 @@
+<section class="products">
+  <div class="container">
+    <h2 class="text-center mt-3">{{ 'general.search.search_results_for' | t }} "{{ search.terms }}"</h2>
+
+    {% section 'products-pagination-controls' %}
+
+    {% paginate search.results by 24 %}
+      <div
+        id="AjaxinateContainer"
+        data-products-grid
+        class="grid gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+      >
+        {% for item in search.results %}
+          {% if item.object_type == 'product' %}
+            {% render 'product-card', product: item %}
+          {% endif %}
+        {% else %}
+          <div class="collection-empty"><p>{{ 'templates.search.no_products_found' | t }}</p></div>
+        {% endfor %}
+      </div>
+
+      <nav class="pagination" aria-label="Pagination">
+        {% if paginate.previous %}
+          <a
+            class="page prev"
+            href="{{ paginate.previous.url }}"
+            rel="prev"
+            aria-label="Previous page"
+            >{{ 'general.pagination.previous' | t }}</a
+          >
+        {% endif %}
+
+        {% for part in paginate.parts %}
+          {% if part.is_link %}
+            <a
+              class="page"
+              href="{{ part.url }}"
+              aria-label="Go to page {{ part.title }}"
+            >
+              {{- part.title -}}
+            </a>
+          {% elsif part.title == paginate.current_page %}
+            <span
+              class="page current"
+              aria-current="page"
+              aria-label="Page {{ part.title }}, current"
+            >
+              {{- part.title -}}
+            </span>
+          {% else %}
+            <span class="page dots" aria-hidden="true">…</span>
+          {% endif %}
+        {% endfor %}
+
+        {% if paginate.next %}
+          <a
+            class="page next"
+            href="{{ paginate.next.url }}"
+            rel="next"
+            aria-label="Next page"
+            >{{ 'general.pagination.next' | t }}</a
+          >
+        {% endif %}
+      </nav>
+    {% endpaginate %}
+  </div>
+</section>

@@ -1,0 +1,162 @@
+<!-- Sticky Newsletter Sidebar -->
+<div class="sticky-newsletter" id="sticky-newsletter">
+    <!-- Collapsed State -->
+    <div class="sticky-collapsed" id="sticky-collapsed" onclick="expandStickyNewsletter()">
+        <div class="collapsed-badge">
+            <span class="discount-percent">10%</span>
+            <span class="discount-text">OFF</span>
+        </div>
+    </div>
+
+    <!-- Expanded State -->
+    <div class="sticky-content">
+        <div class="sticky-header">
+            <h3>Get 10% OFF!</h3>
+            <button class="sticky-close" onclick="collapseStickyNewsletter()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+        <p>Subscribe to our newsletter and get 10% off your first order!</p>
+        <form class="sticky-form">
+            <input type="email" placeholder="Enter your email" required>
+            <button type="submit">Subscribe</button>
+        </form>
+        <p class="sticky-disclaimer">No spam. Unsubscribe anytime.</p>
+    </div>
+</div>
+
+
+    </div>
+
+    <!-- Expanded State -->
+    <div class="sticky-content" id="sticky-content">
+        <button class="close-sticky" onclick="collapseStickyNewsletter()">−</button>
+        <div class="sticky-offer">
+            <h3>Subscribe now and get 10% discount on your first order!</h3>
+            <input type="email" placeholder="Enter your email" class="sticky-email">
+            <button onclick="subscribeStickyNewsletter()" class="sticky-btn">GET MY 10% OFF</button>
+            <p class="sticky-disclaimer">No spam. Unsubscribe anytime. 10% discount code via email</p>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+function subscribeStickyNewsletter() {
+    const emailInput = document.querySelector('.sticky-email');
+    const btn = document.querySelector('.sticky-btn');
+
+    if (!emailInput.value || !emailInput.validity.valid) {
+        emailInput.style.borderColor = '#3E3E3D';
+        emailInput.focus();
+        return;
+    }
+
+    btn.textContent = 'Code Sent! ✓';
+    btn.style.background = 'linear-gradient(135deg, #71877d, #71877d)';
+
+    // Show discount code info
+    const disclaimer = document.querySelector('.sticky-disclaimer');
+    if (disclaimer) {
+        disclaimer.innerHTML = '<strong>Code: WELCOME10</strong><br/>Check your email for details!';
+        disclaimer.style.color = '#71877d';
+        disclaimer.style.fontWeight = 'bold';
+    }
+
+    // Store subscription and collapse sticky
+    localStorage.setItem('newsletter-subscribed', 'true');
+    localStorage.setItem('newsletter-email', emailInput.value);
+    localStorage.setItem('newsletter-type', 'with-discount');
+
+    setTimeout(() => {
+        collapseStickyNewsletter();
+    }, 3000);
+}
+
+function collapseStickyNewsletter() {
+    const stickyNewsletter = document.getElementById('sticky-newsletter');
+    stickyNewsletter.classList.remove('show');
+    localStorage.setItem('sticky-newsletter-state', 'collapsed');
+}
+
+function expandStickyNewsletter() {
+    const stickyNewsletter = document.getElementById('sticky-newsletter');
+    stickyNewsletter.classList.add('show');
+    localStorage.setItem('sticky-newsletter-state', 'expanded');
+}
+
+function closeStickyNewsletter() {
+    const stickyNewsletter = document.getElementById('sticky-newsletter');
+    stickyNewsletter.style.display = 'none';
+    localStorage.setItem('sticky-newsletter-closed', 'true');
+}
+
+function initStickyNewsletter() {
+    const stickyNewsletter = document.getElementById('sticky-newsletter');
+    if (!stickyNewsletter) {
+        console.log('Sticky newsletter element not found');
+        return;
+    }
+
+    // Clear any existing state to force display
+    localStorage.removeItem('sticky-newsletter-closed');
+    localStorage.removeItem('sticky-newsletter-state');
+
+    // Force display
+    stickyNewsletter.style.display = 'block';
+    stickyNewsletter.classList.remove('show'); // Ensure collapsed state
+
+    console.log('Sticky newsletter initialized and forced to display');
+}
+
+
+                // Newsletter Only (without discount) Function
+                function subscribeNewsletterOnly(emailInput) {
+                    if (!emailInput.value || !isValidEmail(emailInput.value)) {
+                        alert('Please enter a valid email address');
+                        return;
+                    }
+
+                    // Show temporary success feedback
+                    const originalPlaceholder = emailInput.placeholder;
+                    emailInput.placeholder = 'Subscribed! ✓';
+                    emailInput.style.color = '#4CAF50';
+                    emailInput.value = '';
+
+                    // Save subscription data (without discount)
+                    localStorage.setItem('newsletter-subscribed', 'true');
+                    localStorage.setItem('newsletter-email', emailInput.value);
+                    localStorage.setItem('newsletter-type', 'newsletter-only');
+
+                    // Reset placeholder after delay
+                    setTimeout(() => {
+                        emailInput.placeholder = originalPlaceholder;
+                        emailInput.style.color = '#333';
+                    }, 2000);
+                }
+
+                // Grid button event listeners
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('DOM Content Loaded');
+
+                    // Check if sticky newsletter element exists
+                    const stickyNewsletter = document.getElementById('sticky-newsletter');
+                    console.log('Sticky newsletter element:', stickyNewsletter);
+
+                    initStickyNewsletter();
+
+                    // Initialize newsletter only field
+                    const newsletterOnlyInput = document.getElementById('newsletter-only-email');
+                    if (newsletterOnlyInput) {
+                        newsletterOnlyInput.addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                subscribeNewsletterOnly(this);
+                            }
+                        });
+                    }
+
+                });
+</script>

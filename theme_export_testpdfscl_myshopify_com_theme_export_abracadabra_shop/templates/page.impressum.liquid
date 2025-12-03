@@ -1,0 +1,20 @@
+<!-- Full-width bar, content centered like the PDP -->
+{{ 'legal-pages.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs' %}
+
+<section class="mt-[4px]">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <h1 class="!text-[32px] md:!text-[48px] font-[400] mb-[20px] text-center">
+      {{ page.title | default: 'Impressum' }}
+    </h1>
+
+    {% if page.content != blank %}
+      <div class="legal-box">
+        <div class="legal-richtext">
+          {{ page.content }}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>

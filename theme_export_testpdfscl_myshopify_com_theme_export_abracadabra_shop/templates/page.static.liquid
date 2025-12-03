@@ -1,0 +1,19 @@
+<!-- Full-width bar, content centered like the PDP -->
+<section class="cart-breadcrumbs mt-[30px]">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <nav class="breadcrumb" role="navigation" aria-label="breadcrumbs">
+      <ol class="breadcrumb__list">
+        <li class="breadcrumb__item"><a class="breadcrumb__link" href="{{ routes.root_url }}">Startseite</a></li>
+        <li class="breadcrumb__item">
+          <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">
+            {{ page.title }}
+          </span>
+        </li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<section class="pt-[20px] md:pt-[30px]">
+  {{ page.content }}
+</section>

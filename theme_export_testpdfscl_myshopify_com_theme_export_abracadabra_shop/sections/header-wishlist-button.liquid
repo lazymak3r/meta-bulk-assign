@@ -1,0 +1,23 @@
+<a
+  href="/pages/wishlist"
+  aria-label="Wunschliste"
+  class="relative inline-flex items-center justify-center w-[20px] h-[20px] transition"
+>
+  <!-- heart icon -->
+  <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10.518 16.3423C10.2346 16.4423 9.76797 16.4423 9.48464 16.3423C7.06797 15.5173 1.66797 12.0757 1.66797 6.24232C1.66797 3.66732 3.74297 1.58398 6.3013 1.58398C7.81797 1.58398 9.15964 2.31732 10.0013 3.45065C10.843 2.31732 12.193 1.58398 13.7013 1.58398C16.2596 1.58398 18.3346 3.66732 18.3346 6.24232C18.3346 12.0757 12.9346 15.5173 10.518 16.3423Z" stroke="#1B2124" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+
+  <!-- wishlist badge -->
+  <span
+    id="wishlistCount"
+    class="absolute -top-1 -right-1 w-[15px] h-[15px] px-[2px] rounded-full text-[9px] leading-[15px] text-white text-center bg-[#647167] hidden"
+  ></span>
+</a>
+
+{% schema %}
+{
+  "name": "Wunschliste-Button",
+  "settings": []
+}
+{% endschema %}

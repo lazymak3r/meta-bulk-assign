@@ -1,0 +1,57 @@
+.announcement-banner-wrapper-{{ section.id }} {
+    display: block;
+    text-decoration: none;
+    --desktop-bg-color: {{ section.settings.desktop_bg_color }};
+    --desktop-text-color: {{ section.settings.desktop_text_color }};
+    --desktop-font-family: {{ section.settings.desktop_font.family }}, {{ section.settings.desktop_font.fallback_families }};
+    --desktop-font-style: {{ section.settings.desktop_font.style }};
+    --desktop-font-weight: {{ section.settings.desktop_font.weight }};
+    --mobile-bg-color: {{ section.settings.mobile_bg_color }};
+    --mobile-text-color: {{ section.settings.mobile_text_color }};
+    --mobile-font-family: {{ section.settings.mobile_font.family }}, {{ section.settings.mobile_font.fallback_families }};
+    --mobile-font-style: {{ section.settings.mobile_font.style }};
+    --mobile-font-weight: {{ section.settings.mobile_font.weight }};
+  }
+  .announcement-banner-content {
+    padding: 20px 15px;
+    text-align: center;
+    background-size: cover;
+    background-position: center;
+  }
+  .announcement-banner-content p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
+  }
+  /* Desktop Version Styles */
+  .announcement-banner-desktop {
+    background-color: var(--desktop-bg-color);
+    color: var(--desktop-text-color);
+    font-family: var(--desktop-font-family);
+    font-style: var(--desktop-font-style);
+    font-weight: var(--desktop-font-weight);
+    {% if section.settings.desktop_bg_image != blank %}
+      background-image: url('{{ section.settings.desktop_bg_image | image_url: width: 1920 }}');
+    {% endif %}
+  }
+  /* Mobile Version Styles */
+  .announcement-banner-mobile {
+    display: none; /* Hide mobile by default */
+    background-color: var(--mobile-bg-color);
+    color: var(--mobile-text-color);
+    font-family: var(--mobile-font-family);
+    font-style: var(--mobile-font-style);
+    font-weight: var(--mobile-font-weight);
+    {% if section.settings.mobile_bg_image != blank %}
+      background-image: url('{{ section.settings.mobile_bg_image | image_url: width: 750 }}');
+    {% endif %}
+  }
+  /* Media Query to switch between desktop and mobile */
+  @media screen and (max-width: 768px) {
+    .announcement-banner-desktop {
+      display: none; /* Hide desktop on small screens */
+    }
+    .announcement-banner-mobile {
+      display: block; /* Show mobile on small screens */
+    }
+  }

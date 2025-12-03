@@ -1,0 +1,20 @@
+{%- comment -%}
+  Formatted price snippet
+  
+  Usage:
+  {% render 'formatted-price', 
+    price: product.price,
+    linethrough: true,
+    star: false
+  %}
+{%- endcomment -%}
+
+{% if star == nil %}
+{% assign star = true %}
+{% endif %}
+
+{% if price %}
+	{% if linethrough %}<span style="text-decoration:line-through">{% endif %}
+		{{ price | money | replace: ',00', ',-' }}{% if star %}<sup class="font-bold" style="top:-0.3em">*</sup>{% endif %}
+	{% if linethrough %}</span>{% endif %}
+{% endif %}

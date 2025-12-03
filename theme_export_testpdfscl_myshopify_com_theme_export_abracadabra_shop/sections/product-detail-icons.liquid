@@ -1,0 +1,31 @@
+<!-- Brand row (logos) stays below if you want it -->
+
+{% assign pictograms = product.metafields.pictograms %}
+{% if pictograms and pictograms != blank %}
+
+<div
+  class="mt-[30px] md:mt-[60px] flex flex-wrap items-center gap-3"
+>
+{% for item in pictograms %}
+  {% assign key = item[0] %}
+  {% assign url = item[1].value %}
+
+  {% if url and url.size > 0 %}
+  
+    <img
+      src="{{ url }}"
+      alt="{{ key }}"
+      class="h-[50px] md:h-[80px] lg:h-[97px] max-w-[120px] object-contain"
+      loading="lazy"
+    >
+
+  {% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Produktsymbole"
+}
+{% endschema %}

@@ -1,0 +1,385 @@
+{{ 'section-featured-categories.css' | asset_url | stylesheet_tag }}
+
+{% assign nonblank_collections = section.settings.collections | compact %}
+{% assign collections_count = nonblank_collections.size %}
+{% assign initial_visible = 3 %}
+
+{% assign c0 = nonblank_collections[0] %}
+{% assign c1 = nonblank_collections[1] %}
+{% assign c2 = nonblank_collections[2] %}
+{% assign c3 = nonblank_collections[3] %}
+{% assign c4 = nonblank_collections[4] %}
+
+<section class="mt-[30px] 2xl:mt-[100px] featured-categories">
+  <div class="container max-w-[var(--container)] mx-auto">
+    {%- comment -%} ======== HERO 2×2 GRID ======== {%- endcomment -%}
+    <div class="grid gap-[32px] md:grid-cols-2 md:grid-rows-[auto_1fr] mb-8">
+      <!-- Left / top: Text card -->
+      <div class="bg-white">
+        <h1 class="text-[28px] md:text-[40px] leading-tight mb-3">{{ section.settings.hero_heading }}</h1>
+        {% if section.settings.hero_text != blank %}
+          <div class="prose max-w-[690px] !text-[14px] md:!text-[16px] !leading-relaxed">
+            {{ section.settings.hero_text }}
+          </div>
+        {% endif %}
+        <a
+          href="{{ section.settings.btn_link }}"
+          class="btn-primary mt-[40px]"
+        >
+          {{ section.settings.btn_label }}
+        </a>
+      </div>
+
+      <!-- Right: Tall image spanning two rows (uses c2) -->
+      {% if c2 %}
+        <a
+          href="{{ c2.url }}"
+          class="group relative overflow-hidden shadow-md hover:shadow-2xl row-span-2 collection-item"
+        >
+          {% assign subtitle2 = c2.metafields.custom.subtitle | default: c2.description | strip_html | truncate: 80 %}
+          {% if c2.image != blank %}
+            <img src="{{ c2.image | img_url: '1200x' }}" alt="{{ c2.title }}" class="w-full h-full object-cover">
+          {% else %}
+            <img
+              src="{{ c2.products.first.featured_image | img_url: '1200x' }}"
+              alt="{{ c2.title }}"
+              class="w-full h-full object-cover"
+            >
+          {% endif %}
+          <div
+            class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          ></div>
+          <div class="absolute inset-0 flex items-center justify-center p-6 text-center opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+            <div class="max-w-[90%] text-white">
+              <h3 class="text-[22px] md:text-[28px] mb-2 drop-shadow">{{ c2.title }}</h3>
+              {% if subtitle2 != blank %}
+                <p class="text-[14px] md:text-[16px] text-white/90">{{ subtitle2 }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+      {% endif %}
+
+      <!-- Left / bottom: two thumbs (c0 & c1) -->
+      <div class="flex gap-4 mt-[7px]">
+        {% for col in nonblank_collections limit: 2 %}
+          <a
+            href="{{ col.url }}"
+            class="group relative flex-1 overflow-hidden shadow-md hover:shadow-2xl collection-item"
+          >
+            {% assign sub = col.metafields.custom.subtitle | default: col.description | strip_html | truncate: 80 %}
+            {% if col.image != blank %}
+              <img src="{{ col.image | img_url: '900x' }}" alt="{{ col.title }}" class="w-full h-full object-cover">
+            {% else %}
+              <img
+                src="{{ col.products.first.featured_image | img_url: '900x' }}"
+                alt="{{ col.title }}"
+                class="w-full h-full object-cover"
+              >
+            {% endif %}
+            <div
+              class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            ></div>
+            <div class="absolute inset-0 flex items-center justify-center p-6 text-center opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+              <div class="max-w-[90%] text-white">
+                <h3 class="text-[22px] md:text-[28px] mb-2 drop-shadow">{{ col.title }}</h3>
+                {% if sub != blank %}
+                  <p class="text-[14px] md:text-[16px] text-white/90">{{ sub }}</p>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="container max-w-[var(--container)] mx-auto">
+    {% assign events_heading = section.settings.events_heading | default: section.settings.hero_heading %}
+    {% assign events_text = section.settings.events_text | default: section.settings.hero_text %}
+    {% assign events_btn_lbl = section.settings.events_btn_label | default: section.settings.btn_label %}
+    {% assign events_btn_url = section.settings.events_btn_link | default: section.settings.btn_link %}
+
+    {%- comment -%} ===== 2×2 layout: left tall, right text + bottom image ===== {%- endcomment -%}
+    <div class="grid gap-[33px] md:grid-cols-2 md:grid-rows-[auto_1fr] items-start">
+      <!-- Right / top: text block -->
+      <div class="bg-white md:col-start-2 md:row-start-1 pt-[28px]">
+        {% if events_heading != blank %}
+          <h1 class="text-[28px] md:text-[40px] leading-tight mb-3">
+            {{ events_heading }}
+          </h1>
+        {% endif %}
+        {% if events_text != blank %}
+          <div class="prose max-w-[690px] !text-[14px] md:!text-[16px] !leading-relaxed">
+            {{ events_text }}
+          </div>
+        {% endif %}
+        {% if events_btn_lbl != blank %}
+          <a href="{{ events_btn_url | default: '#' }}" class="btn-primary mt-[24px]">
+            {{ events_btn_lbl }}
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- Left: tall image spanning 2 rows (prefer c3, fallback c0) -->
+      {% assign events_left = c3 | default: c0 %}
+      {% if events_left %}
+        <a
+          href="{{ events_left.url }}"
+          class="group relative h-[498px] md:h-[798px] overflow-hidden shadow-md hover:shadow-2xl md:col-start-1 md:row-start-1 md:row-span-2 collection-item"
+        >
+          {% assign subtitle0 = events_left.metafields.custom.subtitle
+            | default: events_left.description
+            | strip_html
+            | truncate: 80
+          %}
+          {% if events_left.image != blank %}
+            <img
+              src="{{ events_left.image | img_url: '1400x' }}"
+              alt="{{ events_left.title }}"
+              class="w-full h-full object-cover"
+            >
+          {% else %}
+            <img
+              src="{{ events_left.products.first.featured_image | img_url: '1400x' }}"
+              alt="{{ events_left.title }}"
+              class="w-full h-full object-cover"
+            >
+          {% endif %}
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent"></div>
+          <div class="absolute inset-0 flex items-center justify-center p-6 text-center opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+            <div class="max-w-[90%] text-white">
+              <h3 class="text-[22px] md:text-[28px] mb-2 drop-shadow">{{ events_left.title }}</h3>
+              {% if subtitle0 != blank %}
+                <p class="text-[14px] md:text-[16px] text-white/90">{{ subtitle0 }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+      {% endif %}
+
+      <!-- Right / bottom: single image (prefer c4, fallback c1) -->
+      {% assign events_right = c4 | default: c1 %}
+      {% if events_right %}
+        <a
+          href="{{ events_right.url }}"
+          class="group relative h-[320px] md:h-[475px] overflow-hidden shadow-md hover:shadow-2xl md:self-end md:col-start-2 md:row-start-2 collection-item"
+        >
+          {% assign subtitle1 = events_right.metafields.custom.subtitle
+            | default: events_right.description
+            | strip_html
+            | truncate: 80
+          %}
+          {% if events_right.image != blank %}
+            <img
+              src="{{ events_right.image | img_url: '1200x' }}"
+              alt="{{ events_right.title }}"
+              class="w-full h-full object-cover"
+            >
+          {% else %}
+            <img
+              src="{{ events_right.products.first.featured_image | img_url: '1200x' }}"
+              alt="{{ events_right.title }}"
+              class="w-full h-full object-cover"
+            >
+          {% endif %}
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent"></div>
+          <div class="absolute inset-0 flex items-center justify-center p-6 text-center opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+            <div class="max-w-[90%] text-white">
+              <h3 class="text-[22px] md:text-[28px] mb-2 drop-shadow">{{ events_right.title }}</h3>
+              {% if sub != blank %}
+                <p class="text-[14px] md:text-[16px] text-white/90">{{ subtitle1 }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {%- comment -%} ======== NEWS MOSAIC ======== {%- endcomment -%}
+  <div class="container max-w-[var(--container)] mx-auto mt-12 md:mt-20">
+    <div class="grid gap-6 md:grid-cols-[1fr_2fr] items-start">
+      <!-- Left: text -->
+      <div class="bg-white p-0">
+        {% if section.settings.news_title != blank %}
+          <h3 class="text-[28px] md:text-[32px] leading-tight mb-3 text-brand">{{ section.settings.news_title }}</h3>
+        {% endif %}
+        {% if section.settings.news_text != blank %}
+          <div class="prose max-w-[690px] !text-[14px] md:!text-[16px] !leading-relaxed mb-4">
+            {{ section.settings.news_text }}
+          </div>
+        {% endif %}
+        {% if section.settings.news_btn_label != blank %}
+          <a href="{{ section.settings.news_btn_link | default: '#' }}" class="btn-primary mt-2 inline-flex">
+            {{ section.settings.news_btn_label }}
+          </a>
+        {% endif %}
+      </div>
+
+      {%- assign mosaic_top = nonblank_collections | slice: 5, 2 -%}
+      {%- assign mosaic_bottom = nonblank_collections | slice: 7, 2 -%}
+
+      <!-- RIGHT / TOP: c3 & c4 small (stays in right col only) -->
+      <div class="grid grid-cols-2 gap-[32px] md:grid-cols-[repeat(2,381px)] justify-end">
+        {% for col in mosaic_top limit: 2 %}
+          {% if col %}
+            {% assign sub = col.metafields.custom.subtitle | default: col.description | strip_html | truncate: 80 %}
+            <a href="{{ col.url }}" class="group block w-full relative overflow-hidden shadow-md hover:shadow-2xl">
+              {% if col.image != blank %}
+                <img
+                  src="{{ col.image | img_url: '900x' }}"
+                  alt="{{ col.title }}"
+                  class="w-full h-[180px] md:h-[220px] object-cover"
+                >
+              {% else %}
+                <img
+                  src="{{ col.products.first.featured_image | img_url: '900x' }}"
+                  alt="{{ col.title }}"
+                  class="w-full h-[180px] md:h-[220px] object-cover"
+                >
+              {% endif %}
+              <div
+                class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              ></div>
+              <div class="absolute inset-0 flex items-center justify-center p-6 text-center opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                <div class="max-w-[90%] text-white">
+                  <h3 class="text-[22px] md:text-[28px] mb-2 drop-shadow">{{ col.title }}</h3>
+                  {% if sub != blank %}
+                    <p class="text-[14px] md:text-[16px] text-white/90">{{ sub }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- BOTTOM (SPAN FULL WIDTH): c5 & c6 big -->
+      <div class="hidden md:grid grid-cols-2 gap-[32px] md:col-span-2">
+        {% for col in mosaic_bottom limit: 2 %}
+          {% if col %}
+            {% assign sub = col.metafields.custom.subtitle | default: col.description | strip_html | truncate: 80 %}
+            <a
+              href="{{ col.url }}"
+              class="group block w-full h-[360px] md:h-[691px] relative overflow-hidden shadow-md hover:shadow-2xl"
+            >
+              {% if col.image != blank %}
+                <img src="{{ col.image | img_url: '1400x' }}" alt="{{ col.title }}" class="w-full h-full object-cover">
+              {% else %}
+                <img
+                  src="{{ col.products.first.featured_image | img_url: '1400x' }}"
+                  alt="{{ col.title }}"
+                  class="w-full h-full object-cover"
+                >
+              {% endif %}
+              <div
+                class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              ></div>
+              <div class="absolute inset-0 flex items-center justify-center p-6 text-center opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                <div class="max-w-[90%] text-white">
+                  <h3 class="text-[22px] md:text-[28px] mb-2 drop-shadow">{{ col.title }}</h3>
+                  {% if sub != blank %}
+                    <p class="text-[14px] md:text-[16px] text-white/90">{{ sub }}</p>
+                  {% endif %}
+                </div>
+              </div>
+            </a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Ausgewählte Kategorien",
+  "settings": [
+    { "type": "collection_list", "id": "collections", "label": "Kategorien auswählen" },
+    { "type": "text", "id": "title", "label": "Titel", "default": "Kategorien" },
+
+    { "type": "text", "id": "hero_heading", "label": "Hero Überschrift", "default": "Beratung" },
+    {
+      "type": "richtext",
+      "id": "hero_text",
+      "label": "Hero Text",
+      "default": "<p>Roomio Accessoires verwandeln dein Wohnzimmer ganz nach deinen Vorstellungen…</p>"
+    },
+    { "type": "text", "id": "btn_label", "label": "Button Text", "default": "Jetzt ansehen" },
+    { "type": "url", "id": "btn_link", "label": "Button Link" },
+
+    { "type": "text", "id": "news_title", "label": "News Titel", "default": "News" },
+    {
+      "type": "richtext",
+      "id": "news_text",
+      "label": "News Text",
+      "default": "<p>Roomio bringt nicht nur mit Sofas unverwechselbaren Stil in deine vier Wände …</p>"
+    },
+    { "type": "text", "id": "news_btn_label", "label": "News Button Text", "default": "Roomio entdecken" },
+    { "type": "url", "id": "news_btn_link", "label": "News Button Link" },
+
+    { "type": "header", "content": "Events" },
+    { "type": "text", "id": "events_heading", "label": "Events Überschrift", "default": "Events" },
+    {
+      "type": "richtext",
+      "id": "events_text",
+      "label": "Events Text",
+      "default": "<p>Roomio Accessoires verwandeln dein Wohnzimmer ganz nach deinen Vorstellungen…</p>"
+    },
+    { "type": "text", "id": "events_btn_label", "label": "Events Button Text", "default": "Jetzt ansehen" },
+    { "type": "url", "id": "events_btn_link", "label": "Events Button Link" }
+  ],
+  "blocks": [
+    {
+      "type": "news_tile",
+      "name": "News Tile",
+      "limit": 4,
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Bild" },
+        { "type": "text", "id": "alt", "label": "Alt-Text" },
+        { "type": "url", "id": "link", "label": "Link (optional)" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Ausgewählte Kategorien" }]
+}
+{% endschema %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const rest = document.querySelector('#fc-rest');
+    const loadMoreBtn = document.querySelector('#featured-categories-load-more-btn');
+    if (!rest || !loadMoreBtn) return;
+
+    const items = rest.querySelectorAll('.collection-item');
+    let visibleCount = {{ initial_visible }};
+    const perLoad = {{ initial_visible }};
+
+    function setLoading(on) {
+      loadMoreBtn.disabled = on;
+      loadMoreBtn.setAttribute('aria-busy', on ? 'true' : 'false');
+      loadMoreBtn.querySelector('.btn-loading')?.classList.toggle('hidden', !on);
+    }
+    function render() {
+      items.forEach((el, idx) => el.classList.toggle('hidden', idx >= visibleCount));
+      loadMoreBtn.style.display = (visibleCount >= items.length) ? 'none' : 'flex';
+    }
+    loadMoreBtn.addEventListener('click', async () => {
+      setLoading(true);
+      const next = Array.from(items).slice(visibleCount, visibleCount + perLoad);
+      try {
+        await Promise.all(next.map(el => {
+          const img = el.querySelector('img');
+          return img && img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+        }));
+      } finally {
+        visibleCount += perLoad;
+        render();
+        setLoading(false);
+      }
+    });
+
+    render();
+  });
+</script>

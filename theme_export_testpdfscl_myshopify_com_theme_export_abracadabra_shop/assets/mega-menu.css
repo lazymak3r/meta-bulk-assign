@@ -1,0 +1,508 @@
+/* ============ Mega Menu — Base ============ */
+#megaMenu {
+    --mm-top-font: 18px; /* desktop top-level row font */
+    --mm-sub-font: 16px; /* desktop nested sub-items font */
+    --mm-icon: 16px;
+    --mm-gap: 42px;
+    --mm-row-gap: 8px;
+    --mm-sep: #ebebeb;
+    --mm-text: #2e2e2d;
+    --mm-soft: #f6f6f6;
+    --mm-text-alt: #647167;
+}
+
+/* Collapse/expand (mobile tree uses JS to toggle .hidden) */
+#megaMenu .mm-subpanel {
+    display: block;
+}
+#megaMenu .mm-subpanel.hidden {
+    display: none !important;
+}
+
+/* Focus handling */
+#megaMenu a:focus:not(:focus-visible),
+#megaMenu button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Remove any theme chevrons */
+#megaMenu #mmPanel a::after,
+#megaMenu .mm-tree a::after {
+    content: none !important;
+}
+
+/* ============ Desktop panel ============ */
+#mmPanel {
+    background: #f5f5f5;
+}
+#mmPanel .grid {
+    column-gap: var(--mm-gap) !important;
+    row-gap: var(--mm-row-gap) !important;
+}
+#mmPanel .grid > * {
+    padding: 0 !important;
+}
+#mmPanel ul,
+#mmPanel ol {
+    list-style: none !important;
+    text-align: left !important;
+}
+
+/* Desktop top-level rows */
+#mmPanel .mm-sub,
+#mmPanel ul:not(.mm-subpanel) > li > a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px;
+    font-size: var(--mm-top-font);
+    line-height: 1.3;
+    padding: 2px 0;
+}
+#mmPanel .chev {
+    width: var(--mm-icon);
+    height: var(--mm-icon);
+    flex: 0 0 var(--mm-icon);
+    align-self: center;
+    display: block;
+    opacity: 0.4;
+}
+#megaMenu .mm-sub[aria-expanded="true"] .chev,
+#megaMenu .mm-sub-toggle[aria-expanded="true"] .chev {
+    transform: rotate(90deg);
+}
+
+/* Desktop nested list */
+#mmPanel .mm-subpanel {
+    margin-top: 2px;
+    font-size: var(--mm-sub-font);
+    line-height: 1.25;
+}
+/* Hide repeated heading when all panels are shown together */
+#mmPanel.mm-all h5 {
+    display: none;
+}
+#mmPanel .mm-subpanel > li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+}
+#mmPanel .mm-subpanel > li::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.6;
+    flex: 0 0 4px;
+}
+#mmPanel h5 {
+    margin: 0;
+    padding-bottom: 20px;
+}
+
+/* base chevron styling */
+#mmPanel .mm-sub[aria-controls] .chev {
+    --rot: 0deg;
+    --tx: 0px;
+    width: var(--mm-icon);
+    height: var(--mm-icon);
+    opacity: 0.4;
+    transform-origin: 50% 50%;
+    transform: translateX(var(--tx)) rotate(var(--rot));
+    transition: transform 0.22s ease, opacity 0.15s ease;
+    will-change: transform;
+}
+
+#mmPanel .mm-sub[aria-controls][aria-expanded="true"] .chev {
+    --rot: 90deg;
+    opacity: 0.6; /* optional */
+}
+
+/* hover nudge without killing rotation */
+#mmPanel .mm-sub[aria-controls]:hover .chev,
+#mmPanel .mm-sub[aria-controls]:focus-visible .chev {
+    --tx: 2px;
+}
+
+/* respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    #mmPanel .mm-sub .chev {
+        transition: none;
+    }
+}
+
+/* ============ Mobile ============ */
+@media (max-width: 767.98px) {
+    /* Ensure mobile panel scrolls when content grows */
+    #megaMenu {
+        overflow: hidden;
+        touch-action: pan-y;
+    }
+    #mmMobile {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0; /* header height */
+        bottom: 0;
+        height: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        z-index: 10000;
+    }
+    #mmMobile .mm-mob {
+        max-height: none;
+        overflow: visible;
+    }
+    /* ===== Mobile accordion tree (new) ===== */
+    #mmMobile nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    #mmMobile .mm-list > li {
+        border-bottom: 1px solid var(--mm-sep);
+    }
+    #mmMobile .mm-list > li:last-child {
+        border-bottom: 0;
+    }
+    #mmMobile .mm-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        text-decoration: none;
+        color: var(--mm-text);
+        font-size: 18px;
+    }
+    #mmMobile .mm-sub-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 14px 16px;
+        background: transparent;
+        border: 0;
+        color: var(--mm-text);
+        font-size: 18px;
+    }
+    #mmMobile .mm-sub-toggle .chev {
+        width: 5px;
+        height: 10px;
+        opacity: 0.5;
+        transition: transform 0.18s ease;
+    }
+    #mmMobile .mm-sub-toggle[aria-expanded="true"] .chev {
+        transform: rotate(90deg);
+        opacity: 0.7;
+    }
+
+    /* Expanded state color */
+    #mmMobile .mm-sub-toggle[aria-expanded="true"],
+    #mmPanel .mm-sub-toggle[aria-expanded="true"] {
+        color: #647167;
+    }
+    #mmMobile .mm-sub-toggle[aria-expanded="true"] .chev path,
+    #mmPanel .mm-sub-toggle[aria-expanded="true"] .chev path {
+        stroke: #647167;
+    }
+
+    /* nested list */
+    #mmMobile .mm-subpanel {
+        padding: 0 0 6px 4px; /* tighter */
+        background: transparent;
+    }
+    /* third level indent: only subpanel inside an li */
+    #mmMobile .mm-subpanel > li > .mm-subpanel {
+        padding-left: 24px;
+    }
+    #mmMobile .mm-subpanel > li {
+        border: 0;
+    }
+    #mmMobile .mm-subpanel > li > a,
+    #mmMobile .mm-subpanel > li > div > a {
+        display: block;
+        padding: 4px 10px 4px 24px; /* tighter vertical, deeper indent */
+        position: relative;
+        color: var(--mm-text);
+        font-size: 16px;
+        text-decoration: none;
+    }
+    #mmMobile .mm-subpanel > li > a::before,
+    #mmMobile .mm-subpanel > li > div > a::before {
+        content: "";
+        position: absolute;
+        left: 12px; /* align with increased indent */
+        top: 50%;
+        width: 4px;
+        height: 4px;
+        transform: translateY(-50%);
+        background: currentColor;
+        border-radius: 9999px;
+        opacity: 0.6;
+    }
+    #mmMobile .mm-subpanel > li > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2px 10px; /* smaller vertical gap */
+    }
+    #mmMobile .mm-subpanel > li > div .mm-sub-toggle {
+        padding: 0 0 0 12px;
+        width: auto;
+    }
+
+    /* Close button pinned to overlay’s top-right */
+    /* (The parent .mm-mob is already positioned; this anchors the X inside it) */
+    #megaMenu .mm-x {
+        position: absolute;
+        top: -54px;
+        right: 12px;
+        z-index: 10001;
+    }
+
+    /* Root tiles (2 columns) */
+    .mm-view[data-view="root"] .mm-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding: 12px 16px 24px;
+    }
+    .mm-view[data-view="root"] .mm-row {
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #fff;
+    }
+    .mm-view[data-view="root"] .mm-row .chev {
+        display: none;
+    }
+    .mm-view[data-view="root"] .mm-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--mm-text);
+    }
+    .mm-view[data-view="root"] .mm-thumbs {
+        display: grid;
+        grid-auto-flow: column;
+        gap: 6px;
+        margin-left: 8px;
+    }
+    .mm-view[data-view="root"] .mm-thumbs img {
+        width: 52px;
+        height: 36px;
+        object-fit: cover;
+        border: 1px solid #e6e6e6;
+        background: #fff;
+    }
+
+    /* Sub-views list container */
+    .mm-view:not([data-view="root"]) .mm-list {
+        display: block;
+        padding: 8px 0 24px; /* we add per-row padding below */
+    }
+
+    /* Breadcrumb (Back | Centered title | spacer) */
+    #megaMenu .mm-breadcrumb {
+        display: grid !important;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        width: 100%;
+    }
+    #megaMenu .mm-bc-back {
+        grid-column: 1;
+        justify-self: start;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        color: var(--mm-text);
+    }
+
+    #megaMenu .mm-bc-back span {
+        font-size: 14px !important;
+        font-weight: 400;
+        line-height: 1.3;
+    }
+
+    #megaMenu .mm-bc-current {
+        grid-column: 2;
+        justify-self: center;
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--mm-text-alt);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #megaMenu .mm-breadcrumb::after {
+        content: "";
+        grid-column: 3;
+    }
+    #megaMenu .mm-bc-sep {
+        display: none;
+    }
+
+    /* ---------- Sub list rows: [Thumb Card] [Title] [Chevron] ---------- */
+    /* full-width click target */
+    #megaMenu .mm-list--sub .mm-link {
+        display: grid !important;
+        grid-template-columns: 104px 1fr 20px; /* image, flexible title, chevron */
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        padding: 16px 16px;
+        text-decoration: none;
+        border-bottom: 1px solid var(--mm-sep);
+    }
+
+    /* separators between rows */
+    #megaMenu .mm-list--sub li + li .mm-link {
+        border-top: 1px solid var(--mm-sep);
+    }
+
+    /* Thumbnail “card” */
+    #megaMenu .mm-list--sub .mm-thumb {
+        width: 104px;
+        aspect-ratio: 16 / 9; /* consistent box */
+        overflow: hidden;
+        background: var(--mm-soft);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+        display: block;
+    }
+    #megaMenu .mm-list--sub .mm-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Title */
+    #megaMenu .mm-list--sub .mm-title {
+        font-size: 18px;
+        line-height: 1.3;
+        color: var(--mm-text);
+        font-weight: 500;
+    }
+
+    /* Chevron at far right */
+    #megaMenu .mm-list--sub .chev {
+        width: 20px !important;
+        height: 20px !important;
+        justify-self: end;
+        opacity: 0.4;
+        transition: transform 0.18s ease;
+    }
+
+    /* Hover / focus treatment */
+    #megaMenu .mm-list--sub .mm-link:hover .chev {
+        transform: translateX(3px);
+    }
+    #megaMenu .mm-list--sub .mm-link:focus-visible {
+        outline: 2px solid #9ec2a6;
+        outline-offset: 2px;
+        border-radius: 12px;
+    }
+}
+
+/* Desktop left picker */
+@media (min-width: 768px) {
+    .mm-left {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 24px;
+        justify-content: end; /* center headers across the row */
+        width: 100%;
+        padding: 0 0 16px 0;
+        border-bottom: 0;
+    }
+    .mm-left-row {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: auto;
+        padding: 8px 10px;
+        background: transparent;
+        text-align: left;
+        transition: color 0.2s, border-color 0.2s;
+        border-bottom: 0;
+    }
+    .mm-left-row:hover {
+        .mm-left-title {
+            color: var(--mm-text-alt) !important;
+            text-decoration: underline;
+        }
+    }
+
+    .mm-left-chevron {
+        display: none !important;
+    }
+
+    .mm-left-icon img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+    }
+    .mm-left-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2e2e2d;
+        transition: color 0.3s;
+    }
+    .mm-left-row .chev {
+        margin-left: auto;
+        opacity: 0.4;
+    }
+
+    .mm-left-row.is-active {
+        border-bottom: 0;
+    }
+}
+
+/* make sure mobile overlay is hidden on desktop (already true, but reaffirm) */
+@media (min-width: 768px) {
+    #mmMobile {
+        display: none !important;
+    }
+}
+
+/* accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .mm-left-chevron {
+        transition: none;
+    }
+}
+
+/* Smaller font sizes for laptops (MacBook Air, ~1440px width) */
+@media (max-width: 1536px) {
+    #megaMenu {
+        --mm-top-font: 12px; /* instead of 18px */
+        --mm-sub-font: 10px; /* instead of 16px */
+        --mm-icon: 8px;
+    }
+
+    #mmPanel .mm-sub,
+    #mmPanel ul:not(.mm-subpanel) > li > a {
+        font-size: var(--mm-top-font) !important;
+    }
+
+    #mmPanel .mm-subpanel {
+        font-size: var(--mm-sub-font) !important;
+    }
+
+    #mmPanel svg {
+        width: var(--mm-icon) !important;
+        height: var(--mm-icon) !important;
+    }
+
+    .mm-left-title {
+        font-size: 18px !important; /* slightly smaller than 20px */
+    }
+}

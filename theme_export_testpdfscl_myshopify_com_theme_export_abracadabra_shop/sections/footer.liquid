@@ -1,0 +1,499 @@
+{{ 'section-footer.css' | asset_url | stylesheet_tag }}
+
+<footer class="mt-[50px] md:mt-[150px] bg-surface">
+  <div
+    class="container max-w-[var(--container)] mx-auto px-[20px] pt-[50px] pb-[61px] md:pb-[73px] md:pt-[90px]"
+  >
+    <!-- MOBILE: accordions + newsletter -->
+    <div class="md:hidden">
+      <!-- About -->
+      <details class="group">
+        <summary
+          class="flex items-center justify-between pb-[16px] text-[20px] font-[400] cursor-pointer"
+        >
+          Über Roomio
+
+          <div class="ml-2 flex items-center">
+            <img
+              src="{{ 'chevron-down.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] block group-open:hidden transition-transform duration-200"
+            >
+
+            <img
+              src="{{ 'chevron-up.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] hidden group-open:block transition-transform duration-200"
+            >
+          </div>
+        </summary>
+        {% assign menu = linklists[section.settings.menu1] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="pb-4 text-[16px] leading-[27px] text-[#2E2E2D] font-[400]"
+          >
+            <ul class="flex flex-col gap-[4px]">
+              {% for link in menu.links %}
+                <li>
+                  <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+        {% endif %}
+      </details>
+
+      <!-- Collection -->
+      <details class="group">
+        <summary
+          class="flex items-center justify-between pt-[11px] pb-[16px] text-[20px] font-normal cursor-pointer"
+        >
+          Kollektion
+          <div class="ml-2 flex items-center">
+            <img
+              src="{{ 'chevron-down.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] block group-open:hidden transition-transform duration-200"
+            >
+
+            <img
+              src="{{ 'chevron-up.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] hidden group-open:block transition-transform duration-200"
+            >
+          </div>
+        </summary>
+
+        {% assign menu = linklists[section.settings.menu2] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="pb-4 text-[16px] leading-[27px] text-[#2E2E2D] font-[400]"
+          >
+            <ul class="flex flex-col gap-[4px]">
+              {% for link in menu.links %}
+                <li>
+                  <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+        {% endif %}
+      </details>
+
+      <!-- Customer Service -->
+      <details class="group">
+        <summary
+          class="flex items-center justify-between pt-[11px] pb-[16px] text-[20px] font-normal cursor-pointer"
+        >
+          Kundendienst
+          <div class="ml-2 flex items-center">
+            <img
+              src="{{ 'chevron-down.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] block group-open:hidden transition-transform duration-200"
+            >
+
+            <img
+              src="{{ 'chevron-up.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] hidden group-open:block transition-transform duration-200"
+            >
+          </div>
+        </summary>
+
+        {% assign menu = linklists[section.settings.menu3] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="pb-4 text-[16px] leading-[27px] text-[#2E2E2D] font-[400]"
+          >
+            <ul class="flex flex-col gap-[4px]">
+              {% for link in menu.links %}
+                <li>
+                  <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+        {% endif %}
+      </details>
+
+      <details class="group">
+        <summary class="flex items-center justify-between pt-[11px] pb-[16px] text-[20px] font-normal cursor-pointer">
+          Allgemein
+          <div class="ml-2 flex items-center">
+            <img
+              src="{{ 'chevron-down.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] block group-open:hidden transition-transform duration-200"
+            >
+
+            <img
+              src="{{ 'chevron-up.svg' | asset_url }}"
+              alt=""
+              class="h-[6px] w-[13px] text-[#3F3F3F] hidden group-open:block transition-transform duration-200"
+            >
+          </div>
+        </summary>
+
+        {% assign menu = linklists[section.settings.menu4] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="pb-4 text-[16px] leading-[27px] text-[#2E2E2D] font-[400]"
+          >
+            {% for link in menu.links %}
+              <li>
+                <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </details>
+
+      <!-- Newsletter -->
+      <div class="pt-8">
+        <h4 class="text-[#2E2E2D] font-[500] text-[18px]">Erhalten Sie 25% Rabatt</h4>
+        <p class="mt-[12px] font-[400] text-[14px] leading-[20px] text-[#2E2E2D]">
+          Bleiben Sie über neue Produkteinführungen, Tipps zur Heimwerkerarbeit und exklusive Sonderangebote auf dem
+          Laufenden.
+        </p>
+
+        <form class="mt-[20px]">
+          <div class="relative w-full">
+            <input
+              type="email"
+              placeholder="Geben Sie Ihre E-Mail-Adresse an"
+              class="w-full h-[54px] rounded-full pl-4 pr-[110px] text-[12px] leading-[20px] md:text-[14px] border border-black/10 bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/10"
+              aria-label="Email address"
+            >
+            <button
+              type="submit"
+              class="absolute top-[6px] right-2 w-[120px] h-[42px] px-6 rounded-full bg-primary text-white text-[14px] hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              Anmeldung
+            </button>
+          </div>
+        </form>
+
+        <!-- Payment badges -->
+        <div
+          class="mt-[37px] border-t border-white pt-6 flex flex-wrap items-center gap-2"
+        >
+          <span class="pay-badge">
+            <img
+              src="{{ 'visa-logo.svg' | asset_url }}"
+              alt="Visa"
+            >
+          </span>
+
+          <span class="pay-badge">
+            <img
+              src="{{ 'Bitcoin.svg' | asset_url }}"
+              alt="Bitcoin"
+            >
+          </span>
+
+          <span class="pay-badge">
+            <img
+              src="{{ 'PayPal.svg' | asset_url }}"
+              alt="PayPal"
+            >
+          </span>
+
+          <span class="pay-badge">
+            <img
+              src="{{ 'Mastercard.svg' | asset_url }}"
+              alt="Mastercard"
+            >
+          </span>
+
+          <span class="pay-badge">
+            <img
+              src="{{ 'Amazon.svg' | asset_url }}"
+              class="h-[12px]"
+              alt="Amazon"
+            >
+          </span>
+
+          <span class="pay-badge">
+            <img
+              src="{{ 'Discover.svg' | asset_url }}"
+              alt="Discover"
+            >
+          </span>
+
+          <span class="pay-badge">
+            <img
+              src="{{ 'ApplePay.svg' | asset_url }}"
+              alt="Apple Pay"
+            >
+          </span>
+
+          <span class="pay-badge">
+            <img
+              src="{{ 'Alipay.svg' | asset_url }}"
+              alt="Alipay"
+            >
+          </span>
+        </div>
+      </div>
+    </div>
+    <!-- /MOBILE -->
+
+    <!-- DESKTOP: 6-col grid + newsletter (hidden on mobile) -->
+    <div
+      class="hidden md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-8 lg:[grid-template-columns:repeat(4,minmax(0,1fr))_157px_420px] lg:gap-x-[45px] items-start justify-items-start"
+    >
+      <!-- About -->
+      <div class="min-w-0">
+        <h4 class="text-[#2E2E2D] font-[400] text-[20px]">Über Roomio</h4>
+
+        {% assign menu = linklists[section.settings.menu1] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="mt-4 space-y-2 text-[16px] leading-[27px] text-[#2E2E2D] font-[400]"
+          >
+            <ul class="flex flex-col gap-[4px]">
+              {% for link in menu.links %}
+                <li>
+                  <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+        {% endif %}
+      </div>
+
+      <!-- Collection A -->
+      <div class="min-w-0">
+        <h4 class="text-[#2E2E2D] font-[400] text-[20px]">Kollektion</h4>
+
+        {% assign menu = linklists[section.settings.menu2] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="mt-4 space-y-2 text-[16px] leading-[27px] text-[#2E2E2D]"
+          >
+            <ul class="flex flex-col gap-[4px]">
+              {% for link in menu.links %}
+                <li>
+                  <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+        {% endif %}
+      </div>
+
+      <!-- Customer Service -->
+      <div class="min-w-0">
+        <h4 class="text-[#2E2E2D] font-[400] text-[20px]">Kundendienst</h4>
+
+        {% assign menu = linklists[section.settings.menu3] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="mt-4 space-y-2 text-[16px] leading-[27px] text-[#2E2E2D]"
+          >
+            <ul class="flex flex-col gap-[4px]">
+              {% for link in menu.links %}
+                <li>
+                  <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+        {% endif %}
+      </div>
+
+      <div class="min-w-0">
+        <h4 class="text-[#2E2E2D] font-[400] text-[20px]">Allgemein</h4>
+
+        {% assign menu = linklists[section.settings.menu4] %}
+        {% if menu.links.size > 0 %}
+          <ul
+            class="mt-4 space-y-2 text-[16px] leading-[27px] text-[#2E2E2D]"
+          >
+            <ul class="flex flex-col gap-[4px]">
+              {% for link in menu.links %}
+                <li>
+                  <a href="{{ link.url }}" class="hover:underline">{{ link.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+        {% endif %}
+      </div>
+
+      <!-- Newsletter -->
+      <div
+        class="min-w-0 md:col-span-2 lg:col-span-1 lg:col-start-6 w-full lg:max-w-[420px]"
+      >
+        <h4 class="text-customGray font-medium text-[24px]">Erhalten Sie 25% Rabatt</h4>
+        <p class="mt-[12px] text-[16px] leading-[24px] text-[#2E2E2D]">
+          Bleiben Sie über neue Produkteinführungen, Tipps zur Heimwerkerarbeit und exklusive Sonderangebote auf dem
+          Laufenden.
+        </p>
+
+        <form class="mt-[20px] md:mt-[36px]">
+          <div class="relative w-full">
+            <input
+              type="email"
+              placeholder="Geben Sie Ihre E-Mail-Adresse an"
+              class="w-full h-[60px] rounded-full pl-4 pr-[140px] text-[14px] bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/10"
+              aria-label="Email address"
+            >
+            <button
+              type="submit"
+              class="absolute top-[5px] right-2 w-[140px] h-[50px] px-6 rounded-full bg-primary text-white text-[14px] hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              Anmeldung
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- /DESKTOP -->
+    <!-- Bottom row (shared) -->
+    <div
+      class="hidden md:mt-12 md:border-t md:border-white md:block"
+    ></div>
+
+    <div
+      class="mt-[19px] md:mt-[73px] flex flex-col items-center gap-4 md:flex-col md:items-center md:justify-center lg:flex-row lg:items-center lg:justify-between"
+    >
+      <p
+        class="text-[14px] font-[400] md:text-[16px] leading-[20px] md:leading-[24px] text-black md:order-2 lg:order-1"
+      >
+        @ 2025 ROOMIO - Alle Rechte vorbehalten.
+      </p>
+
+      <!-- Payment badges -->
+      <div
+        class="hidden md:flex flex-wrap items-center gap-2 md:w-full md:justify-center lg:w-auto lg:justify-end md:order-1 lg:order-2"
+      >
+        <span class="pay-badge">
+          <img src="{{ 'visa-logo.svg' | asset_url }}">
+        </span>
+
+        <span class="pay-badge">
+          <img src="{{ 'Bitcoin.svg' | asset_url }}" alt="Bitcoin">
+        </span>
+
+        <span class="pay-badge">
+          <img src="{{ 'PayPal.svg' | asset_url }}" alt="PayPal">
+        </span>
+
+        <span class="pay-badge">
+          <img
+            src="{{ 'Mastercard.svg' | asset_url }}"
+            alt="Mastercard"
+          >
+        </span>
+
+        <span class="pay-badge">
+          <img
+            src="{{ 'Amazon.svg' | asset_url }}"
+            class="h-[12px]"
+            alt="Amazon"
+          >
+        </span>
+
+        <span class="pay-badge">
+          <img
+            src="{{ 'Discover.svg' | asset_url }}"
+            alt="Discover"
+          >
+        </span>
+
+        <span class="pay-badge">
+          <img
+            src="{{ 'ApplePay.svg' | asset_url }}"
+            alt="Apple Pay"
+          >
+        </span>
+
+        <span class="pay-badge">
+          <img src="{{ 'Alipay.svg' | asset_url }}" alt="Alipay">
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="legal">
+    <div class="container max-w-[var(--container)] mx-auto pt-10 pb-10">
+      <p>
+        * Alle Preise inkl. gesetzl. Mehrwertsteuer zzgl. <u>Versandkosten</u> und ggf. Nachnahmegebühren, wenn nicht
+        anders angegeben.
+      </p>
+      <p>
+        * Alle Preise verstehen sich in Euro inklusive der derzeit geltenden 19% Mehrwertsteuer. Nicht enthalten sind
+        gegebenenfalls zusätzlich entstehende Kosten für Lieferung und Montage. Ein Lieferservice (und gegebenenfalls
+        Montageservice) ist abhängig von Ihrem Wohnsitz und dem bestellten Artikel grundsätzlich möglich, muss aber
+        separat bestellt und bezahlt werden. Falls Sie keine Lieferung (und gegebenenfalls Montage) beauftragen, muss
+        der bestellte Artikel (ggf. innerhalb von vier Wochen nach Bereitstellung) abgeholt werden. Bei einigen
+        gesondert gekennzeichneten Produkten gelten die nachfolgenden Besonderheiten:
+      </p>
+      <p>&nbsp;</p>
+      <p class="pl-[30px]">
+        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+          <path stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+        </svg>
+        Bei den mit diesem Symbol gekennzeichneten Produkten handelt es sich um ein reines (unverbindliches)
+        Informationsangebot. Diese Produkte können derzeit leider nicht online bestellt werden, sind aber bei uns vor
+        Ort meist sofort erhältlich. Um Ihren Einkauf so bequem wie möglich zu machen, können Sie die
+        Detailinformationen zu diesen Produkten gerne ausdrucken. Bitte informieren Sie sich gerne direkt bei uns vor
+        Ort im Möbelhaus.
+      </p>
+      <p>&nbsp;</p>
+      <p class="pl-[30px]">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#000"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M16.5 12a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m0 0c0 1.657 1.007 3 2.25 3S21 13.657 21 12a9 9 0 1 0-2.636 6.364M16.5 12V8.25"/>
+        </svg>
+        Die mit diesem Symbol gekennzeichneten Produkte sind nur online bestellbar und stehen nicht zur Selbstabholung
+        beim Verkäufer bereit. Beim Kauf dieses Produkts muss zusätzlich ein Lieferservice beauftragt werden. Über die
+        Liefer- und Montagemöglichkeiten sowie die damit verbundenen Kosten informieren wir Sie gerne unter dem
+        nachfolgenden Link <a href="#">Liefer- und Montageservice</a>. Die genauen Lieferkosten können Sie sich für
+        jeden einzelnen Artikel bereits auf unserer Produktdetailseite berechnen lassen. Im Falle der gleichzeitigen
+        Bestellung mehrerer Artikel werden die Lieferkosten im Warenkorb berechnet. Alle entstehenden Lieferkosten
+        werden vor Abgabe Ihrer Bestellung nochmals auf einer Übersichtsseite angezeigt.
+      </p>
+      <p>&nbsp;</p>
+      <p>
+        Datenfehler, Irrtümer und Änderungen vorbehalten. Farben können von der Darstellung am Bildschirm abweichen.
+        Eventuell in den Bildern enthaltene Dekorationsartikel sind nicht im Lieferumfang enthalten.
+      </p>
+    </div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Fußzeile",
+  "class": "section-footer",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu1",
+      "label": "Wähle ein Menü für die Links"
+    },
+    {
+      "type": "link_list",
+      "id": "menu2",
+      "label": "Wähle ein Menü für die Links"
+    },
+    {
+      "type": "link_list",
+      "id": "menu3",
+      "label": "Wähle ein Menü für die Links"
+    },
+    {
+      "type": "link_list",
+      "id": "menu4",
+      "label": "Wähle ein Menü für die Links"
+    }
+  ],
+  "blocks": [],
+  "default": {}
+}
+{% endschema %}

@@ -1,0 +1,48 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+    "sections": {
+        "all": {
+            "colors": {
+                "label": "Farben",
+                "accent_1": {
+                    "label": "Akzent 1"
+                },
+                "accent_2": {
+                    "label": "Akzent 2"
+                },
+                "background_1": {
+                    "label": "Hintergrund 1"
+                },
+                "background_2": {
+                    "label": "Hintergrund 2"
+                },
+                "inverse": {
+                    "label": "Invers"
+                }
+            }
+        },
+        "category_products_grid": {
+            "name": "Kategorien - Produkte",
+            "pagination_mode": {
+                "click": "Klicken",
+                "scroll": "Scrollen",
+                "label": "Paginierungsmodus"
+            },
+            "load_more": "Mehr laden",
+            "loading_text": "Wird geladen..."
+        }
+    },
+    "gift_card": {
+        "title": "Geschenkkarte",
+        "description": "Schenken Sie die Wahl mit unserer exklusiven Geschenkkarte!",
+        "learn_more": "Erfahren Sie mehr"
+    }
+}

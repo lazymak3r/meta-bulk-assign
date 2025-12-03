@@ -1,0 +1,153 @@
+{{ 'transform-slideshow.css' | asset_url | stylesheet_tag }}
+
+{% for block in section.blocks %}
+    <section class="transform" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url({{ block.settings.image | image_url: width: 2000 }}); background-size: cover; background-position: center; background-repeat: no-repeat;">
+
+    <div class="container">
+        <h2>{{ block.settings.title }}</h2>
+        <p style="margin-bottom: 2rem;">{{ block.settings.description }}</p>
+        <a href="{{ block.settings.button_url }}" class="{{ block.settings.button_class }}">{{ block.settings.button_text }}</a>
+    </div>
+    </section>
+{% endfor %}
+
+{% schema %}
+{
+  "name": "Transform Slideshow",
+  "max_blocks": 10,
+  "blocks": [
+    {
+      "type": "slide",
+      "name": "Slide",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Background Image"
+        },
+        {
+          "type": "textarea",
+          "id": "title",
+          "label": "Title"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description"
+        },
+        {
+          "type": "text",
+          "id": "button_text",
+          "label": "Button Text"
+        },
+        {
+          "type": "url",
+          "id": "button_url",
+          "label": "Button URL"
+        },
+        {
+          "type": "text",
+          "id": "button_class",
+          "label": "Button CSS Class"
+        },
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Transform Slideshow",
+      "category": "Custom"
+    }
+  ]
+}
+{% endschema %}
+
+<script type="text/javascript">
+// Enhanced Parallax effect for Transform section - Background Only
+function handleParallax() {
+    const transformSection = document.querySelector('.transform');
+    if (!transformSection) {
+        console.log('Transform section not found');
+        return;
+    }
+
+    const rect = transformSection.getBoundingClientRect();
+    const scrolled = window.pageYOffset;
+    const windowHeight = window.innerHeight;
+
+    // Check if section is in viewport
+    if (rect.bottom >= 0 && rect.top <= windowHeight) {
+        // Calculate parallax offset for background image only
+        const sectionTop = transformSection.offsetTop;
+        const sectionHeight = transformSection.offsetHeight;
+        const scrollProgress = (scrolled - sectionTop + windowHeight) / (windowHeight + sectionHeight);
+
+        // Move background image with enhanced parallax effect focusing on bottom part
+        const parallaxSpeed = 0.8; // Adjusted speed for bottom-focused movement
+        const backgroundY = (scrolled - sectionTop) * parallaxSpeed;
+
+        // Start from 60% position (showing more of bottom part)
+        const baseOffset = 60; // percentage
+        const viewportOffset = (rect.top / windowHeight) * 50;
+
+        // Calculate final position to show more of bottom part of image
+        const finalYPercent = baseOffset + (backgroundY / windowHeight) * 10 + viewportOffset;
+
+        transformSection.style.backgroundPosition = `center ${finalYPercent}%`;
+
+        // Debug log
+        if (scrolled % 100 < 10) {
+            console.log('Parallax active - scroll:', scrolled, 'finalYPercent:', finalYPercent, 'backgroundY:', backgroundY, 'baseOffset:', baseOffset);
+        }
+    }
+}
+
+// Intersection Observer for section animations
+function initSectionAnimations() {
+    const transformSection = document.querySelector('.transform');
+    if (!transformSection) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    });
+
+    transformSection.style.opacity = '0';
+    transformSection.style.transform = 'translateY(50px)';
+    transformSection.style.transition = 'opacity 1.2s ease, transform 1.2s ease';
+    observer.observe(transformSection);
+}
+
+// Handle parallax on scroll with throttling for performance
+let ticking = false;
+function requestTick() {
+    if (!ticking) {
+        requestAnimationFrame(() => {
+            handleParallax();
+            ticking = false;
+        });
+        ticking = true;
+    }
+}
+
+window.addEventListener('scroll', requestTick);
+window.addEventListener('resize', () => {
+    handleParallax();
+});
+
+
+        // Initialize parallax and animations on page load
+        window.addEventListener('load', () => {
+            handleParallax(); // Initial parallax position
+
+
+        });
+
+</script>

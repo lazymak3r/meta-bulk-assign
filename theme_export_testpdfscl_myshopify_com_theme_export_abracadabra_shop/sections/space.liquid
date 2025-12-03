@@ -1,0 +1,202 @@
+{% comment %}
+  =====================================================================================
+  FLEXIBLER SPACER & DIVIDER (V2.0)
+  - Vollständig getrennte Einstellungen für Desktop und Mobile.
+  - Ermöglicht das separate Ein-/Ausblenden für verschiedene Bildschirmgrößen.
+  - Individuelle Höhen und Trennlinien-Stile für Desktop und Mobile.
+  - Optimiert für Shopify 2.0.
+  =====================================================================================
+{% endcomment %}
+
+{%- liquid
+  assign show_desktop = section.settings.show_desktop_spacer
+  assign show_mobile = section.settings.show_mobile_spacer
+-%}
+
+<style>
+  /* Sichtbarkeits-Logik */
+  #shopify-section-{{ section.id }} .spacer-mobile-wrapper {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    #shopify-section-{{ section.id }} .spacer-desktop-wrapper {
+      display: none;
+    }
+    #shopify-section-{{ section.id }} .spacer-mobile-wrapper {
+      display: block;
+    }
+  }
+
+  /* Allgemeines Styling für die Spacer-Container */
+  .spacer-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  /* Desktop-spezifisches Styling */
+  #shopify-section-{{ section.id }} .spacer-desktop-wrapper {
+    height: {{ section.settings.desktop_height }}px;
+  }
+  #shopify-section-{{ section.id }} .desktop-divider {
+    border: none;
+    height: {{ section.settings.desktop_divider_thickness }}px;
+    width: {{ section.settings.desktop_divider_width }}%;
+    background-color: {{ section.settings.desktop_divider_color }};
+    margin: 0 auto;
+  }
+
+  /* Mobile-spezifisches Styling */
+  #shopify-section-{{ section.id }} .spacer-mobile-wrapper {
+    height: {{ section.settings.mobile_height }}px;
+  }
+  #shopify-section-{{ section.id }} .mobile-divider {
+    border: none;
+    height: {{ section.settings.mobile_divider_thickness }}px;
+    width: {{ section.settings.mobile_divider_width }}%;
+    background-color: {{ section.settings.mobile_divider_color }};
+    margin: 0 auto;
+  }
+</style>
+
+<div class="spacer-section-content">
+  {% comment %} Desktop Spacer wird hier gerendert {% endcomment %}
+  {%- if show_desktop -%}
+    <div class="spacer-container spacer-desktop-wrapper">
+      {%- if section.settings.show_desktop_divider -%}
+        <hr class="desktop-divider">
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+
+  {% comment %} Mobile Spacer wird hier gerendert {% endcomment %}
+  {%- if show_mobile -%}
+    <div class="spacer-container spacer-mobile-wrapper">
+      {%- if section.settings.show_mobile_divider -%}
+        <hr class="mobile-divider">
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+</div>
+
+
+{% schema %}
+{
+  "name": "Flexibler Abstand (D & M)",
+  "tag": "section",
+  "class": "spacer-section-wrapper",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Desktop-Abstand"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_desktop_spacer",
+      "label": "Auf Desktop anzeigen",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "desktop_height",
+      "min": 0,
+      "max": 300,
+      "step": 5,
+      "unit": "px",
+      "label": "Höhe",
+      "default": 50
+    },
+    {
+      "type": "checkbox",
+      "id": "show_desktop_divider",
+      "label": "Trennlinie anzeigen",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "desktop_divider_color",
+      "label": "Linienfarbe",
+      "default": "#E5E5E5"
+    },
+    {
+      "type": "range",
+      "id": "desktop_divider_thickness",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "label": "Liniendicke",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "desktop_divider_width",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "label": "Linienbreite",
+      "default": 100
+    },
+    {
+      "type": "header",
+      "content": "Mobiler Abstand"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_mobile_spacer",
+      "label": "Auf Mobilgeräten anzeigen",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "mobile_height",
+      "min": 0,
+      "max": 200,
+      "step": 5,
+      "unit": "px",
+      "label": "Höhe",
+      "default": 30
+    },
+    {
+      "type": "checkbox",
+      "id": "show_mobile_divider",
+      "label": "Trennlinie anzeigen",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "mobile_divider_color",
+      "label": "Linienfarbe",
+      "default": "#E5E5E5"
+    },
+    {
+      "type": "range",
+      "id": "mobile_divider_thickness",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "label": "Liniendicke",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "mobile_divider_width",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "label": "Linienbreite",
+      "default": 100
+    }
+  ],
+  "presets": [
+    {
+      "name": "Flexibler Abstand (D & M)"
+    }
+  ]
+}
+{% endschema %}

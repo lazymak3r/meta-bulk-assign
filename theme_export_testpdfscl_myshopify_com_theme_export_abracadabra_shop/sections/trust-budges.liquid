@@ -1,0 +1,178 @@
+{{ 'section-trust-badges.css' | asset_url | stylesheet_tag }}
+
+<section class="trust-badges color-{{ section.settings.color_scheme }}" id="trust-badges-{{ section.id }}">
+  <div class="trust-badges-container">
+    <div class="trust-badges-grid">
+      <!-- Free Shipping -->
+      <div class="trust-badge" data-aos="fade-up" data-aos-delay="0">
+        <div class="trust-badge-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20,8h-3V4H3C1.89,4 1,4.89 1,6v12c0,1.11 0.89,2 2,2h1c0,1.66 1.34,3 3,3s3,-1.34 3,-3h6c0,1.66 1.34,3 3,3s3,-1.34 3,-3h1c1.11,0 2,-0.89 2,-2v-5L20,8zM7,19c-0.55,0 -1,-0.45 -1,-1s0.45,-1 1,-1s1,0.45 1,1S7.55,19 7,19zM19,19c-0.55,0 -1,-0.45 -1,-1s0.45,-1 1,-1s1,0.45 1,1S19.55,19 19,19zM20,13l-3,-3h3V13z"/>
+          </svg>
+        </div>
+        <div class="trust-badge-content">
+          <h3 class="trust-badge-title">
+            {% if section.settings.shipping_title != blank %}
+              {{ section.settings.shipping_title }}
+            {% else %}
+              {{ 'trust_badges.free_shipping.title' | t }}
+            {% endif %}
+          </h3>
+          <p class="trust-badge-description">
+            {% if section.settings.shipping_text != blank %}
+              {{ section.settings.shipping_text }}
+            {% else %}
+              {{ 'trust_badges.free_shipping.description' | t }}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- 30 Day Returns -->
+      <div class="trust-badge" data-aos="fade-up" data-aos-delay="100">
+        <div class="trust-badge-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M18,11H15.5V9L12,12.5L15.5,16V14H18V11M6,9V16H8.5V14L12,10.5L8.5,7V9H6Z"/>
+          </svg>
+        </div>
+        <div class="trust-badge-content">
+          <h3 class="trust-badge-title">
+            {% if section.settings.returns_title != blank %}
+              {{ section.settings.returns_title }}
+            {% else %}
+              {{ 'trust_badges.returns.title' | t }}
+            {% endif %}
+          </h3>
+          <p class="trust-badge-description">
+            {% if section.settings.returns_text != blank %}
+              {{ section.settings.returns_text }}
+            {% else %}
+              {{ 'trust_badges.returns.description' | t }}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Quality Guarantee -->
+      <div class="trust-badge" data-aos="fade-up" data-aos-delay="200">
+        <div class="trust-badge-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z"/>
+          </svg>
+        </div>
+        <div class="trust-badge-content">
+          <h3 class="trust-badge-title">
+            {% if section.settings.quality_title != blank %}
+              {{ section.settings.quality_title }}
+            {% else %}
+              {{ 'trust_badges.quality.title' | t }}
+            {% endif %}
+          </h3>
+          <p class="trust-badge-description">
+            {% if section.settings.quality_text != blank %}
+              {{ section.settings.quality_text }}
+            {% else %}
+              {{ 'trust_badges.quality.description' | t }}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Vertrauensabzeichen",
+  "tag": "section",
+  "class": "section",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "settings": [
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Farbschema",
+      "default": "background-1"
+    },
+    {
+      "type": "header",
+      "content": "Kostenloser Versand"
+    },
+    {
+      "type": "text",
+      "id": "shipping_title",
+      "label": "Titel für kostenlosen Versand",
+      "default": "Kostenloser Versand"
+    },
+    {
+      "type": "textarea",
+      "id": "shipping_text",
+      "label": "Beschreibung für kostenlosen Versand",
+      "default": "Genießen Sie kostenlosen Versand für alle Bestellungen über 99 €. Schnelle und zuverlässige Lieferung bis an Ihre Haustür."
+    },
+    {
+      "type": "header",
+      "content": "Rückgaberecht"
+    },
+    {
+      "type": "text",
+      "id": "returns_title",
+      "label": "Titel für Rücksendungen",
+      "default": "30-tägiges Rückgaberecht"
+    },
+    {
+      "type": "textarea",
+      "id": "returns_text",
+      "label": "Beschreibung für Rücksendungen",
+      "default": "Nicht vollständig zufrieden? Senden Sie Ihren Kauf innerhalb von 30 Tagen für eine vollständige Rückerstattung oder einen Umtausch zurück."
+    },
+    {
+      "type": "header",
+      "content": "Qualitätsgarantie"
+    },
+    {
+      "type": "text",
+      "id": "quality_title",
+      "label": "Titel für Qualität",
+      "default": "Qualitätsgarantie"
+    },
+    {
+      "type": "textarea",
+      "id": "quality_text",
+      "label": "Beschreibung für Qualität",
+      "default": "Wir stehen hinter unserer Handwerkskunst. Jedes Stück wird aus hochwertigen Materialien und mit Liebe zum Detail gefertigt."
+    },
+    {
+      "type": "header",
+      "content": "Abschnittsabstand"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Oberer Abstand",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Unterer Abstand",
+      "default": 60
+    }
+  ],
+  "presets": [
+    {
+      "name": "Vertrauensabzeichen"
+    }
+  ]
+}
+{% endschema %}

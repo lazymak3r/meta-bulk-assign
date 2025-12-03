@@ -1,0 +1,45 @@
+<a href="/">
+{% if section.settings.logo != blank %}
+  <img
+    src="{{ section.settings.logo | img_url: '300x' }}"
+    alt="{{ section.settings.text }}"
+    loading="lazy"
+    width="300"
+    height="300"
+  >
+{% else %}
+    <img
+        class="justify-self-center font-serif text-2xl tracking-wide sm:w-[186px] sm:h-[61px] w-[100px] h-[30px] object-contain"
+        src="{{ 'ABRACADABRA_logo.png' | asset_url }}"
+        alt="{{ section.settings.text }}"
+        width="186"
+        height="61"
+    />
+{% endif %}
+</a>
+
+
+{% schema %}
+{
+  "name": "Kopfzeilenlogo",
+  "class": "section-header-logo",
+  "settings": [
+    {
+      "type": "text",
+      "id": "text",
+      "label": "Text",
+      "default": "Shopify"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo hochladen"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Kopfzeilenlogo"
+    }
+  ]
+}
+{% endschema %}

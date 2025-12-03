@@ -1,0 +1,9 @@
+api_version = "2024-10"
+
+[[extensions]]
+uid = "d645989a-9fcb-1a5c-7e8c-4fd76a7a03248770f0ff"
+type = "theme_app_extension"
+name = "Metafield Auto Display"
+handle = "metafield-auto-display"
+
+[extensions.settings]

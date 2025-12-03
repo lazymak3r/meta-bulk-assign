@@ -1,0 +1,117 @@
+html,
+body {
+    overflow-x: clip;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.hero {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 9; /* consistent 16:9 aspect ratio */
+    min-height: 480px; /* optional safety for very narrow screens */
+}
+
+/* Make the custom element fill that box */
+#shopify-section-hero-slideshow .hero e-catalog-viewer-simple {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    contain: layout paint size;
+}
+
+#shopify-section-hero-slideshow .hero e-catalog-viewer-simple section.bleed,
+#shopify-section-hero-slideshow .hero e-catalog-viewer-simple figure.page {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+}
+
+#shopify-section-hero-slideshow .hero e-catalog-viewer-simple img.page-img,
+#shopify-section-hero-slideshow .hero e-catalog-viewer-simple picture > img,
+#shopify-section-hero-slideshow .hero e-catalog-viewer-simple .page-img img {
+    height: 100% !important;
+    display: block !important;
+    object-fit: cover !important;
+    object-position: center 28% !important;
+    max-width: 100% !important;
+}
+
+/* Allow nudging hotspots without changing their percentage position */
+/* #shopify-section-hero-slideshow .hero e-catalog-viewer-simple .hotspot {
+    transform: translate(
+        calc(-50% + var(--hs-nudge-x, 0px)),
+        calc(-50% + var(--hs-nudge-y, 0px))
+    ) !important;
+} 
+
+/* Responsive nudges for a specific hotspot (identified by its aria-label) */
+/* @media (max-width: 719px) {
+    #shopify-section-hero-slideshow
+        .hero
+        e-catalog-viewer-simple
+        .hotspot[aria-label*="3-Sitzer"] {
+        --hs-nudge-x: 180px; 
+        --hs-nudge-y: -20px;
+    }
+}  */
+
+/* @media (min-width: 720px) and (max-width: 1024px) {
+    #shopify-section-hero-slideshow
+        .hero
+        e-catalog-viewer-simple
+        .hotspot[aria-label*="3-Sitzer"] {
+        --hs-nudge-x: -90px;
+    }
+}  */
+
+#shopify-section-hero-slideshow .hero [slot="additional-banner"] > div {
+    z-index: 30;
+}
+
+#shopify-section-hero-slideshow,
+#shopify-section-hero-slideshow .hero {
+    max-width: 100%;
+    width: 100%;
+    overflow-x: clip;
+}
+
+/* tablet-ish */
+@media (min-width: 720px) {
+    .hero {
+        aspect-ratio: 16 / 9;
+    } /* less tall */
+}
+/* desktop */
+@media (min-width: 1025px) {
+    .hero {
+        aspect-ratio: 16 / 9;
+    } /* classic wide hero */
+}
+
+@media (max-width: 719px) {
+    .hero {
+        min-height: 80dvh;
+    } /* dynamic vh to avoid browser chrome issues */
+}
+
+@supports not (overflow: clip) {
+    html,
+    body {
+        overflow-x: hidden;
+    }
+}

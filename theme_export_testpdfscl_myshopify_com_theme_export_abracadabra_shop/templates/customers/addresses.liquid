@@ -1,0 +1,324 @@
+{{ 'account.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs',
+  current_title: 'Adressen',
+  parent_title: 'customer.account.title',
+  parent_url: routes.account_url
+%}
+
+<main class="rm-addresses">
+  <div class="rm-wrap">
+    <h1 class="rm-title">Adressen</h1>
+
+    <section class="rm-card">
+      <div class="rm-card__row">
+        <div>
+          <div class="rm-badge">
+            {% if customer.default_address %}{{ 'customer.addresses.preferred' | t }}{% endif %}
+          </div>
+          {% assign default = customer.default_address | default: customer.addresses.first %}
+          <div class="rm-address">
+            {% if default %}
+              {{ default | format_address }}
+            {% else %}
+              <p class="rm-muted">Keine Adressen gespeichert.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="rm-actions">
+          <!-- Open Add form -->
+          <button class="rm-actions__primary" data-open-add>Fügen Sie eine neue Adresse hinzu</button>
+
+          <div class="rm-actions__row">
+            {% if default %}
+              <a class="rm-btn-outline" href="#edit-{{ default.id }}" data-edit-address="{{ default.id }}">
+                Bearbeiten
+              </a>
+
+              <!-- Delete (works server-side, no JS required) -->
+              <form
+                method="post"
+                action="{{ routes.account_addresses_url }}/{{ default.id }}"
+                class="inline"
+                accept-charset="UTF-8"
+              >
+                <input type="hidden" name="_method" value="delete">
+                <input type="hidden" name="form_type" value="customer_address">
+                <button
+                  type="submit"
+                  class="rm-btn-outline"
+                  onclick="return confirm('Adresse löschen?')"
+                >
+                  Löschen
+                </button>
+              </form>
+            {% else %}
+              <span></span><span></span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {%- comment -%} Visible list of all addresses {%- endcomment -%}
+      {% if customer.addresses_count > 1 %}
+        <div id="rm-addresses-list" class="rm-addresses__list">
+          {% for address in customer.addresses %}
+            {% if customer.default_address and address.id == customer.default_address.id %}
+              {% continue %}
+            {% endif %}
+            <div class="rm-address-item">
+              <div class="rm-badge">
+                {% if address == customer.default_address %}{{ 'customer.addresses.preferred' | t }}{% endif %}
+              </div>
+              <div class="rm-address">{{ address | format_address }}</div>
+              <div class="rm-actions__row rm-actions__row--inline">
+                <a class="rm-btn-outline" href="#edit-{{ address.id }}" data-edit-address="{{ address.id }}"
+                  >Bearbeiten</a
+                >
+                <form
+                  method="post"
+                  action="{{ routes.account_addresses_url }}/{{ address.id }}"
+                  class="inline"
+                  accept-charset="UTF-8"
+                >
+                  <input type="hidden" name="_method" value="delete">
+                  <input type="hidden" name="form_type" value="customer_address">
+                  <button type="submit" class="rm-btn-outline" onclick="return confirm('Adresse löschen?')">
+                    Löschen
+                  </button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {%- comment -%} Add form {%- endcomment -%}
+      <div id="rm-add" class="rm-form is-hidden" aria-hidden="true">
+        {% form 'customer_address', customer.new_address, class: 'address-form__form', novalidate: 'novalidate' %}
+          {% if form.errors %}
+            <div class="form-errors" role="alert">{{ form.errors | default_errors }}</div>
+            <script>
+              (window.__rmPendingOpen = window.__rmPendingOpen || []).push({ type: 'add' });
+            </script>
+          {% endif %}
+          <input type="hidden" name="return_to" value="{{ routes.account_addresses_url }}#rm-addresses-list">
+
+          <div class="rm-grid">
+            <input
+              type="text"
+              name="address[first_name]"
+              value="{{ form.first_name | escape }}"
+              placeholder="Vorname"
+              autocomplete="given-name"
+            >
+            <input
+              type="text"
+              name="address[last_name]"
+              value="{{ form.last_name  | escape }}"
+              placeholder="Nachname"
+              autocomplete="family-name"
+            >
+            <input
+              type="text"
+              name="address[address1]"
+              value="{{ form.address1  | escape }}"
+              placeholder="Adresse 1"
+              autocomplete="address-line1"
+            >
+            <input
+              type="text"
+              name="address[address2]"
+              value="{{ form.address2  | escape }}"
+              placeholder="Adresse 2"
+              autocomplete="address-line2"
+            >
+            <input
+              type="text"
+              name="address[city]"
+              value="{{ form.city      | escape }}"
+              placeholder="Stadt"
+              autocomplete="address-level2"
+            >
+            <input
+              type="text"
+              name="address[zip]"
+              value="{{ form.zip       | escape }}"
+              placeholder="PLZ"
+              autocomplete="postal-code"
+            >
+            <input
+              type="tel"
+              name="address[phone]"
+              value="{{ form.phone     | escape }}"
+              placeholder="Telefon"
+              autocomplete="tel"
+            >
+            <label class="checkbox"> <input type="checkbox" name="address[default]"> Als Standard festlegen </label>
+          </div>
+
+          <div class="rm-form__actions">
+            <button type="submit" class="rm-actions__primary">Adresse speichern</button>
+            <a href="{{ routes.account_addresses_url }}" class="rm-link" data-close-form>Abbrechen</a>
+          </div>
+        {% endform %}
+      </div>
+
+      {%- comment -%} All addresses w/ inline edit forms {%- endcomment -%}
+      {% if customer.addresses_count > 0 %}
+        {% for address in customer.addresses %}
+          <div id="edit-{{ address.id }}" class="rm-form is-hidden" aria-hidden="true">
+            <h3 class="rm-form__title">Adresse bearbeiten</h3>
+            {% form 'customer_address', address, class: 'address-form__form', novalidate: 'novalidate' %}
+              {% if form.errors %}
+                <div class="form-errors" role="alert">{{ form.errors | default_errors }}</div>
+                <script>
+                  (window.__rmPendingOpen = window.__rmPendingOpen || []).push({ type: 'edit', id: {{ address.id }} });
+                </script>
+              {% endif %}
+              <input type="hidden" name="return_to" value="{{ routes.account_addresses_url }}?address={{ address.id }}">
+              <div class="rm-grid">
+                <input
+                  type="text"
+                  name="address[first_name]"
+                  value="{{ form.first_name | default: address.first_name | escape }}"
+                  placeholder="Vorname"
+                  autocomplete="given-name"
+                >
+                <input
+                  type="text"
+                  name="address[last_name]"
+                  value="{{ form.last_name  | default: address.last_name | escape }}"
+                  placeholder="Nachname"
+                  autocomplete="family-name"
+                >
+                <input
+                  type="text"
+                  name="address[address1]"
+                  value="{{ form.address1  | default: address.address1 | escape }}"
+                  placeholder="Adresse 1"
+                  autocomplete="address-line1"
+                >
+                <input
+                  type="text"
+                  name="address[address2]"
+                  value="{{ form.address2  | default: address.address2 | escape }}"
+                  placeholder="Adresse 2"
+                  autocomplete="address-line2"
+                >
+                <input
+                  type="text"
+                  name="address[city]"
+                  value="{{ form.city      | default: address.city | escape }}"
+                  placeholder="Stadt"
+                  autocomplete="address-level2"
+                >
+                <input
+                  type="text"
+                  name="address[zip]"
+                  value="{{ form.zip       | default: address.zip | escape }}"
+                  placeholder="PLZ"
+                  autocomplete="postal-code"
+                >
+                <input
+                  type="tel"
+                  name="address[phone]"
+                  value="{{ form.phone     | default: address.phone | escape }}"
+                  placeholder="Telefon"
+                  autocomplete="tel"
+                >
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    name="address[default]"
+                    {% if customer.default_address and address.id == customer.default_address.id %}
+                      checked
+                    {% endif %}
+                  >
+                  Als Standard festlegen
+                </label>
+              </div>
+              <div class="rm-form__actions">
+                <button type="submit" class="rm-actions__primary">Änderungen speichern</button>
+                <a href="{{ routes.account_addresses_url }}" class="rm-link" data-close-form>Abbrechen</a>
+              </div>
+            {% endform %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    </section>
+  </div>
+</main>
+
+<script>
+  (function () {
+    var $ = function (s, c) {
+      return (c || document).querySelector(s);
+    };
+    var $$ = function (s, c) {
+      return Array.prototype.slice.call((c || document).querySelectorAll(s));
+    };
+
+    function show(el) {
+      if (!el) return;
+      el.classList.remove('is-hidden');
+      el.setAttribute('aria-hidden', 'false');
+    }
+    function hide(el) {
+      if (!el) return;
+      el.classList.add('is-hidden');
+      el.setAttribute('aria-hidden', 'true');
+    }
+
+    function openAdd() {
+      $$('.rm-form').forEach(hide);
+      show($('#rm-add'));
+      history.replaceState && history.replaceState(null, document.title, '{{ routes.account_addresses_url }}#add');
+    }
+    function openEdit(id) {
+      $$('.rm-form').forEach(hide);
+      show($('#edit-' + id));
+      history.replaceState &&
+        history.replaceState(null, document.title, '{{ routes.account_addresses_url }}?address=' + id);
+    }
+
+    // open add
+    var addBtn = $('[data-open-add]');
+    if (addBtn)
+      addBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        openAdd();
+      });
+
+    // open edit
+    $$('[data-edit-address]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        openEdit(this.getAttribute('data-edit-address'));
+      });
+    });
+
+    // close links
+    $$('[data-close-form]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        $$('.rm-form').forEach(hide);
+        history.replaceState && history.replaceState(null, document.title, '{{ routes.account_addresses_url }}');
+      });
+    });
+
+    // deep links and server-provided pending opens
+    if (Array.isArray(window.__rmPendingOpen) && window.__rmPendingOpen.length) {
+      window.__rmPendingOpen.forEach(function (e) {
+        if (e.type === 'add') openAdd();
+        if (e.type === 'edit' && e.id) openEdit(e.id);
+      });
+      window.__rmPendingOpen = [];
+    } else {
+      if (location.hash === '#add') openAdd();
+      var m = location.search.match(/address=(\d+)/);
+      if (m) openEdit(m[1]);
+    }
+  })();
+</script>

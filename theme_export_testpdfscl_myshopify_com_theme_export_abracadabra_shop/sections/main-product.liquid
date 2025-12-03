@@ -1,0 +1,730 @@
+{{ 'section-product-detail.css' | asset_url | stylesheet_tag }}
+
+<style>
+  /* Scoped typography for this section only */
+  #main-product-{{ section.id }} {
+    --mp-heading-font: {{ section.settings.heading_font | default: 'inherit' }};
+    --mp-heading-color: {{ section.settings.heading_color | default: 'inherit' }};
+    --mp-heading-size: {{ section.settings.heading_size | default: 32 }}px;
+    --mp-body-font: {{ section.settings.body_font | default: 'inherit' }};
+    --mp-body-color: {{ section.settings.body_color | default: 'inherit' }};
+    --mp-body-size: {{ section.settings.body_size | default: 16 }}px;
+  }
+  #main-product-{{ section.id }} h1,
+  #main-product-{{ section.id }} h2,
+  #main-product-{{ section.id }} h3,
+  #main-product-{{ section.id }} h4,
+  #main-product-{{ section.id }} h5,
+  #main-product-{{ section.id }} h6 {
+    font-family: var(--mp-heading-font) !important;
+    color: var(--mp-heading-color) !important;
+    font-size: var(--mp-heading-size) !important;
+  }
+  #main-product-{{ section.id }} p,
+  #main-product-{{ section.id }} li,
+  #main-product-{{ section.id }} a,
+  #main-product-{{ section.id }} span,
+  #main-product-{{ section.id }} small,
+  #main-product-{{ section.id }} strong,
+  #main-product-{{ section.id }} em,
+  #main-product-{{ section.id }} label,
+  #main-product-{{ section.id }} legend,
+  #main-product-{{ section.id }} dd,
+  #main-product-{{ section.id }} dt,
+  #main-product-{{ section.id }} th,
+  #main-product-{{ section.id }} td {
+    font-family: var(--mp-body-font) !important;
+    color: var(--mp-body-color) !important;
+    font-size: var(--mp-body-size) !important;
+  }
+  #main-product-{{ section.id }} button,
+  #main-product-{{ section.id }} .btn-primary,
+  #main-product-{{ section.id }} .favorite-btn,
+  #main-product-{{ section.id }} input,
+  #main-product-{{ section.id }} select,
+  #main-product-{{ section.id }} textarea {
+    font-family: var(--mp-body-font) !important;
+    color: var(--mp-body-color) !important;
+    font-size: var(--mp-body-size) !important;
+  }
+  /* Ensure SVG icons inherit text color inside buttons */
+  #main-product-{{ section.id }} button svg,
+  #main-product-{{ section.id }} .btn-primary svg,
+  #main-product-{{ section.id }} .favorite-btn svg,
+  #main-product-{{ section.id }} button svg *,
+  #main-product-{{ section.id }} .btn-primary svg *,
+  #main-product-{{ section.id }} .favorite-btn svg * {
+    fill: currentColor !important;
+    stroke: currentColor !important;
+  }
+</style>
+
+<section class="pt-[20px] md:pt-[30px]" data-pdp-root id="main-product-{{ section.id }}">
+  <div class="container max-w-[var(--container)] mx-auto">
+    {% if section.settings.show_breadcrumbs %}
+      {% render 'breadcrumbs' %}
+    {% endif %}
+    <!-- ONE parent grid for the PDP -->
+    <div class="pdp-grid grid grid-cols-1 lg:grid-cols-12 md:gap-10">
+      {%- comment -%}
+        LEFT: gallery is its own section (make it a 7-col grid item in its schema)
+      {%- endcomment -%}
+
+      <div class="w-full lg:sticky lg:top-24 lg:col-span-7">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+          {% if section.settings.show_mobile_info %}
+            <div class="block lg:hidden lg:col-span-12">
+              <!-- product-detail-info-mobile -->
+              <!-- mobile header row -->
+              <div
+                class="col-span-12 flex items-center lg:hidden mb-[24px] text-[18px] 2xl:text-[20px] font-medium text-[#2E2E2D]"
+              >
+                {% render 'product-detail-navigation' %}
+              </div>
+
+              <!-- mobile h1 + bullets -->
+              <div class="col-span-12 lg:hidden">
+                <h1 class="text-[32px] leading-[0.9] font-medium text-brand">
+                  {{ product.title }}
+                </h1>
+
+                <h2 class="text-[16px] md:text-[20px] mt-[12px] font-[300]">
+                  {{ product.metafields.attributes.subtitle }}
+                </h2>
+
+                {% assign m_desc_plain = product.description | strip_html %}
+                {% assign m_desc_plain = m_desc_plain | replace: '&nbsp;', ' ' | replace: ' ', ' ' | strip %}
+                {% assign m_desc_length = m_desc_plain | size %}
+                {% if m_desc_length > 250 %}
+                  {% assign m_desc_preview = m_desc_plain | truncate: 250, '' %}
+                  <p
+                    id="product-desc-mobile"
+                    class="mt-[12px] text-[16px] font-light text-customGray text-justify leading-[1.6]"
+                    style="hyphens:auto"
+                  >
+                    <span class="desc-preview">{{ m_desc_preview }}</span><span class="desc-ellipsis">...</span>
+                    <span class="desc-full" style="display:none">{{ m_desc_plain }}</span>
+                  </p>
+                  <button type="button" id="desc-toggle-mobile" class="mt-2 text-[14px] underline">
+                    Mehr anzeigen
+                  </button>
+                  <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                      var container = document.getElementById('product-desc-mobile');
+                      if (!container) return;
+                      var preview = container.querySelector('.desc-preview');
+                      var full = container.querySelector('.desc-full');
+                      var dots = container.querySelector('.desc-ellipsis');
+                      var toggle = document.getElementById('desc-toggle-mobile');
+                      if (!preview || !full || !toggle) return;
+                      function showFull(show) {
+                        if (show) {
+                          full.style.display = 'inline';
+                          preview.style.display = 'none';
+                          if (dots) dots.style.display = 'none';
+                          toggle.textContent = 'Weniger anzeigen';
+                        } else {
+                          full.style.display = 'none';
+                          preview.style.display = 'inline';
+                          if (dots) dots.style.display = 'inline';
+                          toggle.textContent = 'Mehr anzeigen';
+                        }
+                      }
+                      toggle.addEventListener('click', function () {
+                        var showingFull = full.style.display !== 'none';
+                        showFull(!showingFull);
+                      });
+                    });
+                  </script>
+                {% else %}
+                  <p
+                    class="mt-[12px] text-[16px] font-light text-customGray text-justify leading-[1.6]"
+                    style="hyphens:auto"
+                  >
+                    {{ m_desc_plain }}
+                  </p>
+                {% endif %}
+              </div>
+            </div>
+          {% endif %}
+          {% if section.settings.show_gallery %}
+            <div class="lg:col-span-12">
+              <!-- product-detail-gallery -->
+              {{ 'section-product-detail-gallery.css' | asset_url | stylesheet_tag }}
+
+              <div
+                id="pdpMainWrap"
+                class="col-span-12 bg-[#F5F5F5] border border-gray-200 relative"
+              >
+                <img
+                  id="pdpMainImg"
+                  src="{{ product.featured_image | img_url: '1100x' }}"
+                  alt="{{ product.title }}"
+                  width="{{ product.featured_image.width }}"
+                  height="{{ product.featured_image.height }}"
+                  class="w-full h-[480px] md:h-[540px] object-cover select-none pointer-events-none"
+                >
+
+                <!-- custom cursor (created in DOM so tailwind doesn't purge classes) -->
+                <div id="pdpHoverCursor" class="hover-cursor hidden"></div>
+              </div>
+
+              <!-- Thumbnails with desktop prev/next controls -->
+              <div class="col-span-12 mt-3 relative">
+                <!-- fades at edges (desktop) -->
+                <div
+                  class="pointer-events-none hidden md:block absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white/95 to-transparent z-10"
+                ></div>
+                <div
+                  class="pointer-events-none hidden md:block absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white/95 to-transparent z-10"
+                ></div>
+
+                <!-- LEFT button -->
+                <button
+                  type="button"
+                  id="pdpThumbPrev"
+                  class="hidden md:flex items-center justify-center absolute left-0 top-0 z-20 h-full w-10 bg-[#5F6B60] text-white disabled:hidden disabled:cursor-default"
+                  aria-label="Vorheriges Bild"
+                >
+                  <svg width="14" height="24" viewBox="0 0 14 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0.8573 12.0007c0-.2619.1001-.524.3000-.7239L11.0958 1.0383c.4001-.4001 1.0479-.4001 1.4477 0 .3998.4001.4001 1.0479 0 1.4478L3.0289 12.0007l9.5146 9.5146c.4001.4001.4001 1.0479 0 1.4477-.4001.3998-1.0479.4001-1.4477 0L1.1573 12.7246c-.1999-.1999-.3000-.462-.3000-.7239Z" fill="white"/>
+                  </svg>
+                </button>
+
+                <!-- STRIP -->
+                <div
+                  id="pdpThumbs"
+                  class="flex gap-2 overflow-x-auto pb-1 md:px-12 snap-x snap-mandatory scroll-smooth"
+                  style="scrollbar-width:none;-ms-overflow-style:none;"
+                >
+                  {% for image in product.images %}
+                    <button
+                      type="button"
+                      data-index="{{ forloop.index0 }}"
+                      data-src="{{ image | img_url: '1100x' }}"
+                      class="thumb relative w-24 h-20 shrink-0 border border-gray-200 bg-[#F5F5F5] rounded-[3px] overflow-hidden snap-start"
+                      {% if forloop.first %}
+                        aria-current="true"
+                      {% endif %}
+                    >
+                      <img
+                        src="{{ image | img_url: '240x240' }}"
+                        alt=""
+                        width="240"
+                        height="240"
+                        class="w-full h-full object-cover"
+                      >
+                      <!-- badge -->
+                      <span class="absolute left-1 bottom-1 px-2 py-0.5 text-[11px] leading-[1.1] bg-white/90 text-gray-800 rounded shadow-sm flex items-center gap-1">
+                        Wohnbeispiel
+                        <span class="inline-block w-4 h-4 rounded-full bg-white/90 text-gray-600 grid place-items-center text-[10px]"
+                          >i</span
+                        >
+                      </span>
+                    </button>
+                  {% endfor %}
+                </div>
+
+                <!-- RIGHT button -->
+                <button
+                  type="button"
+                  id="pdpThumbNext"
+                  class="hidden md:flex items-center justify-center absolute right-[0px] top-0 z-20 h-full w-10 bg-[#5F6B60] text-white disabled:opacity-40 disabled:cursor-default"
+                  aria-label="Nächstes Bild"
+                >
+                  <svg width="14" height="24" viewBox="0 0 14 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13.1427 11.9993C13.1427 12.2612 13.0426 12.5233 12.8427 12.7232L2.60422 22.9617C2.20415 23.3617 1.55631 23.3617 1.1565 22.9617C0.756684 22.5616 0.756428 21.9138 1.1565 21.5139L10.6711 11.9993L1.1565 2.4847C0.756427 2.08463 0.756427 1.43679 1.1565 1.03697C1.55656 0.637161 2.2044 0.636904 2.60422 1.03697L12.8427 11.2755C13.0426 11.4754 13.1427 11.7375 13.1427 11.9993Z" fill="white"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Lightbox / fullscreen viewer -->
+              <div id="pdpLightbox" class="fixed inset-0 z-[999] hidden">
+                <div class="absolute inset-0 bg-black/80 z-0"></div>
+
+                <!-- Close button -->
+                <button
+                  type="button"
+                  id="pdpLbClose"
+                  class="absolute top-32 right-4 text-white text-[60px] leading-none z-50"
+                  aria-label="Schließen"
+                >
+                  ×
+                </button>
+
+                <div id="pdpLbCursor" class="hover-cursor hidden z-40"></div>
+
+                <!-- Image -->
+                <img
+                  id="pdpLbImg"
+                  class="absolute inset-0 m-auto max-w-[92vw] max-h-[92vh] object-contain select-none z-20"
+                  width="1600"
+                  height="1200"
+                  alt=""
+                >
+
+                <!-- Prev / Next hit zones (mouse/touch) -->
+                <button type="button" id="pdpLbPrev" class="absolute left-0 top-0 h-full w-1/2 z-10"></button>
+                <button type="button" id="pdpLbNext" class="absolute right-0 top-0 h-full w-1/2 z-10"></button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {%- comment -%}
+        RIGHT: wrap ALL right-side sections in ONE div that is the 5-col grid item
+        (don’t put col-span classes on the inner sections)
+      {%- endcomment -%}
+      <div class="lg:col-span-5">
+        <div class="space-y-6">
+          <!-- product-detail-info-desktop (adapted) -->
+          {% if section.settings.show_desktop_info %}
+            <div
+              id="overviewBar"
+              class="items-center hidden lg:flex text-[18px] 2xl:text-[20px] font-medium text-[#2E2E2D]"
+            >
+              {% render 'product-detail-navigation' %}
+            </div>
+
+            <div class="hidden lg:block">
+              <h1
+                class="text-[32px] 2xl:text-[48px] leading-[1.5] mt-[30px] font-[400] text-brand"
+              >
+                {{ product.title }}
+              </h1>
+
+              <h2 class="text-[16px] md:text-[20px] mt-[12px] font-[300]">
+                {{ product.metafields.attributes.subtitle }}
+              </h2>
+
+              {%- assign features_mf = product.metafields.attributes.Features -%}
+
+              {% if features_mf and features_mf.value.size > 0 %}
+                <div class="with-checks leading-[1.6] text-[#2E2E2D] mt-[12px]">
+                  <ul class="list-none pl-0">
+                    {% for feature in features_mf.value %}
+                      {% assign clean_feature = feature | strip %}
+                      {% if clean_feature != blank %}
+                        <li class="relative pl-8 mt-2 text-[16px] 2xl:text-[20px]">{{ clean_feature }}</li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% else %}
+                {% assign desc_plain = product.description | strip_html %}
+                {% assign desc_plain = desc_plain | replace: '&nbsp;', ' ' | replace: ' ', ' ' | strip %}
+                {% assign desc_length = desc_plain | size %}
+
+                {% if desc_length > 250 %}
+                  {% assign desc_preview = desc_plain | truncate: 250, '' %}
+                  <p
+                    id="product-desc"
+                    class="mt-[12px] text-[16px] 2xl:text-[20px] text-customGray mx-auto max-w-[760px] 2xl:max-w-[900px] text-justify leading-[1.6]"
+                    style="hyphens:auto"
+                  >
+                    <span class="desc-preview">{{ desc_preview }}</span><span class="desc-ellipsis">...</span>
+                    <span class="desc-full" style="display:none">{{ desc_plain }}</span>
+                  </p>
+                  <button type="button" id="desc-toggle" class="mt-2 text-[14px] underline">Mehr anzeigen</button>
+                  <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                      var container = document.getElementById('product-desc');
+                      if (!container) return;
+                      var preview = container.querySelector('.desc-preview');
+                      var full = container.querySelector('.desc-full');
+                      var dots = container.querySelector('.desc-ellipsis');
+                      var toggle = document.getElementById('desc-toggle');
+                      if (!preview || !full || !toggle) return;
+                      function showFull(show) {
+                        if (show) {
+                          full.style.display = 'inline';
+                          preview.style.display = 'none';
+                          if (dots) dots.style.display = 'none';
+                          toggle.textContent = 'Weniger anzeigen';
+                        } else {
+                          full.style.display = 'none';
+                          preview.style.display = 'inline';
+                          if (dots) dots.style.display = 'inline';
+                          toggle.textContent = 'Mehr anzeigen';
+                        }
+                      }
+                      toggle.addEventListener('click', function () {
+                        var showingFull = full.style.display !== 'none';
+                        showFull(!showingFull);
+                      });
+                    });
+                  </script>
+                {% else %}
+                  <p
+                    class="mt-[12px] text-[16px] 2xl:text-[20px] text-customGray mx-auto max-w-[760px] 2xl:max-w-[900px] text-justify leading-[1.6]"
+                    style="hyphens:auto"
+                  >
+                    {{ desc_plain }}
+                  </p>
+                {% endif %}
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <!-- product-detail-variants (snippet) -->
+          {% if section.settings.show_variants %}
+            {% render 'product-variations', product: product %}
+          {% endif %}
+
+          <!-- product-detail-energy-labels -->
+          {% if section.settings.show_energy_labels %}
+            {% assign energylabels = product.metafields.energylabels %}
+            {% if energylabels.size > 0 %}
+              <div class="flex flex-row gap-[54px]">
+                {% for metafield in energylabels %}
+                  {% assign energylabel = metafield[1].value | parse_json %}
+                  <label class="cursor-pointer">
+                    <div class="flex flex-col items-start">
+                      <a
+                        href="{{ energylabel.pdf_url }}"
+                        class="underline text-gray-700 hover:text-brand text-[12px] md:text-[13px]"
+                      >
+                        <svg width="80" height="38" viewBox="0 0 80 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M57.501 0L80 19L57.501 37.999V38H0.000976562V0H57.501Z" fill="{% render 'energy-label-color', label: energylabel.label %}"/>
+                          <path d="{% render 'energy-label-letter', label: energylabel.label %}" fill="white"/>
+                        </svg>
+                        {{ energylabel.type }}
+                      </a>
+                    </div>
+                  </label>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endif %}
+
+          <!-- product-detail-completed-with -->
+          {% if section.settings.show_completed_with %}
+            {% assign recommendations = product.metafields.recommendations.products.value %}
+            {% if recommendations.count > 0 %}
+              <div
+                aria-labelledby="completedWithTitle"
+                data-addons-container
+                data-section-id="{{ section.id }}"
+              >
+                <legend id="completedWithTitle" class="text-[16px] md:text-[24px] font-[700] text-[#2e2e2d]">
+                  {% if section.settings.recommendations_title != blank %}
+                    {{ section.settings.recommendations_title }}
+                  {% else %}
+                    {{ 'sections.recommendations.title' | t | default: 'Unsere Empfehlungen' }}
+                  {% endif %}
+                </legend>
+
+                <!-- list -->
+                <ul class="flex flex-col gap-[22px] xl:gap-[16px] mt-[16px] md:pr-6 lg:pr-8 md:mb-6">
+                  {% for recommendation in recommendations %}
+                    {% assign v = recommendation.selected_or_first_available_variant %}
+                    {% assign row_id = 'addon-' | append: section.id | append: '-' | append: forloop.index %}
+                    <li>
+                      <label
+                        for="{{ row_id }}"
+                        class="group flex items-center gap-4 cursor-pointer addon-row {% unless v.available %}opacity-50 cursor-not-allowed{% endunless %}"
+                        data-price="{{ v.price }}"
+                      >
+                        <!-- checkbox (kept visually hidden) -->
+                        <input
+                          id="{{ row_id }}"
+                          type="checkbox"
+                          name="addons[]"
+                          value="{{ v.id }}"
+                          class="peer sr-only addon-checkbox"
+                          {% unless v.available %}
+                            disabled aria-disabled="true"
+                          {% endunless %}
+                        >
+
+                        <!-- custom tick -->
+                        <span
+                          class="
+                            shrink-0 inline-grid w-4 h-4 place-items-center rounded bg-white transition
+                            ring-1 ring-gray-300
+                            peer-checked:bg-brand peer-checked:ring-brand
+                            peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40
+                            peer-checked:[&>svg]:opacity-100
+                          "
+                        >
+                          <svg
+                            class="w-3 h-3 text-white opacity-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="3"
+                          >
+                            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </span>
+
+                        <!-- thumb -->
+                        <a href="/products/{{ recommendation.handle }}" class="addon-link">
+                          <img
+                            src="{{ recommendation.featured_image | img_url: '100x' }}"
+                            alt="{{ recommendation.title }}"
+                            class="w-16 h-16 object-cover transition-colors peer-checked:bg-surface peer-checked:text-brand peer-checked:border-transparent focus-visible:ring-2 focus-visible:ring-brand/40 order"
+                          >
+                        </a>
+
+                        <div class="flex-1 min-w-0">
+                          <p class="text-[18px] font-[400] text-[14px] md:text-[18px] text-wrap">
+                            <a href="/products/{{ recommendation.handle }}" class="addon-link">
+                              {{- recommendation.title -}}
+                            </a>
+                          </p>
+                          <p class="text-[14px] md:text-[18px]">Empfohlene Menge: 1</p>
+                        </div>
+
+                        <div class="text-left">
+                          <span class="block text-[18px] font-medium tabular-nums text-[#2E2E2D]">
+                            +{% render 'formatted-price', price: v.price %}
+                            {% unless v.available -%}
+                              <span class="ml-2 text-[12px] text-gray-500">(Ausverkauft)</span>
+                            {%- endunless %}
+                          </span>
+                          <span class="block text-[18px] text-[#2E2E2D]">
+                            {%- render 'formatted-price', price: v.price %}/Stück</span
+                          >
+                        </div>
+                      </label>
+                    </li>
+                  {% endfor %}
+                </ul>
+
+                <!-- totals -->
+                {% assign base_variant = product.selected_or_first_available_variant %}
+                <div
+                  id="addons-totals"
+                  class="mt-4 p-4 rounded border border-gray-200 bg-gray-50"
+                  data-base-price="{{ base_variant.price }}"
+                >
+                  <div class="flex justify-between text-[16px] md:text-[20px]">
+                    <span class="font-[14px]">
+                      {{- 'sections.completed_with.addons_sum' | t | default: 'Summe der Zusatzprodukte' -}}
+                    </span>
+                    <strong id="addons-sum">{{ 0 | money }}</strong>
+                  </div>
+                  <div class="flex justify-between text-[16px] md:text-[20px] font-semibold mt-1">
+                    <span>{{ 'sections.completed_with.total' | t | default: 'Gesamt' }}</span>
+                    <strong id="addons-grand">{{ base_variant.price | money }}</strong>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+
+          <!-- product-detail-add-to-cart -->
+          <div
+            class="mt-[24px] xl:mt-[60px] flex flex-col flex-wrap border-b pb-[25px] justify-between gap-[13px] md:flex-row md:items-center md:gap-[13px]"
+          >
+            <!-- Price -->
+            <p
+              class="text-[28px] 2xl:text-[48px] whitespace-nowrap leading-none font-normal text-brand md:min-w-[140px]"
+            >
+              <span
+                class="text-[18px] 2xl:text-[20px] font-light"
+              >
+                {{- section.settings.price_prefix_text | default: 'ab' -}}
+              </span>
+              {% render 'formatted-price', price: product.price %}
+            </p>
+
+            <!-- Qty + Buttons -->
+            <div
+              class="flex items-center gap-3 md:gap-4"
+            >
+              <!-- Add to Favorite -->
+              <button
+                type="button"
+                class="favorite-btn pdp-favorite-btn h-[50px] px-5 md:px-7 border border-gray-300 text-[16px] hover:bg-gray-50 transition-colors inline-flex items-center gap-2"
+                aria-label="Zu Favoriten"
+                data-product-id="{{ product.handle }}"
+              >
+                {{ section.settings.favorite_button_label | default: 'Zu Favoriten' }}
+                <!-- Heart icon -->
+                <img src="{{ 'heart.svg' | asset_url }}" alt="Zu Favoriten" width="24" height="22">
+              </button>
+
+              <!-- Add to Cart -->
+              <form
+                method="post"
+                action="{{ routes.cart_add_url }}"
+                accept-charset="UTF-8"
+                class="js-product-form"
+                id="pdpAddToCart"
+                data-custom-atc="1"
+              >
+                <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+                <input type="hidden" name="quantity" value="1">
+
+                <button
+                  type="submit"
+                  class="btn-primary js-atc px-4 sm:px-5 md:px-7 flex gap-[10px] h-[50px] items-center justify-center"
+                  {% unless product.available %}
+                    disabled
+                  {% endunless %}
+                >
+                  <span class="js-atc-label text-[16px]">
+                    {% if product.available %}
+                      {{ section.settings.atc_button_label | default: 'In den Warenkorb' }}
+                    {% else %}
+                      Nicht verfügbar
+                    {% endif %}
+                  </span>
+                  <svg width="25" height="24" viewBox="0 0 25 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.6776 17.8448C17.1362 17.8433 15.8854 19.0916 15.8839 20.633C15.8824 22.1744 17.1308 23.4252 18.6722 23.4267C20.2136 23.4282 21.4643 22.1798 21.4658 20.6384C21.4658 20.6376 21.4658 20.6367 21.4658 20.6358C21.4644 19.096 20.2173 17.8478 18.6776 17.8448Z" fill="currentColor"/>
+                    <path d="M23.6278 4.48019C23.561 4.46726 23.4932 4.46069 23.4251 4.46058H6.43181L6.16267 2.66004C5.99499 1.46427 4.97216 0.574587 3.76466 0.574219H1.57655C0.981978 0.574219 0.5 1.0562 0.5 1.65077C0.5 2.24534 0.981978 2.72732 1.57655 2.72732H3.76735C3.90423 2.72632 4.02008 2.82825 4.03648 2.96418L5.69436 14.3272C5.92166 15.771 7.16363 16.8362 8.62529 16.8409H19.8241C21.2313 16.8428 22.4454 15.8537 22.7281 14.4752L24.4802 5.74167C24.5932 5.15792 24.2115 4.59315 23.6278 4.48019Z" fill="currentColor"/>
+                    <path d="M11.8404 20.5162C11.7749 19.02 10.5401 17.8423 9.04245 17.8475C7.50232 17.9097 6.30423 19.2087 6.36647 20.7488C6.42619 22.2266 7.62832 23.4012 9.10705 23.4267H9.17434C10.7143 23.3592 11.9079 22.0562 11.8404 20.5162Z" fill="currentColor"/>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- product-detail-delivery-time -->
+          <div class="mt-[18px] flex items-center">
+            {% render 'delivery-estimator' %}
+          </div>
+
+          <!-- product-detail-icons -->
+          {% assign pictograms = product.metafields.pictograms %}
+          {% if pictograms and pictograms != blank %}
+            <div
+              class="mt-[60px] flex flex-wrap items-center gap-3"
+            >
+              {% for item in pictograms %}
+                {% assign key = item[0] %}
+                {% assign url = item[1].value %}
+                {% if url and url.size > 0 %}
+                  <img
+                    src="{{ url }}"
+                    alt="{{ key }}"
+                    class="h-[50px] md:h-[80px] lg:h-[97px] max-w-[120px] object-contain"
+                    loading="lazy"
+                  >
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <!-- /.pdp-grid -->
+
+    {%- comment -%}
+      Badges row lives BELOW the two-column grid
+    {%- endcomment -%}
+    {% if section.settings.show_badges %}
+      <section class="section-product-badges w-full bg-white col-span-full lg:col-span-12 lg:col-start-1 lg:col-end-13">
+        <div class="max-w-[var(--container)] mx-auto py-8 md:py-12">
+          <div class="badges-grid">
+            <!-- Handmade -->
+            <div class="badge">
+              <!-- ... SVG and text copied from product-detail-badges ... -->
+              {% render 'ecatalog-globals' %}
+            </div>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+  (function () {
+    function executeScripts(container) {
+      const scripts = container.querySelectorAll('script');
+      scripts.forEach((old) => {
+        const s = document.createElement('script');
+        for (const { name, value } of Array.from(old.attributes)) s.setAttribute(name, value);
+        s.textContent = old.textContent || '';
+        old.replaceWith(s);
+      });
+    }
+
+    async function pjaxTo(url) {
+      try {
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'fetch' } });
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const newRoot = doc.querySelector('[data-pdp-root]');
+        const root = document.querySelector('[data-pdp-root]');
+        if (!newRoot || !root) return window.location.assign(url);
+        root.innerHTML = newRoot.innerHTML;
+        executeScripts(root);
+        history.pushState(null, '', url);
+        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (_) {
+        window.location.assign(url);
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      const link = e.target.closest('a[data-pdp-variant-link]');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (!href) return;
+      e.preventDefault();
+      pjaxTo(new URL(href, location.origin).toString());
+    });
+
+    window.addEventListener('popstate', function () {
+      pjaxTo(location.href);
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Main product",
+  "tag": "section",
+  "class": "main-product",
+  "settings": [
+    { "type": "checkbox", "id": "show_breadcrumbs", "label": "Show breadcrumbs", "default": true },
+    { "type": "checkbox", "id": "show_mobile_info", "label": "Show mobile info", "default": true },
+    { "type": "checkbox", "id": "show_gallery", "label": "Show gallery", "default": true },
+    { "type": "checkbox", "id": "show_desktop_info", "label": "Show desktop info", "default": true },
+    { "type": "checkbox", "id": "show_variants", "label": "Show variants", "default": true },
+    { "type": "checkbox", "id": "show_energy_labels", "label": "Show energy labels", "default": true },
+    { "type": "checkbox", "id": "show_completed_with", "label": "Show completed with", "default": true },
+    { "type": "checkbox", "id": "show_add_to_cart", "label": "Show add to cart", "default": true },
+    { "type": "checkbox", "id": "show_delivery_time", "label": "Show delivery time", "default": true },
+    { "type": "checkbox", "id": "show_icons", "label": "Show icons", "default": true },
+    { "type": "checkbox", "id": "show_badges", "label": "Show badges", "default": true },
+    { "type": "text", "id": "price_prefix_text", "label": "Price prefix text", "default": "ab" },
+    { "type": "text", "id": "favorite_button_label", "label": "Favorite button label", "default": "Zu Favoriten" },
+    { "type": "text", "id": "atc_button_label", "label": "Add to cart button label", "default": "In den Warenkorb" },
+    {
+      "type": "text",
+      "id": "recommendations_title",
+      "label": "Recommendations title",
+      "default": "Unsere Empfehlungen"
+    },
+    { "type": "text", "id": "heading_font", "label": "Heading font-family", "default": "inherit" },
+    { "type": "color", "id": "heading_color", "label": "Heading color", "default": "#2E2E2D" },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading font size (px)",
+      "min": 20,
+      "max": 80,
+      "step": 1,
+      "default": 32
+    },
+    { "type": "text", "id": "body_font", "label": "Body font-family", "default": "inherit" },
+    { "type": "color", "id": "body_color", "label": "Body color", "default": "#2E2E2D" },
+    {
+      "type": "range",
+      "id": "body_size",
+      "label": "Body font size (px)",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "default": 16
+    }
+  ],
+  "presets": [{ "name": "Main product" }]
+}
+{% endschema %}

@@ -1,0 +1,149 @@
+{{ 'section-product-detail.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs' %}
+
+{%- assign is_kuche = false -%}
+{%- if collection and collection.handle -%}
+  {%- assign coll_handle_down = collection.handle | downcase -%}
+  {%- if coll_handle_down contains 'kuche' -%}
+    {%- assign is_kuche = true -%}
+  {%- endif -%}
+{%- endif -%}
+
+<section class="pt-[20px] md:pt-[30px]" data-pdp-root>
+  <div class="container max-w-[var(--container)] mx-auto">
+    <!-- ONE parent grid for the PDP -->
+    <div class="pdp-grid grid grid-cols-1 lg:grid-cols-12 md:gap-10">
+      {%- comment -%}
+        LEFT: gallery is its own section (make it a 7-col grid item in its schema)
+      {%- endcomment -%}
+
+      <div class="w-full lg:sticky lg:top-24 lg:col-span-7">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-[30px]">
+          <div class="block lg:hidden lg:col-span-12">
+            {% section 'product-detail-info-mobile' %}
+          </div>
+          <div class="lg:col-span-12">
+            {% section 'product-detail-gallery' %}
+          </div>
+        </div>
+
+        <div class="lg:hidden">
+          {% render 'product-features', text_size: 'text-[14px] md:text-[20px]' %}
+        </div>
+      </div>
+
+      {%- comment -%}
+        RIGHT: wrap ALL right-side sections in ONE div that is the 5-col grid item
+        (don’t put col-span classes on the inner sections)
+      {%- endcomment -%}
+      <div class="lg:col-span-5">
+        <div class="space-y-6">
+          <div class="hidden lg:block">
+            {% section 'product-detail-info-desktop' %}
+          </div>
+          {% assign variants = product.metafields.variations.variations.value %}
+          {% if variants != blank %}
+            {% section 'product-detail-variants' %}
+          {% endif %}
+          {% assign energylabels = product.metafields.energylabels %}
+          {% if energylabels != blank %}
+            {% section 'product-detail-energy-labels' %}
+          {% endif %}
+
+          {%- comment -%}
+            Container for app-managed energy labels
+          {%- endcomment -%}
+          <div data-meta-bulk-assign-container="energy_label" class="flex flex-row gap-[54px] flex-wrap"></div>
+
+          <p class="text-[14px] md:text-[16px] md:my-[30px] text-[#2E2E2D] font-light">
+            Artikel ist vor Ort abholbar/bestellbar.
+          </p>
+          <div class="hidden lg:block">
+            {% section 'product-detail-completed-with' %}
+          </div>
+          {% section 'product-detail-add-to-cart' %}
+          {% section 'product-detail-delivery-time' %}
+          {% section 'product-detail-icons' %}
+
+            {%- comment -%}
+                Container for app-managed product detail icons
+            {%- endcomment -%}
+            <div data-meta-bulk-assign-container="product_detail_icon" class="flex flex-row gap-[0.75rem] flex-wrap !mt-[60px]"></div>
+        </div>
+      </div>
+    </div>
+    <!-- /.pdp-grid -->
+
+    {%- comment -%}
+      Badges row lives BELOW the two-column grid
+    {%- endcomment -%}
+    {% section 'product-detail-badges' %}
+
+    {%- comment -%}
+      Container for app-managed product detail icons
+    {%- endcomment -%}
+
+    <div class="lg:hidden">
+      {% section 'product-detail-completed-with' %}
+    </div>
+  </div>
+</section>
+
+{% section 'product-tabs' %}
+{% if is_kuche %}
+  <div class="max-w-[var(--container)] mx-auto mt-[30px] md:mt-0">
+    <img src="{{ 'kuche.png' | asset_url }}" alt="Kuche Promo Images" width="100%" height="100%">
+  </div>
+{% else %}
+  {% section 'promo-images' %}
+{% endif %}
+
+{% section 'product-detail-video' %}
+{% section 'product-detail-promo-text' %}
+{% section 'product-detail-faq' %}
+{% section 'product-detail-related-products' %}
+
+<script>
+  (function () {
+    function executeScripts(container) {
+      const scripts = container.querySelectorAll('script');
+      scripts.forEach((old) => {
+        const s = document.createElement('script');
+        for (const { name, value } of Array.from(old.attributes)) s.setAttribute(name, value);
+        s.textContent = old.textContent || '';
+        old.replaceWith(s);
+      });
+    }
+
+    async function pjaxTo(url) {
+      try {
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'fetch' } });
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const newRoot = doc.querySelector('[data-pdp-root]');
+        const root = document.querySelector('[data-pdp-root]');
+        if (!newRoot || !root) return window.location.assign(url);
+        root.innerHTML = newRoot.innerHTML;
+        executeScripts(root);
+        history.pushState(null, '', url);
+        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (_) {
+        window.location.assign(url);
+      }
+    }
+
+    document.addEventListener('click', function (e) {
+      const link = e.target.closest('a[data-pdp-variant-link]');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (!href) return;
+      e.preventDefault();
+      pjaxTo(new URL(href, location.origin).toString());
+    });
+
+    window.addEventListener('popstate', function () {
+      pjaxTo(location.href);
+    });
+  })();
+</script>

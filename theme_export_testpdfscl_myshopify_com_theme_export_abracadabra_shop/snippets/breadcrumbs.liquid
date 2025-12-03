@@ -1,0 +1,163 @@
+{{ 'section-breadcrumbs.css' | asset_url | stylesheet_tag }}
+
+{%- unless template == 'index' or template == 'list-collections' or template == '404' -%}
+  {%- assign t = template | split: '.' | first -%}
+
+  {%- comment %} Title keys may be i18n keys; resolve when needed {% endcomment -%}
+  {%- assign resolved_title = current_title -%}
+  {%- if current_title and current_title contains '.' -%}
+    {%- assign resolved_title = current_title | t -%}
+  {%- endif -%}
+
+  {%- comment %} Prefer the collection from URL; otherwise first product collection {% endcomment -%}
+  {%- assign crumb_collection = nil -%}
+  {%- if collection -%}
+    {%- assign crumb_collection = collection -%}
+  {%- elsif product and product.collections.size > 0 -%}
+    {%- assign crumb_collection = product.collections.first -%}
+  {%- endif -%}
+
+  <nav class="breadcrumb" role="navigation" aria-label="breadcrumbs">
+    <ol class="breadcrumb__list">
+      <li class="breadcrumb__item">
+        <a class="breadcrumb__link" href="{{ routes.root_url }}">{{ 'general.breadcrumbs.home' | t | default: 'Home' }}</a>
+      </li>
+
+      {%- case t -%}
+        {%- when 'product' -%}
+          {%- if crumb_collection -%}
+            <li class="breadcrumb__item">
+              {{ crumb_collection.title | link_to: crumb_collection.url, class: 'breadcrumb__link' }}
+            </li>
+          {%- endif -%}
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">{{ product.title }}</span>
+          </li>
+
+        {%- when 'collection' -%}
+          {%- if collection and collection.handle -%}
+            <li class="breadcrumb__item">
+              <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">{{ collection.title }}</span>
+            </li>
+          {%- endif -%}
+
+        {%- when 'blog' -%}
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">{{ blog.title }}</span>
+          </li>
+
+        {%- when 'article' -%}
+          <li class="breadcrumb__item">
+            {{ blog.title | link_to: blog.url, class: 'breadcrumb__link' }}
+          </li>
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">{{ article.title }}</span>
+          </li>
+
+        {%- when 'search' -%}
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">
+              {{ 'general.search.title' | t | default: 'Search' }}{%- if search and search.terms -%}: “{{ search.terms }}”{%- endif -%}
+            </span>
+          </li>
+
+        {%- when 'cart' -%}
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">
+              {{ 'general.cart.title' | t | default: 'Cart' }}
+            </span>
+          </li>
+
+        {%- when 'customers' -%}
+          {%- comment -%} Handle common account subpages {%- endcomment -%}
+          {%- assign sub = template | split: '.' | last -%}
+          <li class="breadcrumb__item">
+            <a class="breadcrumb__link" href="{{ routes.account_url }}">
+              {{ 'customer.account.title' | t | default: 'Account' }}
+            </a>
+          </li>
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">
+              {%- case sub -%}
+                {%- when 'account' -%}{{ 'customer.account.title' | t | default: 'Account' }}
+                {%- when 'orders'  -%}{{ 'customer.orders.title'  | t | default: 'Orders' }}
+                {%- when 'order'   -%}{{ 'customer.order.title'   | t | default: 'Order' }}
+                {%- when 'addresses' -%}{{ 'customer.addresses.title' | t | default: 'Addresses' }}
+                {%- when 'login'   -%}{{ 'customer.login.title'   | t | default: 'Login' }}
+                {%- when 'register' -%}{{ 'customer.register.title' | t | default: 'Register' }}
+                {%- else -%}{{ page_title }}
+              {%- endcase -%}
+            </span>
+          </li>
+
+        {%- when 'page' -%}
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">
+              {{ resolved_title | default: page.title | default: page_title }}
+            </span>
+          </li>
+
+        {%- else -%}
+          <li class="breadcrumb__item">
+            <span class="breadcrumb__link breadcrumb__link--current" aria-current="page">
+              {{ resolved_title | default: page_title }}
+            </span>
+          </li>
+      {%- endcase -%}
+    </ol>
+  </nav>
+
+  {%- comment -%}
+    JSON-LD Breadcrumbs for SEO - built from what we rendered above.
+    Positions start at 1 (Home).
+  {%- endcomment -%}
+  {%- capture crumb_json -%}
+    {%- assign pos = 1 -%}
+    {%- capture items -%}
+      { "@" : "" } {%- comment -%}placeholder to simplify comma handling{%- endcomment -%}
+    {%- endcapture -%}
+    {%- assign items = '' -%}
+    {%- assign pos = pos | plus: 0 -%}
+    {%- assign items = items | append: '{"@type":"ListItem","position":' | append: pos | append: ',"name":"Home","item":"{{ shop.url }}"}' -%}
+    {%- assign pos = pos | plus: 1 -%}
+
+    {%- if t == 'product' and crumb_collection -%}
+      {%- assign items = items | append: ',{"@type":"ListItem","position":' | append: pos | append: ',"name":"{{ crumb_collection.title | escape }}","item":"{{ shop.url }}{{ crumb_collection.url }}"}' -%}
+      {%- assign pos = pos | plus: 1 -%}
+    {%- elsif t == 'article' -%}
+      {%- assign items = items | append: ',{"@type":"ListItem","position":' | append: pos | append: ',"name":"{{ blog.title | escape }}","item":"{{ shop.url }}{{ blog.url }}"}' -%}
+      {%- assign pos = pos | plus: 1 -%}
+    {%- endif -%}
+
+    {%- assign current_name = '' -%}
+    {%- if t == 'product' -%}
+      {%- assign current_name = product.title -%}
+    {%- elsif t == 'collection' -%}
+      {%- assign current_name = collection.title -%}
+    {%- elsif t == 'blog' -%}
+      {%- assign current_name = blog.title -%}
+    {%- elsif t == 'article' -%}
+      {%- assign current_name = article.title -%}
+    {%- elsif t == 'search' -%}
+      {%- assign current_name = 'general.search.title' | t | default: 'Search' -%}
+    {%- elsif t == 'cart' -%}
+      {%- assign current_name = 'general.cart.title' | t | default: 'Cart' -%}
+    {%- elsif t == 'customers' -%}
+      {%- assign current_name = page_title -%}
+    {%- elsif t == 'page' -%}
+      {%- assign current_name = resolved_title | default: page.title | default: page_title -%}
+    {%- else -%}
+      {%- assign current_name = resolved_title | default: page_title -%}
+    {%- endif -%}
+
+    {%- assign items = items | append: ',{"@type":"ListItem","position":' | append: pos | append: ',"name":"{{ current_name | escape }}","item":"{{ shop.url }}{{ request.path }}"}' -%}
+  {%- endcapture -%}
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{{ crumb_json | strip }}]
+    }
+  </script>
+{%- endunless -%}

@@ -1,0 +1,14 @@
+<section class="mt-[30px] md:mt-[60px]" id="category-products-bottom-{{ section.id }}">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <div
+      id="cat-bottom-grid-{{ section.id }}"
+      class="grid gap-4 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+    >
+      {% for product in collection.products %}
+        {% render 'product-card', product: product %}
+      {% endfor %}
+    </div>
+
+    {% render 'load-more', target_id: 'cat-bottom-grid-' | append: section.id, initial: 5, step: 5 %}
+  </div>
+</section>

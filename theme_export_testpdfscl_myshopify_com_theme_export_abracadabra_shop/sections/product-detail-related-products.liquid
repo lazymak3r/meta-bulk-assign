@@ -1,0 +1,19 @@
+{% assign related_products = product.metafields.related_products.products.value %}
+
+{% if related_products and related_products.count > 0 %}
+  {% render 'product-slider', title: section.settings.title, products: related_products, id_suffix: 'pdp' %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "Verwandte Produkte",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titel",
+      "default": "Mehr aus der gleichen Serie"
+    }
+  ]
+}
+{% endschema %}

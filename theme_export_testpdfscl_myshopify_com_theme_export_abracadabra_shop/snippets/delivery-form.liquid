@@ -1,0 +1,83 @@
+{% comment %}
+  Reusable delivery form snippet
+  Usage: {% render 'delivery-form', form_id: 'my-form-id' %}
+{% endcomment %}
+
+{%- assign form_id = form_id | default: 'delivery-form' -%}
+
+{{ 'delivery-form.css' | asset_url | stylesheet_tag }}
+
+<form id="{{ form_id }}" class="discount-form collapsed" onsubmit="return false">
+  <input
+    id="{{ form_id }}-zip"
+    class="discount-input"
+    type="text"
+    inputmode="numeric"
+    pattern="[0-9]*"
+    placeholder="Postleitzahl eingeben"
+    autocomplete="postal-code"
+  >
+  <button id="{{ form_id }}-button" class="btn-primary-cta" type="button">Lieferzeit und Preis berechnen</button>
+  <div id="{{ form_id }}-result" style="margin-top:10px;"></div>
+</form>
+
+<script>
+(function() {
+  const formId = {{ form_id | json }};
+  const zipInput = document.getElementById(formId + '-zip');
+  const calcButton = document.getElementById(formId + '-button');
+  const resultDiv = document.getElementById(formId + '-result');
+  
+  {% if product %}
+    const variantId = {{ product.variants.first.id | json }};
+    const productId = {{ product.id | json }};
+  {% else %}
+    const variantId = null;
+    const productId = null;
+  {% endif %}
+
+  if (!calcButton || !zipInput || !resultDiv) return;
+
+  calcButton.addEventListener('click', async () => {
+    const zip = zipInput.value.trim();
+    
+    if (!zip) {
+      resultDiv.innerHTML = 'Bitte geben Sie eine Postleitzahl ein.';
+      return;
+    }
+
+    if (!variantId) {
+      resultDiv.innerHTML = 'Produktinformationen fehlen.';
+      return;
+    }
+
+    resultDiv.innerHTML = 'Berechnung läuft…';
+
+    try {
+      const res = await fetch('https://api.app615423e.interbranche.com/api/shipping/calc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          zip: zip,
+          variant_id: variantId,
+          quantity: 1
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        resultDiv.innerHTML = 'Keine Liefermethoden gefunden.';
+        return;
+      }
+
+      resultDiv.innerHTML = json.rates
+        .map(r => `${r.title}: ${r.price} ${r.currency}`)
+        .join('<br>');
+    } catch (error) {
+      resultDiv.innerHTML = 'Fehler bei der Berechnung. Bitte versuchen Sie es erneut.';
+      console.error('Shipping calculation error:', error);
+    }
+  });
+})();
+</script>
