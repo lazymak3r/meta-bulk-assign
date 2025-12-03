@@ -20,6 +20,60 @@ export async function applyMetafieldsToProduct(
       continue;
     }
 
+    // For list.metaobject_reference, validate array of GIDs
+    if (config.type === 'list.metaobject_reference') {
+      if (!Array.isArray(config.value)) {
+        console.log(`Skipping metafield ${config.namespace}.${config.key} - value is not an array`);
+        continue;
+      }
+
+      // Validate each GID in the array
+      const invalidGids = config.value.filter(gid => !String(gid).startsWith('gid://shopify/Metaobject/'));
+      if (invalidGids.length > 0) {
+        console.log(`Skipping metafield ${config.namespace}.${config.key} - invalid metaobject GIDs found`);
+        continue;
+      }
+
+      const metafield = {
+        namespace: config.namespace,
+        key: config.key,
+        value: JSON.stringify(config.value), // Stringify array for GraphQL
+        type: config.type,
+      };
+
+      metafields.push(metafield);
+      continue;
+    }
+
+    // For list.file_reference, validate array of file GIDs
+    if (config.type === 'list.file_reference') {
+      if (!Array.isArray(config.value)) {
+        console.log(`Skipping metafield ${config.namespace}.${config.key} - value is not an array`);
+        continue;
+      }
+
+      // Filter out empty values and validate GIDs
+      const validFileGids = config.value.filter(gid => {
+        const gidStr = String(gid);
+        return gidStr && (gidStr.startsWith('gid://shopify/MediaImage/') || gidStr.startsWith('gid://shopify/GenericFile/'));
+      });
+
+      if (validFileGids.length === 0) {
+        console.log(`Skipping metafield ${config.namespace}.${config.key} - no valid file GIDs`);
+        continue;
+      }
+
+      const metafield = {
+        namespace: config.namespace,
+        key: config.key,
+        value: JSON.stringify(validFileGids), // Stringify array for GraphQL
+        type: config.type,
+      };
+
+      metafields.push(metafield);
+      continue;
+    }
+
     // For metaobject_reference, ensure value is a valid GID
     if (config.type === 'metaobject_reference') {
       const valueStr = String(config.value);

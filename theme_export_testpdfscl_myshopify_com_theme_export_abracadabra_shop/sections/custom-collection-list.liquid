@@ -1,0 +1,64 @@
+{{ 'custom-collection-list.css' | asset_url | stylesheet_tag }}
+
+<div id="collections-listing" class="page-width">
+  <div class="title-wrapper-with-link title-wrapper--self-padded-mobile title-wrapper--no-top-margin">
+    <h2 class="title">{{ section.settings.title | escape }}</h2>
+  </div>
+
+  <div class="collection-grid">
+    {% for collection in collections %}
+      {%- comment -%}
+        Skip the automatic "all" collection unless you want to show it.
+      {%- endcomment -%}
+      {%- if collection.handle == 'all' -%}
+        {%- continue -%}
+      {%- endif -%}
+
+      <a href="{{ collection.url }}" class="collection-card">
+        <div class="collection-card__image-wrapper">
+          {%- if collection.image -%}
+            <img
+              src="{{ collection.image | image_url: width: 500 }}"
+              alt="{{ collection.image.alt | default: collection.title | escape }}"
+              width="500"
+              height="{{ 500 | divided_by: collection.image.aspect_ratio | round }}"
+              loading="lazy"
+              class="collection-card__image"
+            >
+          {%- else -%}
+            {{ 'collection-1' | placeholder_svg_tag: 'placeholder-svg' }}
+          {%- endif -%}
+        </div>
+        <div class="collection-card__info">
+          <h3 class="collection-card__title">{{ collection.title }}</h3>
+          <p class="collection-card__product-count">
+            {{ 'collections.general.items_with_count' | t: count: collection.products_count }}
+          </p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Kollektionsliste",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Überschrift",
+      "default": "Unsere Kollektionen"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Kollektionsliste"
+    }
+  ]
+}
+{% endschema %}
+
+

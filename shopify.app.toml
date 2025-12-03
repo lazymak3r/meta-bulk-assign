@@ -21,3 +21,8 @@ redirect_urls = [
   "https://meta-bulk-assign.vercel.app/api/auth",
   "https://meta-bulk-assign.vercel.app/api/auth/callback"
 ]
+
+[app_proxy]
+url = "https://meta-bulk-assign.vercel.app"
+subpath = "meta-bulk-assign"
+prefix = "apps"

@@ -1,0 +1,126 @@
+{{ 'section-featured-categories.css' | asset_url | stylesheet_tag }}
+
+{% assign collections_count = section.settings.collections.size %}
+{% assign nonblank_collections = section.settings.collections | compact %}
+{% assign collections_count = nonblank_collections.size %}
+{% assign initial_visible = 5 %}
+
+<section class="mt-[23px] 2xl:mt-[100px] featured-categories">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <div class="mb-[16px] md:mb-[45px] flex justify-center md:justify-start">
+      <h2 class="!text-[32px] md:!text-[48px] leading-tight font-[400]">
+        {{ section.settings.title }}
+      </h2>
+    </div>
+
+    <div id="fc-rest" class="grid grid-cols-1 md:grid-cols-6 gap-[20px] md:gap-[10px]">
+      {% for collection in nonblank_collections %}
+        {% assign idx = forloop.index0 %}
+        {% assign mod = idx | modulo: 5 %}
+
+        <a
+          href="{{ collection.url }}"
+          class="
+            group relative col-span-1 collection-item h-[170px]
+            {% if mod == 0 or mod == 1 %} md:col-span-3 md:aspect-[16/9] md:h-auto {% else %} md:col-span-2 md:aspect-auto md:h-[570px]{% endif %}
+            overflow-hidden shadow-md transition-shadow duration-300 hover:shadow-2xl
+          "
+        >
+          {% assign subtitle = collection.metafields.custom.subtitle
+            | default: collection.description
+            | strip_html
+            | truncate: 80
+          %}
+
+          <div class="relative h-full">
+            {% if collection.image != blank %}
+              <img
+                src="{{ collection.image | img_url: '800x600' }}"
+                alt="{{ collection.title }}"
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out transform-gpu group-hover:scale-[1.03]"
+                style="will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform-origin: center;"
+                width="800"
+                height="600"
+              >
+            {% else %}
+              <img
+                src="{{ collection.products.first | img_url: '800x600' }}"
+                alt="{{ collection.title }}"
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out transform-gpu group-hover:scale-[1.03]"
+                style="will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform-origin: center;"
+                width="800"
+                height="600"
+              >
+            {% endif %}
+          </div>
+
+          <!-- gradient base -->
+          <div
+            class="
+              absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent
+              transition-colors duration-300 group-hover:bg-none group-hover:bg-[#1C1C1C]/80
+            "
+          ></div>
+
+          {% if collection.title != blank %}
+            <!-- static subtitle bottom-left (hidden on hover) -->
+            <div class="absolute left-[22px] bottom-[26px] z-10 pointer-events-none">
+              <span class="text-white font-[400] text-[24px] leading-[1.1] drop-shadow transition-opacity duration-300 group-hover:opacity-0">
+                {{ collection.title }}
+              </span>
+            </div>
+          {% endif %}
+
+          <!-- centered hover content -->
+          <div
+            class="
+              absolute inset-0 aspect-[16/9] h-full w-full flex items-center justify-center py-[26px] px-[22px] text-center
+              opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0
+            "
+          >
+            <div class="max-w-[90%] text-white">
+              <h3 class="text-[22px] md:text-[32px] leading-tight mb-2 drop-shadow">
+                {{ collection.title }}
+              </h3>
+              {% if subtitle != blank %}
+                <p class="text-[14px] md:text-[16px] leading-snug text-white/90">
+                  {{ subtitle }}
+                </p>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+    {% if collections_count > initial_visible %}
+      {% render 'load-more', target_id: 'fc-rest', initial: initial_visible, step: initial_visible %}
+    {% endif %}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Ausgewählte Kategorien",
+  "settings": [
+    {
+      "type": "collection_list",
+      "id": "collections",
+      "label": "Kategorien auswählen"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titel",
+      "default": "Kategorien"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Ausgewählte Kategorien"
+    }
+  ]
+}
+{% endschema %}
+
+<!-- load more logic handled in reusable snippet -->

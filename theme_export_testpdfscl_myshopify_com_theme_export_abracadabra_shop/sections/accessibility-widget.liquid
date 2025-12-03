@@ -1,0 +1,586 @@
+{{ 'accessibility-widget.css' | asset_url | stylesheet_tag }}
+
+<!-- Accessibility Widget -->
+<div class="accessibility-widget" id="accessibility-widget">
+    <!-- Sticky Button -->
+    <div class="accessibility-sticky-btn" id="accessibility-sticky-btn" onclick="toggleAccessibilityMenu()" title="Accessibility">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
+        </svg>
+    </div>
+
+    <!-- Accessibility Menu -->
+    <div class="accessibility-menu" id="accessibility-menu">
+        <!-- Header -->
+        <div class="accessibility-header">
+            <h3>Accessibility Menu (CTRL+U)</h3>
+            <button class="accessibility-close" onclick="toggleAccessibilityMenu()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- General Settings -->
+        <div class="accessibility-settings">
+            <div class="setting-item">
+                <div class="setting-left">
+                    <div class="setting-icon language-icon">US</div>
+                    <span>English (USA)</span>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                </svg>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-left">
+                    <div class="setting-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                    </div>
+                    <span>Accessibility Profiles</span>
+                </div>
+                <div class="setting-right">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                    </svg>
+                    <div class="info-icon">i</div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-left">
+                    <span>XL Oversized Widget</span>
+                </div>
+                <div class="toggle-switch" onclick="toggleOversizedWidget()">
+                    <div class="toggle-slider" id="oversized-toggle"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accessibility Options Grid -->
+        <div class="accessibility-options">
+            <div class="option-grid">
+                <button class="accessibility-option" onclick="toggleContrast()">
+                    <div class="option-icon contrast-icon"></div>
+                    <span>Contrast +</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleScreenReader()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                    </div>
+                    <span>Screen Reader</span>
+                    <div class="info-icon">i</div>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleSmartContrast()">
+                    <div class="option-icon smart-contrast-icon"></div>
+                    <span>Smart Contrast</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleHighlightLinks()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3.9 12l2.1 2.1L9 9.2l-2.1-2.1L3.9 12zm6.1-6.1l2.1 2.1L12 3.9l-2.1 2.1L10 5.9z"/>
+                        </svg>
+                    </div>
+                    <span>Highlight Links</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleBiggerText()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.5 4v3h5v12h3V7h5V4H2.5zM21.5 9h-9v3h3v7h3v-7h3V9z"/>
+                        </svg>
+                    </div>
+                    <span>Bigger Text</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleTextSpacing()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 17h10v-2H7v2zm12-4H5v-2h14v2zm0-4H5V7h14v2z"/>
+                        </svg>
+                    </div>
+                    <span>Text Spacing</span>
+                </button>
+
+                <button class="accessibility-option" onclick="togglePauseAnimations()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+                        </svg>
+                    </div>
+                    <span>Pause Animations</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleHideImages()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                            <path d="M19 7l-2 2-2-2-2 2-2-2-2 2V5h10v2z"/>
+                        </svg>
+                    </div>
+                    <span>Hide Images</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleDyslexiaFriendly()">
+                    <div class="option-icon">Df</div>
+                    <span>Dyslexia Friendly</span>
+                    <div class="info-icon">i</div>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleCursor()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13.64 21.97a.99.99 0 0 1-1.33-.47l-2.18-4.74l-2.51 2.02c-.17.14-.38.22-.62.22a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1c.24 0 .47.09.64.23l.01-.01L14 12l-1.36 9.97z"/>
+                        </svg>
+                    </div>
+                    <span>Cursor</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleTooltips()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                    </div>
+                    <span>Tooltips</span>
+                </button>
+
+                <button class="accessibility-option" onclick="togglePageStructure()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 3v18h18V3H3zm16 16H5V5h14v14z"/>
+                            <path d="M7 7h10v2H7z"/>
+                            <path d="M7 11h10v2H7z"/>
+                            <path d="M7 15h7v2H7z"/>
+                        </svg>
+                    </div>
+                    <span>Page Structure</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleLineHeight()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h1.75L17.81 4.94 16.06 3.19 3 16.25zM20.71 7.04c.39-.39 1.02-.39 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-1.41 1.41-2.12-2.12 1.41-1.41z"/>
+                        </svg>
+                    </div>
+                    <span>Line Height</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleTextAlign()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M15 15H3v2h12v-2zm0-8H3v2h12V7zM3 13h18v-2H3v2zm0 8h18v-2H3v2zM3 3v2h18V3H3z"/>
+                        </svg>
+                    </div>
+                    <span>Text Align</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleSaturation()">
+                    <div class="option-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                            <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
+                        </svg>
+                    </div>
+                    <span>Saturation</span>
+                </button>
+
+                <button class="accessibility-option" onclick="toggleDictionary()">
+                    <div class="option-icon">A</div>
+                    <span>Dictionary</span>
+                    <div class="info-icon">i</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="accessibility-footer">
+            <button class="reset-accessibility" onclick="resetAccessibilitySettings()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                </svg>
+                <span>Reset All Accessibility Settings</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+function resetAccessibilitySettings() {
+    // Remove all accessibility classes
+    const accessibilityClasses = [
+        'oversized-widget', 'high-contrast', 'screen-reader-mode', 'smart-contrast',
+        'highlight-links', 'bigger-text', 'text-spacing', 'pause-animations',
+        'hide-images', 'dyslexia-friendly', 'large-cursor', 'show-tooltips',
+        'show-page-structure', 'increased-line-height', 'left-align-text',
+        'low-saturation', 'dictionary-mode'
+    ];
+
+    accessibilityClasses.forEach(className => {
+        document.body.classList.remove(className);
+    });
+
+    // Reset all option buttons
+    document.querySelectorAll('.accessibility-option').forEach(option => {
+        option.classList.remove('active');
+    });
+
+    // Reset toggle switch
+    const toggle = document.getElementById('oversized-toggle');
+    if (toggle) {
+        toggle.parentElement.classList.remove('active');
+    }
+
+    // Clear localStorage
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+        if (key.startsWith('accessibility-')) {
+            localStorage.removeItem(key);
+        }
+    });
+
+    // Close menu
+    toggleAccessibilityMenu();
+
+    console.log('All accessibility settings reset');
+}
+
+function loadAccessibilitySettings() {
+    // Load and apply saved settings
+    const settings = [
+        { key: 'oversized', class: 'oversized-widget', element: 'oversized-toggle' },
+        { key: 'contrast', class: 'high-contrast', selector: '[onclick="toggleContrast()"]' },
+        { key: 'screen-reader', class: 'screen-reader-mode', selector: '[onclick="toggleScreenReader()"]' },
+        { key: 'smart-contrast', class: 'smart-contrast', selector: '[onclick="toggleSmartContrast()"]' },
+        { key: 'highlight-links', class: 'highlight-links', selector: '[onclick="toggleHighlightLinks()"]' },
+        { key: 'bigger-text', class: 'bigger-text', selector: '[onclick="toggleBiggerText()"]' },
+        { key: 'text-spacing', class: 'text-spacing', selector: '[onclick="toggleTextSpacing()"]' },
+        { key: 'pause-animations', class: 'pause-animations', selector: '[onclick="togglePauseAnimations()"]' },
+        { key: 'hide-images', class: 'hide-images', selector: '[onclick="toggleHideImages()"]' },
+        { key: 'dyslexia-friendly', class: 'dyslexia-friendly', selector: '[onclick="toggleDyslexiaFriendly()"]' },
+        { key: 'large-cursor', class: 'large-cursor', selector: '[onclick="toggleCursor()"]' },
+        { key: 'show-tooltips', class: 'show-tooltips', selector: '[onclick="toggleTooltips()"]' },
+        { key: 'show-page-structure', class: 'show-page-structure', selector: '[onclick="togglePageStructure()"]' },
+        { key: 'increased-line-height', class: 'increased-line-height', selector: '[onclick="toggleLineHeight()"]' },
+        { key: 'left-align-text', class: 'left-align-text', selector: '[onclick="toggleTextAlign()"]' },
+        { key: 'low-saturation', class: 'low-saturation', selector: '[onclick="toggleSaturation()"]' },
+        { key: 'dictionary-mode', class: 'dictionary-mode', selector: '[onclick="toggleDictionary()"]' }
+    ];
+
+    settings.forEach(setting => {
+        const isEnabled = localStorage.getItem(`accessibility-${setting.key}`) === 'true';
+        if (isEnabled) {
+            document.body.classList.add(setting.class);
+
+            if (setting.element) {
+                const element = document.getElementById(setting.element);
+                if (element) {
+                    element.parentElement.classList.add('active');
+                }
+            } else if (setting.selector) {
+                const element = document.querySelector(setting.selector);
+                if (element) {
+                    element.classList.add('active');
+                }
+            }
+        }
+    });
+}
+
+// Accessibility Widget Functions
+function initializeAccessibilityWidget() {
+    // Load saved settings from localStorage
+    loadAccessibilitySettings();
+
+    // Add keyboard shortcut (Ctrl+U)
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'u') {
+            e.preventDefault();
+            toggleAccessibilityMenu();
+        }
+    });
+}
+
+function toggleAccessibilityMenu() {
+    const menu = document.getElementById('accessibility-menu');
+    const isActive = menu.classList.contains('active');
+
+    if (isActive) {
+        menu.classList.remove('active');
+    } else {
+        menu.classList.add('active');
+    }
+}
+
+
+
+function toggleOversizedWidget() {
+    const toggle = document.getElementById('oversized-toggle');
+    const switchElement = toggle.parentElement;
+    const isActive = switchElement.classList.contains('active');
+
+    if (isActive) {
+        switchElement.classList.remove('active');
+        document.body.classList.remove('oversized-widget');
+        localStorage.setItem('accessibility-oversized', 'false');
+    } else {
+        switchElement.classList.add('active');
+        document.body.classList.add('oversized-widget');
+        localStorage.setItem('accessibility-oversized', 'true');
+    }
+}
+
+function toggleContrast() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('high-contrast');
+        localStorage.setItem('accessibility-contrast', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('high-contrast');
+        localStorage.setItem('accessibility-contrast', 'true');
+    }
+}
+
+function toggleScreenReader() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('screen-reader-mode');
+        localStorage.setItem('accessibility-screen-reader', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('screen-reader-mode');
+        localStorage.setItem('accessibility-screen-reader', 'true');
+    }
+}
+
+function toggleSmartContrast() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('smart-contrast');
+        localStorage.setItem('accessibility-smart-contrast', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('smart-contrast');
+        localStorage.setItem('accessibility-smart-contrast', 'true');
+    }
+}
+
+function toggleHighlightLinks() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('highlight-links');
+        localStorage.setItem('accessibility-highlight-links', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('highlight-links');
+        localStorage.setItem('accessibility-highlight-links', 'true');
+    }
+}
+
+function toggleBiggerText() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('bigger-text');
+        localStorage.setItem('accessibility-bigger-text', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('bigger-text');
+        localStorage.setItem('accessibility-bigger-text', 'true');
+    }
+}
+
+function toggleTextSpacing() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('text-spacing');
+        localStorage.setItem('accessibility-text-spacing', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('text-spacing');
+        localStorage.setItem('accessibility-text-spacing', 'true');
+    }
+}
+
+function togglePauseAnimations() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('pause-animations');
+        localStorage.setItem('accessibility-pause-animations', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('pause-animations');
+        localStorage.setItem('accessibility-pause-animations', 'true');
+    }
+}
+
+function toggleHideImages() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        //document.body.classList.remove('hide-images');
+        localStorage.setItem('accessibility-hide-images', 'false');
+    } else {
+        option.classList.add('active');
+        //document.body.classList.add('hide-images');
+        localStorage.setItem('accessibility-hide-images', 'true');
+    }
+}
+
+function toggleDyslexiaFriendly() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('dyslexia-friendly');
+        localStorage.setItem('accessibility-dyslexia-friendly', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('dyslexia-friendly');
+        localStorage.setItem('accessibility-dyslexia-friendly', 'true');
+    }
+}
+
+function toggleCursor() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('large-cursor');
+        localStorage.setItem('accessibility-large-cursor', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('large-cursor');
+        localStorage.setItem('accessibility-large-cursor', 'true');
+    }
+}
+
+function toggleTooltips() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('show-tooltips');
+        localStorage.setItem('accessibility-show-tooltips', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('show-tooltips');
+        localStorage.setItem('accessibility-show-tooltips', 'true');
+    }
+}
+
+function togglePageStructure() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('show-page-structure');
+        localStorage.setItem('accessibility-show-page-structure', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('show-page-structure');
+        localStorage.setItem('accessibility-show-page-structure', 'true');
+    }
+}
+
+function toggleLineHeight() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('increased-line-height');
+        localStorage.setItem('accessibility-increased-line-height', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('increased-line-height');
+        localStorage.setItem('accessibility-increased-line-height', 'true');
+    }
+}
+
+function toggleTextAlign() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('left-align-text');
+        localStorage.setItem('accessibility-left-align-text', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('left-align-text');
+        localStorage.setItem('accessibility-left-align-text', 'true');
+    }
+}
+
+function toggleSaturation() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('low-saturation');
+        localStorage.setItem('accessibility-low-saturation', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('low-saturation');
+        localStorage.setItem('accessibility-low-saturation', 'true');
+    }
+}
+
+function toggleDictionary() {
+    const option = event.target.closest('.accessibility-option');
+    const isActive = option.classList.contains('active');
+
+    if (isActive) {
+        option.classList.remove('active');
+        document.body.classList.remove('dictionary-mode');
+        localStorage.setItem('accessibility-dictionary-mode', 'false');
+    } else {
+        option.classList.add('active');
+        document.body.classList.add('dictionary-mode');
+        localStorage.setItem('accessibility-dictionary-mode', 'true');
+    }
+}
+
+
+// Initialize accessibility widget
+initializeAccessibilityWidget();
+
+
+</script>

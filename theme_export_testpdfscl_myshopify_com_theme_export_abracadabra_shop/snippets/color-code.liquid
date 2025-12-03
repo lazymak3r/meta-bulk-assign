@@ -1,0 +1,77 @@
+{% assign color = color | downcase -%}
+
+{% capture out -%}
+  {% case color -%}
+    {% when "messing" -%}#DAA520
+    {% when "graphit" -%}#474A51
+    {% when "anthrazit" -%}#303030
+    {% when "nickel" -%}#AFAFAF
+    {% when "dunkelgrün" -%}#006400
+    {% when "weiß" -%}#FFFFFF
+    {% when "blau" -%}#0000FF
+    {% when "rost" -%}#B7410E
+    {% when "cappuccino" -%}#A67B5B
+    {% when "dunkelgrau" -%}#2F2F2F
+    {% when "ecru" -%}#C2B280
+    {% when "edelstahl" -%}#B0B0B0
+    {% when "hellgelb" -%}#FFFF99
+    {% when "rot" -%}#FF0000
+    {% when "fichte" -%}#556B2F
+    {% when "eiche hell" -%}#DEB887
+    {% when "rosa" -%}#FFC0CB
+    {% when "aluminium" -%}#C8C8C8
+    {% when "sand" -%}#C2B280
+    {% when "hellgrau" -%}#D3D3D3
+    {% when "bordeaux" -%}#800000
+    {% when "champagner" -%}#F7E7CE
+    {% when "beige" -%}#F5F5DC
+    {% when "flieder" -%}#E6E6FA
+    {% when "mehrfarbig" -%}#FFAAFF
+    {% when "holzfarben dunkel" -%}#8B5A2B
+    {% when "offwhite" -%}#FAF9F6
+    {% when "klar" -%}#FFFFFF
+    {% when "oliv" -%}#808000
+    {% when "grau" -%}#808080
+    {% when "chrom" -%}#E0E0E0
+    {% when "hellrot" -%}#FF6666
+    {% when "eiche dunkel" -%}#654321
+    {% when "apricot" -%}#FBCEB1
+    {% when "schilf" -%}#B2B377
+    {% when "dunkelblau" -%}#00008B
+    {% when "holzfarben" -%}#A0522D
+    {% when "türkis" -%}#40E0D0
+    {% when "pastell" -%}#FFAAFF
+    {% when "hellbraun" -%}#A52A2A
+    {% when "mittelblau" -%}#4682B4
+    {% when "petrol" -%}#005F6A
+    {% when "bronze" -%}#CD7F32
+    {% when "silber" -%}#C0C0C0
+    {% when "gold" -%}#FFD700
+    {% when "braun" -%}#8B4513
+    {% when "schwarz" -%}#000000
+    {% when "mint" -%}#98FF98
+    {% when "jeansblau" -%}#5D8AA8
+    {% when "kupfer" -%}#B87333
+    {% when "gelb" -%}#FFFF00
+    {% when "natur" -%}#EEDC82
+    {% when "dunkelbraun" -%}#5C4033
+    {% when "pink" -%}#FFC0CB
+    {% when "hellblau" -%}#ADD8E6
+    {% when "creme" -%}#FFFDD0
+    {% when "hellgrün" -%}#90EE90
+    {% when "buche" -%}#C68642
+    {% when "metallfarben" -%}#B0B0B0
+    {% when "transparent" -%}transparent
+    {% when "dunkelrot" -%}#8B0000
+    {% when "orange" -%}#FFA500
+    {% when "holzfarben hell" -%}#D2B48C
+    {% when "königsblau" -%}#4169E1
+    {% when "lila" -%}#800080
+    {% when "grün" -%}#008000
+    {% when "taupe" -%}#483C32
+    {% when "smaragd" -%}#50C878
+    {% else -%}#FFAAFF
+  {% endcase -%}
+{% endcapture -%}
+
+{{ out | strip }}

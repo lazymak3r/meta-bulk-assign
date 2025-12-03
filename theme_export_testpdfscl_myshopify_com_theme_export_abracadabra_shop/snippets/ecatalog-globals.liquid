@@ -1,0 +1,73 @@
+<script>
+  (function () {
+    // Lightweight global handlers so e-catalog can call into the theme everywhere
+    if (typeof window.handleCardATC !== 'function') {
+      window.handleCardATC = function (e, form) {
+        try {
+          e && e.preventDefault && e.preventDefault();
+          e && e.stopPropagation && e.stopPropagation();
+
+          var card = form && form.closest ? form.closest('article[data-product-id]') : null;
+          var variantId =
+            (card && card.getAttribute('data-variant-id')) ||
+            (form && form.querySelector && (form.querySelector('input[name="id"]') || {}).value);
+          if (!variantId) return false;
+
+          return fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ id: variantId, quantity: 1 }),
+          })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function () {
+              // Notify theme listeners; many themes listen to one of these
+              document.dispatchEvent(new CustomEvent('cart:refresh', { detail: { open: true } }));
+              document.dispatchEvent(new CustomEvent('cart:updated'));
+              document.dispatchEvent(new CustomEvent('cart-drawer:open', { detail: { source: 'ecatalog' } }));
+            })
+            .catch(function (err) {
+              console.error('ATC error', err);
+            })
+            .finally(function () {
+              return false;
+            });
+        } catch (err) {
+          console.error('handleCardATC failed', err);
+          return false;
+        }
+      };
+    }
+
+    if (typeof window.handleFavoriteClick !== 'function') {
+      window.handleFavoriteClick = function (e, handle) {
+        try {
+          e && e.preventDefault && e.preventDefault();
+          if (!handle) return;
+          var raw = localStorage.getItem('favorites') || '[]';
+          var favorites = [];
+          try {
+            favorites = JSON.parse(raw) || [];
+          } catch (_) {}
+          var idx = favorites.indexOf(handle);
+          if (idx >= 0) {
+            favorites.splice(idx, 1);
+          } else {
+            favorites.push(handle);
+          }
+          localStorage.setItem('favorites', JSON.stringify(favorites));
+          // update header counter if function exists
+          if (typeof window.updateWishlistCount === 'function') window.updateWishlistCount();
+          // let theme parts react if needed
+          document.dispatchEvent(
+            new CustomEvent('favorite:updated', { detail: { handle: handle, inFavorites: idx < 0 } })
+          );
+        } catch (err) {
+          console.error('favorite handler failed', err);
+        }
+      };
+    }
+  })();
+</script>

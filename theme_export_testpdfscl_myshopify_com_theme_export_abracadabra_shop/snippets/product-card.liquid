@@ -1,0 +1,458 @@
+{% assign variations = product.metafields.variations.variations.value %}
+
+{%- assign new_window_days = settings.new_window_days | default: 30 -%}
+{%- comment %} Flags (no logic inside assign) {%- endcomment %}
+{%- assign is_sold_out = false -%}
+{%- if product.available == false -%}{%- assign is_sold_out = true -%}{%- endif -%}
+{%- assign has_discount = false -%}
+{%- if product.compare_at_price_max and product.price_min and product.compare_at_price_max > product.price_min -%}
+  {%- assign has_discount = true -%}
+{%- endif -%}
+{%- comment %} Discount % (safe math) {%- endcomment %}
+{%- assign discount_pct = 0 -%}
+{%- if has_discount -%}
+  {%- assign ca_min = product.compare_at_price_min | default: 0 -%}
+  {%- assign pr_min = product.price_min | default: 0 -%}
+  {%- if ca_min > 0 and pr_min > 0 and ca_min > pr_min -%}
+    {%- assign discount_pct = ca_min | minus: pr_min | times: 100 | divided_by: ca_min | round -%}
+  {%- endif -%}
+{%- endif -%}
+{%- comment %} New badge by tag OR time window {%- endcomment %}
+{%- assign is_new = false -%}
+{%- assign tags_down = product.tags | join: ',' | downcase -%}
+{%- if tags_down contains 'new' or tags_down contains 'neu' -%}
+  {%- assign is_new = true -%}
+{%- endif -%}
+{%- unless is_new -%}
+  {%- if product.published_at -%}
+    {%- assign pub_ts = product.published_at | date: '%s' -%}
+    {%- assign now_ts = 'now' | date: '%s' -%}
+    {%- assign days_since = now_ts | minus: pub_ts | divided_by: 86400 -%}
+    {%- if days_since >= 0 and days_since < new_window_days -%}
+      {%- assign is_new = true -%}
+    {%- endif -%}
+  {%- endif -%}
+{%- endunless -%}
+{%- comment %} Primary badge (sold out > sale > new) {%- endcomment %}
+{%- assign badge_text = '' -%}
+{%- assign badge_class = '' -%}
+{%- if is_sold_out -%}
+  {%- assign badge_text = 'Verkauf' -%}
+  {%- assign badge_class = 'bg-[#8B8B8B]' -%}
+{%- elsif has_discount and discount_pct > 0 -%}
+  {%- assign badge_text = '-' | append: discount_pct | append: '%' -%}
+  {%- assign badge_class = 'bg-[#FF8A00]' -%}
+{%- elsif is_new -%}
+  {%- assign badge_text = 'Neu' -%}
+  {%- assign badge_class = 'bg-[#FF4D4D]' -%}
+{%- endif -%}
+
+{%- comment %} Kitchen collection UVP flag {%- endcomment %}
+{%- assign is_kuche = false -%}
+{%- if collection and collection.handle -%}
+  {%- assign coll_handle_down = collection.handle | downcase -%}
+  {%- if coll_handle_down contains 'kuche' -%}
+    {%- assign is_kuche = true -%}
+  {%- endif -%}
+{%- endif -%}
+
+{{ 'product-card.css' | asset_url | stylesheet_tag }}
+
+<article
+  data-url="{{ product.url | within: collection }}"
+  data-product-id="{{ product.id }}"
+  data-variant-id="{{ product.variants.first.id }}"
+  role="link"
+  tabindex="0"
+  class="pcard group relative overflow-hidden transition-all duration-300 ease-out hover:border-transparent h-full flex flex-col cursor-pointer"
+>
+  {%- if badge_text != '' -%}
+    <div class="pcard-badge">
+      <span class="px-[8px] py-[2px] inline-flex items-center text-white text-[12px] font-semibold {{ badge_class }}">
+        {{- badge_text -}}
+      </span>
+    </div>
+  {%- endif -%}
+
+  <!-- Clickable -->
+  <a
+    href="{{ product.url | within: collection }}"
+    class="sr-only"
+    aria-label="Produkt ansehen {{ product.title | escape }}"
+  ></a>
+  <!-- Media -->
+  <div class="pcard-media" data-gallery data-no-card-nav>
+    <div class="pcard-media-inner">
+      {% assign gallery = product.images %}
+      {% for image in gallery %}
+        <img
+          src="{{ image | img_url: '600x' }}"
+          data-full="{{ image | img_url: '1100x' }}"
+          alt="{{ product.title | escape }} - {{ forloop.index }}"
+          class="pcard-img absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-out {% if forloop.first %}pcard-img--active{% endif %}"
+          loading="{% if forloop.index > 2 %}lazy{% else %}eager{% endif %}"
+        >
+      {% endfor %}
+
+      {% if gallery.size > 1 %}
+        <!-- Prev / Next arrows -->
+        <button type="button" class="img-arrow img-arrow--prev" aria-label="Vorheriges Bild" data-no-card-nav>
+          <!-- chevron left -->
+          <svg width="8" height="15" viewBox="0 0 8 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0.749478 0.749219L6.18281 6.18255C6.82448 6.82422 6.82448 7.87422 6.18281 8.51589L0.749479 13.9492" stroke="#647167" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button type="button" class="img-arrow img-arrow--next" aria-label="Nächstes Bild" data-no-card-nav>
+          <!-- chevron right -->
+          <svg width="8" height="15" viewBox="0 0 8 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0.749478 0.749219L6.18281 6.18255C6.82448 6.82422 6.82448 7.87422 6.18281 8.51589L0.749479 13.9492" stroke="#647167" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="p-[16px] isolate grow flex flex-col">
+    <h3 class="text-[20px] leading-[22px] font-medium text-gray-900 flex items-center gap-2">
+      {{ product.title | escape }}
+    </h3>
+
+    <p class="mt-1 text-[14px] 2xl:text-[16px] hidden md:block font-light leading-[18px] text-[#2E2E2D]">
+      {{ product.metafields.attributes.subtitle }}
+    </p>
+
+    <!-- button appeared -->
+    {% comment %}
+      <div class="card-added hidden mt-3" data-no-card-nav>
+        <a
+          href="/cart"
+          class="
+            card-added-btn h-10 px-4 rounded-full border border-[#647167] text-[#647167] bg-white
+            inline-flex items-center gap-2 text-[12px] 2xl:text-[16px] font-medium whitespace-nowrap shadow-sm
+            transition hover:bg-[#647167] hover:text-white focus:outline-none
+            focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#647167]
+          "
+          data-no-card-nav
+        >
+          <span>Zum Warenkorb</span>
+          <!-- cart icon (same as ATC) -->
+          <svg
+            class="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="M3 3h2l2.4 12.3a1.5 1.5 0 0 0 1.48 1.2h8.42a1.5 1.5 0 0 0 1.46-1.12L21 7H6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="10" cy="20" r="1.5" fill="currentColor"/>
+            <circle cx="17" cy="20" r="1.5" fill="currentColor"/>
+          </svg>
+        </a>
+      </div>
+    {% endcomment %}
+
+    {%- if is_kuche -%}
+      {%- assign energylabels = product.metafields.energylabels -%}
+      {%- if energylabels and energylabels.size > 0 -%}
+        <!-- Energy labels (only for Küche collection) -->
+        <div class="energy-row mt-[16px]">
+          <div class="flex flex-row flex-wrap gap-3 items-center">
+            {% for metafield in energylabels %}
+              {% assign energylabel = metafield[1].value | parse_json %}
+              <a
+                href="{{ energylabel.pdf_url }}"
+                target="_blank"
+                rel="noopener"
+                class="flex flex-col items-start flex-wrap gap-1 text-[12px] text-gray-700 hover:text-brand"
+                aria-label="{{ energylabel.type }}"
+              >
+                <svg
+                  width="60"
+                  height="28"
+                  viewBox="0 0 80 38"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path d="M57.501 0L80 19L57.501 37.999V38H0.000976562V0H57.501Z" fill="{% render 'energy-label-color', label: energylabel.label %}"/>
+                  <path d="{% render 'energy-label-letter', label: energylabel.label %}" fill="white"/>
+                </svg>
+                <span class="text-[12px] hover:underline leading-none">{{ energylabel.type }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {%- endif -%}
+    {%- endif -%}
+    <!-- Features from metafields -->
+    {%- assign features_mf = product.metafields.attributes.Features -%}
+
+    {% if features_mf and features_mf.value.size > 0 %}
+      <div class="with-checks with-checks--sm leading-[1.5] text-[#2E2E2D]">
+        <ul class="list-none mt-[16px] pl-0">
+          {% for feature in features_mf.value %}
+            {% assign clean_feature = feature | strip %}
+            {% if clean_feature != blank %}
+              <li class="relative pl-8 mt-2 font-[400] text-[12px] 2xl:text-[16px] leading-[20px]">
+                {{ clean_feature }}
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <div class="description overflow-y-scroll  mt-5 text-[14px] 2xl:text-[16px] leading-[20px] text-[#2E2E2D] break-words max-h-[280px]">
+        {{ product.description | strip_html }}
+      </div>
+    {% endif %}
+
+    <div class="mt-auto">
+      {% for variation in variations %}
+        {% if variation.settings.type == 'colorpicker' %}
+          <div class="mt-[16px] w-full flex gap-[14px] flex-wrap">
+            {% for option in variation.options %}
+              <span
+                class="inline-block w-[20px] h-[20px] rounded-full pcard-swatch"
+                style="background-color: {% render 'color-code', color: option.value %};"
+              ></span>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <div class="mt-6 border-t border-[#C2C2C2]"></div>
+
+      <!-- sticky footer area -->
+      <div class="mt-[16px]">
+        <!-- ROW WRAPPER: make this relative so the absolute arrow centers to this row only -->
+        <div class="relative group atc-row" data-reveal="icons">
+          <!-- Row: price + actions; right padding = space for the absolute arrow -->
+          <div class="flex flex-wrap md:items-center justify-between gap-4 min-h-[44px]">
+            <!-- Price -->
+            <div class="flex items-center gap-2 min-w-0">
+              {%- if has_discount and is_sold_out == false and discount_pct > 0 -%}
+                <span class="text-[16px] 2xl:text-[20px] text-[#111] whitespace-nowrap">
+                  {%- if is_kuche -%}
+                    <span class="font-[700] mr-1">UVP</span>
+                  {%- endif -%}
+                  <span class="font-[400] hidden md:inline">ab</span>
+                  <span class="font-[700]">{% render 'formatted-price', price: product.price -%}</span>
+                </span>
+                <s class="text-[13px] 2xl:text-[15px] text-gray-500 whitespace-nowrap">
+                  {%- render 'formatted-price', price: product.compare_at_price -%}
+                </s>
+                <span class="text-xs text-[#FF8A00] font-semibold shrink-0">Sie sparen {{ discount_pct }}%</span>
+              {%- else -%}
+                <span class="text-[16px] 2xl:text-[20px] font-semibold text-[#111] whitespace-nowrap">
+                  {%- if is_kuche -%}
+                    <span class="font-[700] mr-1">UVP</span>
+                  {%- endif -%}
+                  <span class="font-[400] hidden md:inline">ab</span>
+                  <span class="font-[700]">{% render 'formatted-price', price: product.price -%}</span>
+                </span>
+              {%- endif -%}
+            </div>
+
+            <!-- Actions -->
+            <div class="ml-auto sm:mt-0 flex items-center gap-2 shrink-0" data-no-card-nav>
+              <!-- CTA -->
+              <form
+                method="post"
+                action="/cart/add"
+                accept-charset="UTF-8"
+                class="flex gap-[12px] items-center pointer-events-auto relative z-20 shrink-0"
+                data-no-card-nav
+              >
+                <input type="hidden" name="id" value="{{ product.variants.first.id }}">
+
+                <!-- Wishlist (matches cart icon styling) -->
+                <button
+                  type="button"
+                  class="
+                    favorite-btn grid place-items-center w-[32px] h-[30px] rounded-full
+                    border border-[#647167] transition
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#647167]
+                  "
+                  aria-label="Zu Favoriten hinzufügen"
+                  data-product-id="{{ product.handle }}"
+                  data-no-card-nav
+                >
+                  <!-- provided heart SVG -->
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10.496 16.9343C10.224 17.0219 9.776 17.0219 9.504 16.9343C7.184 16.2112 2 13.1949 2 8.08258C2 5.82584 3.992 4 6.448 4C7.904 4 9.192 4.6427 10 5.63596C10.808 4.6427 12.104 4 13.552 4C16.008 4 18 5.82584 18 8.08258C18 13.1949 12.816 16.2112 10.496 16.9343Z" stroke="#647167" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+
+                <!-- Always-visible icon; submits the hidden form above -->
+                <button
+                  type="submit"
+                  form="card-atc-{{ product.id }}"
+                  class="
+                    icon-btn icon-add-to-cart grid place-items-center w-[32px] h-[32px] rounded-full
+                    border border-[#647167] transition
+                    hover:bg-[#ECECEC]
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#647167]
+                  "
+                  aria-label="In den Warenkorb"
+                  data-no-card-nav
+                >
+                  <!-- borderless cart SVG -->
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_18456_5812)">
+                    <path d="M1.5 1.5H2.47962C2.66414 1.5 2.75639 1.5 2.83064 1.53393C2.89606 1.56383 2.95151 1.61192 2.99036 1.67246C3.03445 1.74116 3.0475 1.83249 3.07359 2.01515L3.42857 4.5M3.42857 4.5L4.21749 10.2986C4.3176 11.0344 4.36766 11.4023 4.54357 11.6793C4.69858 11.9233 4.92081 12.1173 5.18352 12.238C5.48165 12.375 5.85296 12.375 6.59558 12.375H13.014C13.7209 12.375 14.0744 12.375 14.3632 12.2478C14.6179 12.1357 14.8364 11.9549 14.9942 11.7257C15.1732 11.4657 15.2393 11.1185 15.3716 10.4241L16.3643 5.21227C16.4109 4.96786 16.4342 4.84565 16.4004 4.75012C16.3708 4.66633 16.3124 4.59576 16.2357 4.55101C16.1481 4.5 16.0237 4.5 15.7749 4.5H3.42857ZM7.5 15.75C7.5 16.1642 7.16421 16.5 6.75 16.5C6.33579 16.5 6 16.1642 6 15.75C6 15.3358 6.33579 15 6.75 15C7.16421 15 7.5 15.3358 7.5 15.75ZM13.5 15.75C13.5 16.1642 13.1642 16.5 12.75 16.5C12.3358 16.5 12 16.1642 12 15.75C12 15.3358 12.3358 15 12.75 15C13.1642 15 13.5 15.3358 13.5 15.75Z" stroke="#647167" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <ellipse cx="6.75078" cy="15.7508" rx="0.45" ry="0.45" fill="#647167"/>
+                    <ellipse cx="13.0516" cy="15.7508" rx="0.45" ry="0.45" fill="#647167"/>
+                    </g>
+                    <defs>
+                    <clipPath id="clip0_18456_5812">
+                    <rect width="18" height="18" fill="white"/>
+                    </clipPath>
+                    </defs>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+<script>
+  (() => {
+    const initCardGalleries = () => {
+      document.querySelectorAll('.pcard [data-gallery]').forEach((root) => {
+        if (root.__galleryBound) return;
+        root.__galleryBound = true;
+
+        const imgs = Array.from(root.querySelectorAll('.pcard-img'));
+        if (imgs.length < 2) return;
+
+        let idx = imgs.findIndex((el) => el.classList.contains('pcard-img--active'));
+        if (idx < 0) idx = 0;
+
+        const show = (next) => {
+          imgs[idx]?.classList.remove('pcard-img--active');
+          idx = (next + imgs.length) % imgs.length;
+          imgs[idx]?.classList.add('pcard-img--active');
+        };
+
+        root.querySelector('.img-arrow--prev')?.addEventListener(
+          'click',
+          (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            show(idx - 1);
+          },
+          true
+        );
+
+        root.querySelector('.img-arrow--next')?.addEventListener(
+          'click',
+          (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            show(idx + 1);
+          },
+          true
+        );
+      });
+    };
+
+    document.addEventListener('DOMContentLoaded', initCardGalleries);
+    ['shopify:section:load', 'shopify:section:select', 'shopify:section:reorder'].forEach((evt) =>
+      document.addEventListener(evt, initCardGalleries)
+    );
+  })();
+</script>
+<script>
+  (() => {
+    const INTERACTIVE_SELECTORS = [
+      'a',
+      'button',
+      'input',
+      'select',
+      'textarea',
+      'label',
+      '[role="button"]',
+      '[contenteditable="true"]',
+      '[data-no-card-nav]',
+      '.img-arrow',
+      'form',
+    ].join(',');
+
+    const navigate = (card) => {
+      const url = card?.getAttribute('data-url');
+      if (!url) return;
+      window.location.assign(url);
+    };
+
+    const bindCardNav = () => {
+      document.querySelectorAll('.pcard[role="link"]').forEach((card) => {
+        if (card.__navBound) return;
+        card.__navBound = true;
+
+        card.addEventListener('click', (e) => {
+          const target = e.target;
+          if (!target) return;
+          if (target.closest(INTERACTIVE_SELECTORS)) return; // let native controls work
+          e.preventDefault();
+          navigate(card);
+        });
+
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (e.target && e.target.closest(INTERACTIVE_SELECTORS)) return;
+            e.preventDefault();
+            navigate(card);
+          }
+        });
+      });
+    };
+
+    document.addEventListener('DOMContentLoaded', bindCardNav);
+    ['shopify:section:load', 'shopify:section:select', 'shopify:section:reorder'].forEach((evt) =>
+      document.addEventListener(evt, bindCardNav)
+    );
+  })();
+</script>
+<script>
+  (() => {
+    const initCardLightboxOpen = () => {
+      document.querySelectorAll('.pcard [data-gallery]').forEach((root) => {
+        if (root.__lbBound) return;
+        root.__lbBound = true;
+
+        const imgs = Array.from(root.querySelectorAll('.pcard-img'));
+        if (!imgs.length) return;
+
+        const getActive = () => {
+          const i = imgs.findIndex((el) => el.classList.contains('pcard-img--active'));
+          return i < 0 ? 0 : i;
+        };
+
+        // open overlay when clicking image area (but NOT the arrows)
+        root.addEventListener(
+          'click',
+          (e) => {
+            if (e.target.closest('.img-arrow')) return; // <-- only ignore arrows now
+            const sources = imgs.map((img) => img.getAttribute('data-full') || img.getAttribute('src'));
+            try {
+              window.RoomioLightbox?.open(sources, getActive());
+            } catch (e) {
+              console.error('RoomioLightbox failed', e);
+            }
+          },
+          true
+        );
+      });
+    };
+
+    document.addEventListener('DOMContentLoaded', initCardLightboxOpen);
+    ['shopify:section:load', 'shopify:section:select', 'shopify:section:reorder'].forEach((evt) =>
+      document.addEventListener(evt, initCardLightboxOpen)
+    );
+  })();
+</script>

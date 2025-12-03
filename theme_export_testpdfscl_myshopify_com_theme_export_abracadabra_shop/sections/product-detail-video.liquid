@@ -1,0 +1,59 @@
+{% for video in product.metafields.videos %}
+  {% assign video_id = video[1] | split: '/' | last %}
+
+  <!-- VIDEO BANNER -->
+  <section class="mt-[30px] 2xl:mt-[100px]">
+    <div class="max-w-[var(--container)] mx-auto">
+      <div class="relative w-full aspect-video overflow-hidden shadow-soft">
+        <!-- Poster image (replace with your new PM asset) -->
+        <img
+          id="product-video-cover"
+          alt="{{ product.title }}"
+          class="absolute inset-0 w-full h-full object-cover"
+          width="1920"
+          height="1080"
+        >
+        <!-- Play button -->
+        <button
+          id="videoPlay"
+          class="absolute inset-0 m-auto w-16 h-16 md:w-20 md:h-20 grid place-items-center rounded-full bg-white/90 hover:bg-white transition shadow"
+          aria-label="Play video"
+        >
+          <svg viewBox="0 0 24 24" class="w-7 h-7">
+            <path fill="currentColor" d="M8 5v14l11-7z"></path>
+          </svg>
+        </button>
+
+        <iframe
+          id="videoEl"
+          class="absolute inset-0 w-full h-full hidden"
+          src="{{ video[1] }}"
+          title="{{ product.title }}"
+          frameborder="0"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>
+  </section>
+{% endfor %}
+
+<script>
+  window.addEventListener('load', () => {
+    loadYoutubeThumbnail('product-video-cover', '{{ video_id }}');
+
+    const btn = document.getElementById('videoPlay');
+    const video = document.getElementById('videoEl');
+    btn?.addEventListener('click', () => {
+      if (!video) return;
+      btn.classList.add('hidden');
+      video.classList.remove('hidden');
+      video.play?.();
+    });
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Produktvideos"
+}
+{% endschema %}

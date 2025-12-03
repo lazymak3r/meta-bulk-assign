@@ -1,0 +1,149 @@
+<!-- PRODUCT TRANSPARENCY -->
+<section id="pt" class="mt-[30px] 2xl:mt-[100px] bg-[#F5F5F5]">
+  <div class="max-w-[var(--container)] mx-auto py-[60px] xl:py-[80px]">
+    <div class="grid xl:grid-cols-[minmax(280px,1fr)_minmax(420px,700px)_minmax(260px,1fr)] items-start xl:gap-x-[60px]">
+      <!-- Left image -->
+      <figure class="relative overflow-hidden mt-[20px] md:mt-[131px]">
+        <img
+          src="{{ section.settings.image_1 | img_url: '1000x' }}"
+          alt=""
+          class="w-full h-auto aspect-[16/9] md:h-[420px] md:h-[520px] lg:h-[580px] object-cover"
+        >
+      </figure>
+
+      <!-- Center text column -->
+      <div class="flex items-center self-center">
+        <div class="w-full mx-auto mt-[20px] 2xl:mt-[0]">
+          {% assign mobile_title = section.settings.mobile_title | strip %}
+          <h2 class="text-[32px] lg:text-[48px] leading-none font-[400] text-brand">
+            {% if mobile_title != blank %}
+              <span class="only-mobile-title">{{ mobile_title }}</span>
+              <span class="only-desktop">{{ section.settings.title }}</span>
+            {% else %}
+              {{ section.settings.title }}
+            {% endif %}
+          </h2>
+
+          <!-- Rich text (may include <ul>) -->
+          {% assign mobile_intro = section.settings.mobile_intro | strip %}
+          <div
+            class="rte flex flex-col gap-5 mt-3 md:mt-4 !text-[14px] font-[400] md:text-[20px] leading-7 text-customGray"
+          >
+            {% if mobile_intro != blank %}
+              <div class="only-mobile gap-[24px]">{{ mobile_intro }}</div>
+              <div class="only-desktop gap-[24px]">{{ section.settings.description }}</div>
+            {% else %}
+              {{ section.settings.description }}
+            {% endif %}
+          </div>
+
+          <!-- Optional bullet blocks -->
+          {% if section.blocks.size > 0 %}
+            <div id="pt-bullets" class="mt-6 md:mt-8">
+              <ul role="list">
+                {% for block in section.blocks %}
+                  {% if block.type == 'bullet' %}
+                    <li role="listitem">
+                      <strong>{{ block.settings.text }}</strong>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Right image -->
+      <figure class="relative overflow-hidden self-center mt-[20px] 2xl:mt-[0]">
+        <img
+          src="{{ section.settings.image_2 | img_url: '1000x' }}"
+          alt=""
+          class="w-full h-auto aspect-[16/9] md:h-[460px] md:h-[560px] lg:h-[620px] object-cover"
+        >
+      </figure>
+    </div>
+  </div>
+
+  <!-- Scoped styles: bullets in richtext AND block list -->
+  <style>
+    /* Show different content on mobile/desktop when mobile intro is provided */
+    .only-desktop > p {
+      color: #2e2e2d !important;
+      font-size: 20px !important;
+      font-weight: 400 !important;
+      line-height: 1.5;
+    }
+    .only-desktop > ul {
+      font-size: 20px !important;
+      font-weight: 400 !important;
+    }
+
+    @media (max-width: 768px) {
+      .only-mobile {
+        display: contents;
+        font-size: 14px !important;
+      }
+      .only-mobile > ul {
+        font-size: 16px !important;
+      }
+
+      .only-mobile-title {
+        display: inline;
+        font-size: 32px !important;
+        font-weight: 400 !important;
+      }
+
+      .only-desktop {
+        display: none;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .only-mobile {
+        display: none;
+      }
+
+      .only-mobile-title {
+        display: none;
+      }
+
+      .only-desktop {
+        display: contents;
+      }
+    }
+  </style>
+</section>
+
+{% schema %}
+{
+  "name": "Produkt-Werbetext",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Titel" },
+    {
+      "type": "text",
+      "id": "mobile_title",
+      "label": "Mobile Titel (optional)",
+      "info": "Wird nur auf mobilen Geräten angezeigt. Desktop zeigt den vollen Titel."
+    },
+    { "type": "richtext", "id": "description", "label": "Beschreibung", "default": "<p>Beschreibung</p>" },
+    {
+      "type": "richtext",
+      "id": "mobile_intro",
+      "label": "Mobile Einleitung (optional)",
+      "info": "Wird nur auf mobilen Geräten angezeigt. Desktop zeigt die volle Beschreibung."
+    },
+    { "type": "image_picker", "id": "image_1", "label": "Bild 1" },
+    { "type": "image_picker", "id": "image_2", "label": "Bild 2" }
+  ],
+  "blocks": [
+    {
+      "type": "bullet",
+      "name": "Stichpunkt",
+      "limit": 6,
+      "settings": [{ "type": "text", "id": "text", "label": "Text" }]
+    }
+  ],
+  "presets": [{ "name": "Produkt-Werbetext" }]
+}
+{% endschema %}

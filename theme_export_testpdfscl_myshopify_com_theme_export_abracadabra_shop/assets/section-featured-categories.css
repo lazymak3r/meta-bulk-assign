@@ -1,0 +1,74 @@
+.pay-badge {
+    display: inline-flex;
+    height: 24px;
+    min-width: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.25rem;
+    background-color: #ffffff;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+.pay-badge img {
+    width: auto;
+    max-height: 16px;
+    object-fit: cover;
+}
+
+/* Energy chevrons */
+.energy-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    white-space: nowrap;
+    gap: 16px;
+}
+.energy {
+    --bg: #2f9e44;
+    --w: 10px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 23px;
+    flex: 0 0 auto;
+    color: #fff;
+    font: 600 12px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    background: var(--bg);
+    white-space: nowrap;
+    padding: 0 calc(12px + var(--w)) 0 12px;
+
+    clip-path: polygon(
+        0 0,
+        calc(100% - var(--w)) 0,
+        100% 50%,
+        calc(100% - var(--w)) 100%,
+        0 100%
+    );
+}
+/* butt the chevrons together (no seam) */
+.energy + .energy {
+    margin-left: calc(-1 * var(--w));
+}
+
+.energy-row .brand {
+    height: 25px;
+    width: auto;
+    display: block;
+}
+
+.featured-categories .collection-item {
+    position: relative;
+}
+.featured-categories .collection-item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) inset;
+    transition: opacity 0.3s ease;
+}
+.featured-categories .collection-item:hover::after {
+    opacity: 1;
+}

@@ -1,0 +1,75 @@
+<section class="mt-[60px] 2xl:mt-[100px] bg-[#F5F5F5]">
+    <div class="container max-w-[var(--container)] md:mx-auto" >
+        <div
+            class="grid lg:grid-cols-12 2xl:gap-[84px] items-center md:py-[60px] 2xl:py-[100px]"
+        >
+            <!-- Image first on mobile, second on desktop -->
+            <div class="lg:col-span-7 order-1 lg:order-2 min-w-0">
+                <div
+                    class="relative w-full max-w-[1006px] aspect-[16/9] overflow-hidden mx-auto"
+                >
+                    {% if section.settings.image %}
+                        <img 
+                            src="{{ section.settings.image | image_url: width: 1006 }}" 
+                            alt="{{ section.settings.image.alt | escape }}" 
+                            class="block w-full h-full object-cover"
+                        >
+                    {% endif %}
+                
+                </div>
+            </div>
+
+            <!-- Left copy -->
+            <div
+                class="lg:col-span-5 order-2 lg:order-1 mt-[8px] md:mt-[28px] 2xl:mt-0 justify-self-center md:justify-self-start"
+            >
+                <h2
+                    class="!text-[32px] md:!text-[48px] leading-[1.4] text-brand"
+                >
+                    {{ section.settings.title }}
+                </h2>
+                <p
+                    class="mt-[8px] text-[16px] md:text-[20px] leading-[1.5] text-[#2E2E2D]"
+                >
+                    {{ section.settings.description }}
+                </p>
+                <a href="{{ section.settings.collection.url | default: '/collections/sofa' }}" class="mt-6 md:mt-12 btn-primary md:w-[209px] w-full">
+                    {{ section.settings.button }}</a
+                >
+            </div>
+        </div>
+    </div>
+</section>
+
+{% schema %}
+{
+  "name": "Ausgewählte Kategorie (L)",
+  "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Bild"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titel"
+        },
+        {
+          "type": "text",
+          "id": "button",
+          "label": "Taste"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Beschreibung"
+        }
+      ],
+  "presets": [
+    {
+      "name": "Vorgestellte Kategorie links"
+    }
+  ]
+}
+{% endschema %}

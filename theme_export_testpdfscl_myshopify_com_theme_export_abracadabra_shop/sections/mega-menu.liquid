@@ -1,0 +1,560 @@
+<style>
+  {{ section.settings.menu_font | font_face }}
+  /* --- Desktop Dropdown Menu --- */
+  :root {
+    --menu-bg-color: {{ section.settings.menu_bg_color }};
+    --menu-text-color: {{ section.settings.menu_text_color }};
+    --menu-font-family: {{ section.settings.menu_font.family }}, {{ section.settings.menu_font.fallback_families }};
+    --menu-l2-font-size: {{ section.settings.font_size_l2 }}px;
+    --menu-l2-line-height: {{ section.settings.line_height_l2 }};
+    --menu-l3-font-size: {{ section.settings.font_size_l3 }}px;
+    --menu-l3-line-height: {{ section.settings.line_height_l3 }};
+    --menu-column-gap: {{ section.settings.column_gap }}px;
+    --menu-l1-spacing: {{ section.settings.level_1_spacing }}px;
+  }
+  .header__inline-menu { position: static; }
+  .header__inline-menu .list-menu__item--has-dropdown {
+    position: static;
+    padding-bottom: 20px;
+    margin-bottom: -20px;
+  }
+  .dropdown-container {
+    display: none; position: fixed; top: 0; left: 0;
+    background-color: var(--menu-bg-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 120px 40px 40px; z-index: -1;
+    width: fit-content; height: 100vh; overflow-y: auto;
+  }
+  .list-menu__item--has-dropdown:hover > .dropdown-container { display: block; z-index: 10; }
+  .dropdown-l1-nav { display: flex; gap: 30px; padding-bottom: 30px; border-bottom: 1px solid #e5e5e5; margin-bottom: var(--menu-l1-spacing); }
+  .dropdown-l1-nav a { text-decoration: none; color: var(--menu-text-color); font-family: var(--menu-font-family); font-size: 18px; font-weight: 500; padding-bottom: 5px; border-bottom: 2px solid transparent; }
+  .dropdown-l1-nav a.active, .dropdown-l1-nav a:hover { border-bottom-color: var(--menu-text-color); }
+  .dropdown-grid { display: grid; grid-template-columns: max-content 1fr; gap: var(--menu-column-gap); max-width: 1300px; }
+  .dropdown-column--left { width: max-content; }
+  .dropdown-column--left ul, .flyout-content ul { list-style: none; padding: 0; margin: 0; }
+  .dropdown-item--l2 a { display: block; padding: 2px 0; text-decoration: none; color: var(--menu-text-color); font-family: var(--menu-font-family); font-size: var(--menu-l2-font-size); line-height: var(--menu-l2-line-height); font-weight: 400; text-transform: uppercase; white-space: nowrap; transition: color 0.2s ease, transform 0.2s ease; }
+  .dropdown-item--l2 a:hover { text-decoration: underline; }
+  .dropdown-item--l2:hover a { transform: translateX(4px); }
+
+  /* KORREKTUR: L3-Header ist jetzt ein Link */
+  .flyout-l3-header { display: block; text-decoration: none; margin: 0 0 10px 0; font-family: var(--menu-font-family); font-size: var(--menu-l3-font-size); line-height: var(--menu-l3-line-height); font-weight: 700; color: var(--menu-text-color); text-transform: uppercase; }
+  .flyout-l3-header:hover { text-decoration: underline; }
+
+  .flyout-l4-list { margin-bottom: 25px; }
+  .flyout-l4-link { display: block; padding: 2px 0; text-decoration: none; font-family: var(--menu-font-family); font-size: var(--menu-l3-font-size); line-height: var(--menu-l3-line-height); color: var(--menu-text-color); font-weight: 400; }
+  .flyout-l4-link:hover { text-decoration: underline; }
+
+  /* Flyout appear transition */
+  .dropdown-column--right { position: relative; }
+  .flyout-fade { opacity: 0; transform: translateY(6px); transition: opacity 0.2s ease, transform 0.2s ease; }
+  .flyout-fade.is-visible { opacity: 1; transform: translateY(0); }
+
+  /* --- MOBILE NAVIGATION STYLES --- */
+  .mobile-menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background-color: rgba(0, 0, 0, 0.5); z-index: 99999; }
+  .mobile-menu-overlay.is-open { display: block; }
+  .mobile-menu__panel { position: absolute; top: 0; left: 0; width: 90%; max-width: 400px; height: 100dvh; background-color: {{ section.settings.mobile_bg_color }}; color: {{ section.settings.mobile_text_color }}; transform: translateX(-100%); transition: transform 0.3s ease-in-out; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  .is-open .mobile-menu__panel { transform: translateX(0); }
+  .mobile-menu__header { display: flex; justify-content: flex-end; padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+  .mobile-menu__close { background: none; border: none; cursor: pointer; color: inherit; }
+  .mobile-menu__content { padding: 20px; }
+  .mobile-menu__list { list-style: none; padding: 0; margin: 0; }
+  /* borders only for top-level items to avoid overlapping lines in nested lists */
+  .mobile-menu__list > .mobile-menu__item { border-bottom: 1px solid rgba(0,0,0,0.1); }
+  .mobile-menu__list > .mobile-menu__item:last-child { border-bottom: 0; }
+  .mobile-menu__item-wrapper { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+  .mobile-menu__link {
+    display: block;
+    padding: 15px 0;
+    color: inherit;
+    font-size: {{ section.settings.mobile_font_size_l1 }}px;
+    text-decoration: none;
+    flex-grow: 1;
+    word-break: break-word;
+  }
+  .mobile-menu__toggle {
+    background: none; border: none; cursor: pointer; color: inherit;
+    padding: 15px;
+    flex-shrink: 0;
+  }
+  .mobile-menu__submenu { display: none; padding-left: 20px; }
+  /* remove borders on nested submenu items */
+  .mobile-menu__submenu .mobile-menu__item { border-bottom: 0; }
+  .mobile-menu__submenu.is-open { display: block; }
+  .mobile-menu__submenu .mobile-menu__link { font-size: {{ section.settings.mobile_font_size_l2 }}px; }
+  .mobile-menu__submenu .mobile-menu__submenu .mobile-menu__link { font-size: {{ section.settings.mobile_font_size_l3 }}px; }
+  .mobile-menu__toggle .icon-plus, .mobile-menu__toggle.is-open .icon-minus { display: block; }
+  .mobile-menu__toggle .icon-minus, .mobile-menu__toggle.is-open .icon-plus { display: none; }
+</style>
+
+<button id="menuBtn" class="2xl:hidden justify-self-start p-2 -ml-2">
+  <span class="sr-only">Open menu</span>
+  <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M21 1.4C21 0.626828 20.3732 0 19.6 0H1.4C0.626829 0 0 0.626828 0 1.4C0 2.17317 0.626829 2.8 1.4 2.8H19.6C20.3732 2.8 21 2.17312 21 1.4ZM1.4 8.4H26.6C27.3732 8.4 28 9.02688 28 9.8C28 10.5732 27.3732 11.2 26.6 11.2H1.4C0.626829 11.2 0 10.5732 0 9.8C0 9.02688 0.626829 8.4 1.4 8.4ZM1.4 16.8H14C14.7731 16.8 15.4 17.4268 15.4 18.2C15.4 18.9731 14.7731 19.6 14 19.6H1.4C0.626829 19.6 0 18.9731 0 18.2C0 17.4268 0.626829 16.8 1.4 16.8Z" fill="black"/>
+  </svg>
+</button>
+
+<!-- Desktop Navigation -->
+<nav class="hidden 2xl:flex items-center gap-10 text-[18px] font-medium header__inline-menu">
+  <ul class="list-none flex gap-10 p-0 m-0">
+    {%- for link in section.settings.menu.links -%}
+      {%- liquid
+        assign has_dropdown = false
+        assign dropdown_block = null
+        for block in section.blocks
+          if block.type == 'vertical_dropdown' and block.settings.trigger == link.title
+            assign has_dropdown = true
+            assign dropdown_block = block
+            break
+          endif
+        endfor
+      -%}
+      <li class="{% if has_dropdown %}list-menu__item--has-dropdown{% endif %}">
+        <a href="{{ link.url }}" class="hover:underline transition-all">{{ link.title }}</a>
+        {%- if has_dropdown -%}
+          <div class="dropdown-container">
+            <div class="dropdown-l1-nav">
+              {%- for l1_link in section.settings.menu.links -%}
+                <a
+                  href="{{ l1_link.url }}"
+                  class="{% if l1_link.title == dropdown_block.settings.trigger %}active{% endif %}"
+                >
+                  {{- l1_link.title -}}
+                </a>
+              {%- endfor -%}
+            </div>
+            <div class="dropdown-grid">
+              <div class="dropdown-column--left">
+                <ul>
+                  {%- for l2_link in dropdown_block.settings.dropdown_menu.links -%}
+                    <li class="dropdown-item--l2" data-handle="{{ l2_link.handle }}">
+                      <a href="{{ l2_link.url }}">{{ l2_link.title }}</a>
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              </div>
+              <div class="dropdown-column--right">
+                <div id="flyout-content-{{ section.id }}-{{ forloop.index }}"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flyout-menus-data" style="display: none;">
+            {%- for l2_link in dropdown_block.settings.dropdown_menu.links -%}
+              {%- if l2_link.links.size > 0 -%}
+                <div data-handle="{{ l2_link.handle }}">
+                  {%- for l3_link in l2_link.links -%}
+                    <!-- DIESE ZEILE WURDE GEÄNDERT -->
+                    <a href="{{ l3_link.url }}" class="flyout-l3-header">{{ l3_link.title }}</a>
+                    {%- if l3_link.links.size > 0 -%}
+                      <ul class="flyout-l4-list">
+                        {%- for l4_link in l3_link.links -%}
+                          <li>
+                            <a href="{{ l4_link.url }}" class="flyout-l4-link">{{ l4_link.title }}</a>
+                          </li>
+                        {%- endfor -%}
+                      </ul>
+                    {%- endif -%}
+                  {%- endfor -%}
+                </div>
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+        {%- endif -%}
+      </li>
+    {%- endfor -%}
+  </ul>
+</nav>
+
+<!-- NEUE Mobile Navigation (Overlay) -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <div class="mobile-menu__panel">
+    <div class="mobile-menu__header">
+      <button class="mobile-menu__close">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="mobile-menu__content">
+      <ul class="mobile-menu__list">
+        {%- for l1_link in section.settings.menu.links -%}
+          {%- liquid
+            assign has_l2_dropdown = false
+            assign dropdown_block = null
+            for block in section.blocks
+              if block.type == 'vertical_dropdown' and block.settings.trigger == l1_link.title
+                assign has_l2_dropdown = true
+                assign dropdown_block = block
+                break
+              endif
+            endfor
+          -%}
+          <li class="mobile-menu__item">
+            {%- if has_l2_dropdown and dropdown_block.settings.dropdown_menu.links.size > 0 -%}
+              <div class="mobile-menu__item-wrapper">
+                <a href="{{ l1_link.url }}" class="mobile-menu__link">{{ l1_link.title }}</a>
+                <button class="mobile-menu__toggle">
+                  <span class="mobile-menu__toggle-icon">
+                    <svg
+                      class="icon-plus h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <svg
+                      class="icon-minus h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+              <ul class="mobile-menu__submenu">
+                {%- for l2_link in dropdown_block.settings.dropdown_menu.links -%}
+                  <li class="mobile-menu__item">
+                    {%- if l2_link.links.size > 0 -%}
+                      <div class="mobile-menu__item-wrapper">
+                        <a href="{{ l2_link.url }}" class="mobile-menu__link">{{ l2_link.title }}</a>
+                        <button class="mobile-menu__toggle">
+                          <span class="mobile-menu__toggle-icon">
+                            <svg
+                              class="icon-plus h-5 w-5"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            <svg
+                              class="icon-minus h-5 w-5"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                            </svg>
+                          </span>
+                        </button>
+                      </div>
+                      <ul class="mobile-menu__submenu">
+                        {%- for l3_link in l2_link.links -%}
+                          <li class="mobile-menu__item">
+                            {%- if l3_link.links.size > 0 -%}
+                              <div class="mobile-menu__item-wrapper">
+                                <a href="{{ l3_link.url }}" class="mobile-menu__link">{{ l3_link.title }}</a>
+                                <button class="mobile-menu__toggle">
+                                  <span class="mobile-menu__toggle-icon">
+                                    <svg
+                                      class="icon-plus h-5 w-5"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                    </svg>
+                                    <svg
+                                      class="icon-minus h-5 w-5"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                    </svg>
+                                  </span>
+                                </button>
+                              </div>
+                              <ul class="mobile-menu__submenu">
+                                {%- for l4_link in l3_link.links -%}
+                                  <li class="mobile-menu__item">
+                                    <a href="{{ l4_link.url }}" class="mobile-menu__link">{{ l4_link.title }}</a>
+                                  </li>
+                                {%- endfor -%}
+                              </ul>
+                            {%- else -%}
+                              <a href="{{ l3_link.url }}" class="mobile-menu__link">{{ l3_link.title }}</a>
+                            {%- endif -%}
+                          </li>
+                        {%- endfor -%}
+                      </ul>
+                    {%- else -%}
+                      <a href="{{ l2_link.url }}" class="mobile-menu__link">{{ l2_link.title }}</a>
+                    {%- endif -%}
+                  </li>
+                {%- endfor -%}
+              </ul>
+            {%- else -%}
+              <a href="{{ l1_link.url }}" class="mobile-menu__link">{{ l1_link.title }}</a>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Desktop Menu Logic
+    document.querySelectorAll('.list-menu__item--has-dropdown').forEach((item, index) => {
+      const l2Links = item.querySelectorAll('.dropdown-item--l2');
+      const flyoutTarget = item.querySelector(`#flyout-content-{{ section.id }}-${index + 1}`);
+      const flyoutDataSource = item.querySelector('.flyout-menus-data');
+      if (!l2Links.length || !flyoutTarget || !flyoutDataSource) return;
+
+      const DELAY_MS = 150; // tweak 150–250ms
+      let switchTimer = null;
+      let pendingHandle = null;
+
+      const showFlyout = (handle) => {
+        const sourceData = flyoutDataSource.querySelector(`[data-handle="${handle}"]`);
+        if (!sourceData) {
+          flyoutTarget.innerHTML = '';
+          return;
+        }
+        flyoutTarget.innerHTML = `<div class="flyout-fade">${sourceData.innerHTML}</div>`;
+        const fadeEl = flyoutTarget.querySelector('.flyout-fade');
+        requestAnimationFrame(() => fadeEl.classList.add('is-visible'));
+      };
+
+      l2Links.forEach((link) => {
+        const handle = link.dataset.handle;
+        const a = link.querySelector('a');
+
+        const scheduleSwitch = () => {
+          pendingHandle = handle;
+          clearTimeout(switchTimer);
+          switchTimer = setTimeout(() => {
+            if (pendingHandle === handle) showFlyout(handle);
+          }, DELAY_MS);
+        };
+
+        const cancelSwitch = () => {
+          if (pendingHandle === handle) pendingHandle = null;
+          clearTimeout(switchTimer);
+        };
+
+        link.addEventListener('mouseenter', scheduleSwitch);
+        link.addEventListener('mouseleave', cancelSwitch);
+
+        // keyboard focus behaves like hover
+        if (a) {
+          a.addEventListener('focus', scheduleSwitch);
+          a.addEventListener('blur', cancelSwitch);
+        }
+      });
+
+      // Optional: initialize first item when dropdown opens
+      const container = item.querySelector('.dropdown-container');
+      if (container) {
+        container.addEventListener('mouseenter', () => {
+          if (!flyoutTarget.innerHTML && l2Links[0]) {
+            showFlyout(l2Links[0].dataset.handle);
+          }
+        });
+      }
+
+      // Optional: entering the flyout cancels pending switches
+      flyoutTarget.addEventListener('mouseenter', () => {
+        pendingHandle = null;
+        clearTimeout(switchTimer);
+      });
+    });
+
+
+    // Mobile Menu Logic
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const closeBtn = mobileMenuOverlay.querySelector('.mobile-menu__close');
+
+    const openMenu = () => {
+      mobileMenuOverlay.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+    };
+
+    const closeMenu = () => {
+      mobileMenuOverlay.classList.remove('is-open');
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+    };
+
+    menuBtn.addEventListener('click', openMenu);
+    closeBtn.addEventListener('click', closeMenu);
+    mobileMenuOverlay.addEventListener('click', (e) => {
+      if (e.target === mobileMenuOverlay) {
+        closeMenu();
+      }
+    });
+
+    mobileMenuOverlay.querySelectorAll('.mobile-menu__toggle').forEach((toggle) => {
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const parentWrapper = toggle.closest('.mobile-menu__item-wrapper');
+        const submenu = parentWrapper.nextElementSibling;
+        if (submenu && submenu.classList.contains('mobile-menu__submenu')) {
+          submenu.classList.toggle('is-open');
+          toggle.classList.toggle('is-open');
+        }
+      });
+    });
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Header Navigation Links",
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "Main Menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "header",
+      "content": "Desktop: Dropdown Style"
+    },
+    { "type": "font_picker", "id": "menu_font", "label": "Dropdown Font", "default": "assistant_n4" },
+    { "type": "color", "id": "menu_bg_color", "label": "Background Color", "default": "#FFFFFF" },
+    { "type": "color", "id": "menu_text_color", "label": "Text Color", "default": "#000000" },
+    {
+      "type": "range",
+      "id": "dropdown_width",
+      "min": 20,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "label": "Width",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "column_gap",
+      "min": 20,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Column Spacing",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "level_1_spacing",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Abstand unter Level 1 Navigation",
+      "default": 40
+    },
+    { "type": "header", "content": "Desktop: Level 2 Font (e.g., 'MÖBEL')" },
+    {
+      "type": "range",
+      "id": "font_size_l2",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "Font Size",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "line_height_l2",
+      "min": 1.0,
+      "max": 2.5,
+      "step": 0.1,
+      "label": "Line Height",
+      "default": 1.5
+    },
+    { "type": "header", "content": "Desktop: Level 3 & 4 Font (e.g., 'Sofas')" },
+    {
+      "type": "range",
+      "id": "font_size_l3",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "Font Size",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "line_height_l3",
+      "min": 1.0,
+      "max": 2.5,
+      "step": 0.1,
+      "label": "Line Height",
+      "default": 1.5
+    },
+    {
+      "type": "header",
+      "content": "Mobile Menu Style"
+    },
+    { "type": "color", "id": "mobile_bg_color", "label": "Background Color", "default": "#FFFFFF" },
+    { "type": "color", "id": "mobile_text_color", "label": "Text Color", "default": "#000000" },
+    {
+      "type": "range",
+      "id": "mobile_font_size_l1",
+      "min": 14,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "label": "Font Size (Level 1)",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "mobile_font_size_l2",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "Font Size (Level 2)",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "mobile_font_size_l3",
+      "min": 12,
+      "max": 22,
+      "step": 1,
+      "unit": "px",
+      "label": "Font Size (Level 3+)",
+      "default": 14
+    }
+  ],
+  "blocks": [
+    {
+      "type": "vertical_dropdown",
+      "name": "Dropdown Menu",
+      "settings": [
+        {
+          "type": "text",
+          "id": "trigger",
+          "label": "Trigger Link Title",
+          "info": "Must exactly match a link in your Main Menu (e.g., 'PRODUKTE')."
+        },
+        {
+          "type": "link_list",
+          "id": "dropdown_menu",
+          "label": "Dropdown Menu Links",
+          "info": "Choose the menu with the nested list of links for this dropdown."
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

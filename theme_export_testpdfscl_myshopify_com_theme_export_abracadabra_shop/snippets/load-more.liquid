@@ -1,0 +1,95 @@
+{%- comment -%}
+  Generic Load More / Show Less control
+  Params:
+    - target_id: id of the list container (required)
+    - initial: number of items visible initially (default: 4)
+    - step: number of items to reveal per click (default: 4)
+    - more_label: button label for load more (optional)
+    - less_label: button label for show less (optional)
+{%- endcomment -%}
+
+{%- assign _initial = initial | default: 4 -%}
+{%- assign _step = step | default: _initial -%}
+{%- assign trans_more = 'sections.category_products_grid.load_more' | t: default: 'Mehr laden' -%}
+{%- assign trans_less = 'sections.category_products_grid.show_less' | t: default: 'Weniger anzeigen' -%}
+{%- assign _more = more_label | default: trans_more -%}
+{%- assign _less = less_label | default: trans_less -%}
+
+<div class="flex mt-[30px] justify-center w-full">
+  <button
+    id="lm-{{ target_id }}"
+    type="button"
+    class="w-full max-w-full mx-auto flex items-center gap-4 text-xs md:text-sm text-gray-500 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+    aria-live="polite"
+    data-target-id="{{ target_id }}"
+    data-initial="{{ _initial }}"
+    data-step="{{ _step }}"
+    data-more-label="{{ _more }}"
+    data-less-label="{{ _less }}"
+  >
+    <span aria-hidden="true" class="flex-1 h-0 border-t border-[#BAB9B7]"></span>
+    <span class="shrink-0 text-black text-[20px] btn-label">{{ _more }}</span>
+    <span aria-hidden="true" class="flex-1 h-0 border-t border-[#BAB9B7]"></span>
+  </button>
+  <script>
+    (function () {
+      var btn = document.getElementById('lm-{{ target_id }}');
+      if (!btn) return;
+      var list = document.getElementById(btn.dataset.targetId);
+      if (!list) return;
+      var initial = parseInt(btn.dataset.initial || '0', 10);
+      var step = parseInt(btn.dataset.step || '0', 10) || initial;
+      var more = btn.dataset.moreLabel || 'Mehr laden';
+      var less = btn.dataset.lessLabel || 'Weniger anzeigen';
+      var labelEl = btn.querySelector('.btn-label');
+
+      function ensureInitialState() {
+        var children = Array.prototype.slice.call(list.children);
+        // Mark and hide items beyond the initial index if not hidden yet
+        children.forEach(function (el, idx) {
+          if (idx >= initial) {
+            el.setAttribute('data-more-item', 'true');
+            if (!el.classList.contains('hidden')) el.classList.add('hidden');
+          }
+        });
+      }
+
+      function hiddenItems() {
+        return Array.prototype.slice.call(list.querySelectorAll('[data-more-item].hidden'));
+      }
+
+      function setLabel(showLess) {
+        if (labelEl) labelEl.textContent = showLess ? less : more;
+        btn.setAttribute('aria-label', showLess ? less : more);
+      }
+
+      ensureInitialState();
+      setLabel(hiddenItems().length === 0);
+
+      btn.addEventListener('click', function () {
+        var hidden = hiddenItems();
+        var allVisible = hidden.length === 0;
+
+        if (allVisible) {
+          // collapse back
+          Array.prototype.slice.call(list.querySelectorAll('[data-more-item]')).forEach(function (el) {
+            el.classList.add('hidden');
+          });
+          Array.prototype.slice
+            .call(list.children)
+            .slice(0, initial)
+            .forEach(function (el) {
+              el.classList.remove('hidden');
+            });
+          setLabel(false);
+          return;
+        }
+
+        hidden.slice(0, step).forEach(function (el) {
+          el.classList.remove('hidden');
+        });
+        setLabel(hiddenItems().length === 0);
+      });
+    })();
+  </script>
+</div>

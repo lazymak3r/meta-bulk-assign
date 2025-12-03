@@ -9,6 +9,8 @@ import {
     Banner,
     Spinner,
     HorizontalStack,
+    Checkbox,
+    Select,
 } from "@shopify/polaris";
 import {TitleBar} from "@shopify/app-bridge-react";
 import {useNavigate, useParams} from "react-router-dom";
@@ -45,9 +47,28 @@ export default function EditConfiguration() {
         refetchOnWindowFocus: false,
     });
 
+    // Helper function to fetch metaobject data by GID
+    const fetchMetaobjectData = useCallback(async (gid) => {
+        try {
+            const metaobjectId = gid.split('/').pop();
+            const response = await fetch(`/api/metaobjects/${metaobjectId}`);
+            if (!response.ok) {
+                console.error('Failed to fetch metaobject:', gid);
+                return null;
+            }
+            const data = await response.json();
+            return data.metaobject;
+        } catch (error) {
+            console.error('Error fetching metaobject:', error);
+            return null;
+        }
+    }, [fetch]);
+
     // Initialize form when data loads
     useEffect(() => {
-        if (configData) {
+        async function loadConfiguration() {
+            if (!configData) return;
+
             setName(configData.name || "");
 
             // Convert snake_case to camelCase for frontend compatibility
@@ -63,9 +84,69 @@ export default function EditConfiguration() {
             }));
             setRules(convertedRules);
 
-            setMetafieldConfigs(configData.metafield_configs || []);
+            // Convert metafield configs - if values are GIDs, fetch the actual metaobject data
+            const processedConfigs = await Promise.all(
+                (configData.metafield_configs || []).map(async (config) => {
+                    // For list.metaobject_reference, convert array of GIDs to array of field values
+                    if (config.type === 'list.metaobject_reference' && Array.isArray(config.value)) {
+                        const isGidArray = config.value.every(v =>
+                            typeof v === 'string' && v.startsWith('gid://shopify/Metaobject/')
+                        );
+
+                        if (isGidArray) {
+                            // Fetch each metaobject and convert to field values
+                            const fieldValuesArray = await Promise.all(
+                                config.value.map(async (gid) => {
+                                    const metaobject = await fetchMetaobjectData(gid);
+                                    if (!metaobject || !metaobject.fields) {
+                                        return {};
+                                    }
+
+                                    // Convert metaobject fields array to object
+                                    const fieldValues = {};
+                                    metaobject.fields.forEach(field => {
+                                        fieldValues[field.key] = field.value;
+                                    });
+                                    return fieldValues;
+                                })
+                            );
+
+                            return {
+                                ...config,
+                                value: fieldValuesArray.filter(fv => Object.keys(fv).length > 0)
+                            };
+                        }
+                    }
+
+                    // For single metaobject_reference, convert GID to field values
+                    if (config.type === 'metaobject_reference' &&
+                        typeof config.value === 'string' &&
+                        config.value.startsWith('gid://shopify/Metaobject/')) {
+
+                        const metaobject = await fetchMetaobjectData(config.value);
+                        if (metaobject && metaobject.fields) {
+                            const fieldValues = {};
+                            metaobject.fields.forEach(field => {
+                                fieldValues[field.key] = field.value;
+                            });
+
+                            return {
+                                ...config,
+                                value: fieldValues
+                            };
+                        }
+                    }
+
+                    // Return as-is if not a metaobject or already has field values
+                    return config;
+                })
+            );
+
+            setMetafieldConfigs(processedConfigs);
         }
-    }, [configData]);
+
+        loadConfiguration();
+    }, [configData, fetchMetaobjectData]);
 
     // Fetch vendors, collections, categories, metafield definitions
     const {data: vendorsData} = useQuery({

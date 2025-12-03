@@ -1,0 +1,48 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+    "sections": {
+        "all": {
+            "colors": {
+                "label": "Colors",
+                "accent_1": {
+                    "label": "Accent 1"
+                },
+                "accent_2": {
+                    "label": "Accent 2"
+                },
+                "background_1": {
+                    "label": "Background 1"
+                },
+                "background_2": {
+                    "label": "Background 2"
+                },
+                "inverse": {
+                    "label": "Inverse"
+                }
+            }
+        },
+        "category_products_grid": {
+            "name": "Category - Products",
+            "pagination_mode": {
+                "click": "Click",
+                "scroll": "Scroll",
+                "label": "Pagination mode"
+            },
+            "load_more": "Load more",
+            "loading_text": "Loading..."
+        }
+    },
+    "gift_card": {
+        "title": "Gift Card",
+        "description": "Give the gift of choice with our exclusive gift card!",
+        "learn_more": "Learn more"
+    }
+}

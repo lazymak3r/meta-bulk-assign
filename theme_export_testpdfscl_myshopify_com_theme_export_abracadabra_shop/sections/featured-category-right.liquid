@@ -1,0 +1,84 @@
+<section class="mt-[60px] 2xl:mt-[100px]">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <div class="grid md:grid-cols-2 2xl:grid-cols-[1fr_800px] gap-0 md:gap-[20px] 2xl:gap-[40px] items-stretch 2xl:min-h-[890px]">
+      <!-- Left big image fills full height -->
+      <div class="relative overflow-hidden md:block 2xl:min-h-0 hidden">
+        <img
+          class="w-full h-full object-cover 2xl:absolute 2xl:inset-0 2xl:h-full"
+          src="{{ section.settings.image1 | img_url: '925x925' }}"
+          alt="{{ block.settings.title }}"
+        >
+      </div>
+
+      <!-- Right column -->
+      <div class="w-full 2xl:w-[800px] flex flex-col 2xl:h-full">
+        <!-- desktop paddings: L 110 / T 60 / R 240 -->
+        <div class="pt-[8px] md:pt-12 2xl:px-0 2xl:pt-[60px] 2xl:pl-[110px] !pr-1 w-full order-2 md:order-1 2xl:order-1">
+          <h2 class="!text-[32px] lg:!text-[48px] leading-tight font-[400] text-brand">
+            {{ section.settings.title }}
+          </h2>
+          <p class="mt-4 !text-[14px] md:!text-[20px] leading-[1.5] text-[#2E2E2D]">
+            {{ section.settings.description }}
+          </p>
+          <a href="{{ section.settings.collection.url }}" class="mt-6 2xl:mt-12 md:!w-[238px] w-full btn-primary">
+            {{ section.settings.button }}
+          </a>
+        </div>
+
+        <!-- Right image: lock to 400px tall on desktop -->
+        <div
+          class="order-1 md:order-2 mt-0 md:pt-[73px] !pr-1 md:w-full md:max-w-[640px] lg:max-w-[720px] md:h-[300px] lg:h-full md:mx-auto overflow-hidden 2xl:order-2 2xl:mt-auto 2xl:px-0 2xl:overflow-visible 2xl:max-w-none 2xl:mx-0 2xl:h-auto"
+        >
+          <img
+            class="block w-full h-full object-cover"
+            src="{{ section.settings.image2 | img_url: '800x400' }}"
+            alt="{{ block.settings.title }}"
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Ausgewählte Kategorie (R)",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image1",
+      "label": "Bild 1"
+    },
+    {
+      "type": "image_picker",
+      "id": "image2",
+      "label": "Bild 2"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titel"
+    },
+    {
+      "type": "text",
+      "id": "button",
+      "label": "Taste"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Beschreibung"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Kollektion"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Vorgestellte Kategorie rechts"
+    }
+  ]
+}
+{% endschema %}

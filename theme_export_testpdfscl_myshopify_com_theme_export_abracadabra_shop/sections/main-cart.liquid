@@ -1,0 +1,424 @@
+{%- assign FREE_SHIP_THRESHOLD = section.settings.free_ship_threshold | default: 300 -%}
+{%- assign cart_total_num = cart.total_price | divided_by: 100.0 -%}
+
+<main class="cart-main" data-section-type="main-cart">
+  <div class="cart-container">
+    <h1 class="cart-title">Warenkorb</h1>
+
+    {%- if cart.item_count == 0 -%}
+      <div class="empty-cart">
+        <h2>Ihr Warenkorb ist leer</h2>
+        <p>Sie haben noch keine Artikel in den Warenkorb gelegt.</p>
+        <a class="btn-ghost" href="{{ routes.all_products_collection_url | default: routes.root_url }}"
+          >Jetzt einkaufen</a
+        >
+      </div>
+    {%- else -%}
+      <div class="wk-card">
+        <!-- header -->
+        {% comment %}
+          <div class="wk-head">
+            <div class="count">Artikel im Warenkorb ({{ cart.item_count }})</div>
+            <button class="clear-all" type="button" onclick="removeCartProducts()" aria-label="Alles löschen">
+              Alles löschen
+            </button>
+          </div>
+        {% endcomment %}
+
+        <!-- top free-shipping status -->
+        {% comment %}
+          {%- if cart_total_num >= FREE_SHIP_THRESHOLD -%}
+            <div class="free-ship-pill" aria-live="polite">🚚 <span>Kostenloser Versand freigeschaltet!</span></div>
+          {%- else -%}
+            {%- assign remain = FREE_SHIP_THRESHOLD | minus: cart_total_num -%}
+            {%- assign remain_cents = remain | times: 100 | round: 0 -%}
+            {%- assign pct = cart_total_num | divided_by: FREE_SHIP_THRESHOLD | times: 100 -%}
+            {%- if pct >= 99 and pct < 100 -%}{% assign pct = 99 %}{% endif -%}
+            <div class="shipping-progress" aria-live="polite">
+              <h3>
+                Nur noch {% render 'formatted-price', price: remain_cents, star: false %} bis zum KOSTENLOSEN Versand
+              </h3>
+              <div class="progress-track"><div class="progress-fill" style="width: {{ pct | at_most: 100 }}%"></div></div>
+              <div class="progress-hint">
+                Gratis ab {% render 'formatted-price', price: FREE_SHIP_THRESHOLD, star: false %}
+              </div>
+            </div>
+          {%- endif -%}
+        {% endcomment %}
+
+        <!-- lines -->
+        <div class="wk-lines">
+          {%- for item in cart.items -%}
+            <article class="wk-line">
+              <div class="wk-line-grid">
+                <div class="wk-media">
+                  {%- if item.image -%}
+                    <img
+                      loading="lazy"
+                      src="{{ item.image | image_url: width: 220 }}"
+                      alt="{{ item.product.title | escape }}"
+                      width="220"
+                      height="220"
+                    >
+                  {%- endif -%}
+                </div>
+                <div>
+                  <h3 class="wk-title">{{ item.product.title }}</h3>
+                  {% if item.variant.title != 'Default Title' %}
+                    <div class="wk-meta">{{ item.variant.title }}</div>
+                  {% endif %}
+
+                  {% assign p = item.product %}
+                  {%- assign spec_id = 'specs-' | append: forloop.index -%}
+
+                  <dl id="{{ spec_id }}" class="wk-specs is-collapsed">
+                    {% comment %} Unified specs: use unstructured metafields.attributes like wishlist {% endcomment %}
+                    {% assign attributes = p.metafields.attributes %}
+                    {% for item in attributes %}
+                      {% assign key = item[0] %}
+                      {% assign val = item[1].value %}
+                      {% if val != blank %}
+                        {% if val.first != null %}
+                          {% assign val_str = val | join: ', ' %}
+                        {% else %}
+                          {% assign val_str = val
+                            | replace: ';', ','
+                            | replace: ',', ', '
+                            | replace: '  ', ' '
+                            | strip
+                          %}
+                        {% endif %}
+                        {% unless key == 'Title' and val_str == 'Default Title' %}
+                          <dt>{{ key | replace: '_', ' ' | capitalize }}</dt>
+                          <dd>{{ val_str }}</dd>
+                        {% endunless %}
+                      {% endif %}
+                    {% endfor %}
+                  </dl>
+
+                  <div class="wk-actions">
+                    <button
+                      class="spec-toggle"
+                      type="button"
+                      aria-controls="{{ spec_id }}"
+                      aria-expanded="false"
+                      onToggle="toggleSpecs('{{ spec_id }}', this)"
+                    >
+                      <span class="spec-title">Weitere Spezifikationen</span
+                      ><span class="chev">
+                        <img
+                          src="{{ 'chevron-down.svg' | asset_url }}"
+                          width="16"
+                          height="9"
+                          alt=""
+                          aria-hidden="true"
+                        >
+                      </span>
+                    </button>
+                    <a href="{{ item.url }}">Bearbeiten</a>
+                  </div>
+                </div>
+
+                <div class="wk-line-side">
+                  <div>
+                    <div class="wk-price">{% render 'formatted-price', price: item.final_line_price %}</div>
+                    {% comment %}
+                      {%- if item.quantity > 1 -%}
+                        <div class="wk-price-each">je {% render 'formatted-price', price: item.final_price %}</div>
+                      {%- endif -%}
+                    {% endcomment %}
+                  </div>
+                  <div class="flex flex-row items-center gap-[20px] w-full md:w-auto">
+                    <div class="quantity-controls" data-line="{{ forloop.index }}">
+                      {% if item.quantity == 1 %}
+                        <button class="qty-btn trash" aria-label="Artikel entfernen" data-cart-remove>
+                          <svg
+                            width="12"
+                            height="14"
+                            viewBox="0 0 12 14"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M6.80888 11.3699V6.46157C6.80888 6.34554 6.85497 6.23426 6.93702 6.15222C7.01907 6.07017 7.13035 6.02407 7.24638 6.02407C7.36241 6.02407 7.47369 6.07017 7.55574 6.15222C7.63778 6.23426 7.68388 6.34554 7.68388 6.46157V11.3698C7.68388 11.4858 7.63778 11.5971 7.55574 11.6791C7.47369 11.7612 7.36241 11.8073 7.24638 11.8073C7.13035 11.8073 7.01907 11.7612 6.93702 11.6791C6.85497 11.5971 6.80888 11.4858 6.80888 11.3698V11.3699ZM4.31138 11.3699V6.46157C4.31138 6.34554 4.35748 6.23426 4.43952 6.15222C4.52157 6.07017 4.63285 6.02407 4.74888 6.02407C4.86491 6.02407 4.97619 6.07017 5.05824 6.15222C5.14029 6.23426 5.18638 6.34554 5.18638 6.46157V11.3698C5.18638 11.4858 5.14029 11.5971 5.05824 11.6791C4.97619 11.7612 4.86491 11.8073 4.74888 11.8073C4.63285 11.8073 4.52157 11.7612 4.43952 11.6791C4.35748 11.5971 4.31138 11.4858 4.31138 11.3698V11.3699ZM9.51074 12.7131L10.0675 5.07459H1.92723L2.44919 12.7112C2.45719 12.8234 2.50735 12.9284 2.58958 13.0052C2.67182 13.0819 2.78005 13.1247 2.89254 13.125H9.06747C9.17995 13.1258 9.2885 13.0836 9.3709 13.0071C9.4533 12.9305 9.50332 12.8253 9.51074 12.7131ZM1.11621 3.48608C1.11643 3.29689 1.1917 3.11552 1.3255 2.98177C1.45929 2.84801 1.64069 2.77281 1.82988 2.77266H10.1697C10.3589 2.77284 10.5404 2.8481 10.6742 2.98189C10.808 3.11569 10.8832 3.29711 10.8834 3.48633V4.2H1.11621V3.48633V3.48608ZM4.01965 1.13241C4.0205 1.06439 4.04791 0.999401 4.09602 0.951307C4.14413 0.903214 4.20913 0.875829 4.27715 0.875H7.72246C7.79048 0.875885 7.85546 0.903298 7.90357 0.951396C7.95167 0.999495 7.97909 1.06448 7.97998 1.1325V1.89766H4.01965V1.13241ZM10.1697 1.89766H8.85501V1.13241C8.85466 0.832162 8.73523 0.544309 8.5229 0.332012C8.31058 0.119714 8.02271 0.000311189 7.72246 0L4.27715 0C3.97686 0.000354591 3.68898 0.119799 3.47665 0.332132C3.26431 0.544465 3.14487 0.832349 3.14452 1.13263V1.89766H1.82988C1.4087 1.89818 1.00492 2.06573 0.707105 2.36355C0.409286 2.66137 0.241739 3.06515 0.241211 3.48633V4.6375C0.241269 4.75351 0.287381 4.86476 0.369416 4.94679C0.45145 5.02883 0.562696 5.07494 0.678711 5.075L1.05042 5.07478L1.57619 12.7707C1.59988 13.1039 1.74874 13.4158 1.99288 13.6439C2.23702 13.8719 2.55838 13.9991 2.89243 14H9.06753C9.40045 13.9989 9.72073 13.8724 9.96457 13.6457C10.2084 13.419 10.3579 13.1088 10.3833 12.7769L10.9447 5.07467H11.3209C11.4369 5.07467 11.5481 5.0286 11.6302 4.9466C11.7122 4.86459 11.7583 4.75336 11.7584 4.63736V3.48619C11.7579 3.06502 11.5903 2.66125 11.2925 2.36345C10.9947 2.06566 10.5909 1.89814 10.1697 1.89766Z" fill="#202503"/>
+                          </svg>
+                        </button>
+                      {% else %}
+                        <button class="qty-btn" aria-label="Menge verringern" data-cart-delta="-1">−</button>
+                      {% endif %}
+                      <span class="qty-display" aria-live="polite">{{ item.quantity | prepend: '0' }}</span>
+                      <button class="qty-btn" aria-label="Menge erhöhen" data-cart-delta="1">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          {%- endfor -%}
+        </div>
+
+        <!-- Bottom order summary (full width) -->
+        <section class="wk-summary">
+          <div class="order-summary">
+            <!-- optional discount -->
+            {% comment %}
+              <div class="summary-head">
+                <div
+                  class="discount-toggle"
+                  role="button"
+                  tabindex="0"
+                  aria-controls="discount-form"
+                  aria-expanded="false"
+                  onclick="toggleDiscountCode()"
+                >
+                  <span>🏷️</span><span>Gutscheincode?</span><span>▼</span>
+                </div>
+              </div>
+            {% endcomment %}
+
+            <!-- rows + customer service side by side -->
+            <div class="summary-two-col">
+              <!-- Promo link row spanning two columns (top) -->
+              <div class="sr-promo-row">
+                <a
+                  href="#"
+                  class="sr-promo-link"
+                  aria-controls="discount-form"
+                  aria-expanded="false"
+                  onclick="toggleDiscountCode(event, this)"
+                >
+                  <span class="flex flex-row gap-[13px] items-center">
+                    <img src="{{ 'aktioncode.svg' | asset_url }}" alt="Aktionscode" width="40" height="40">
+                    <span class="sr-promo-long">Haben Sie einen Aktionscode?</span>
+                    <span class="sr-promo-short">Aktionscode?</span>
+                    <span class="sr-caret">
+                      <img
+                        src="{{ 'chevron-down.svg' | asset_url }}"
+                        width="16"
+                        height="9"
+                        alt=""
+                        aria-hidden="true"
+                      >
+                    </span>
+                  </span>
+                </a>
+                <form id="discount-form" class="discount-form collapsed" onsubmit="applyDiscount(event)">
+                  <input
+                    id="discount-code"
+                    class="discount-input"
+                    type="text"
+                    placeholder="Gutscheincode eingeben"
+                    autocomplete="off"
+                  >
+                  <button class="btn-primary-cta" type="submit">Anwenden</button>
+                </form>
+              </div>
+
+              <!-- Left: Kundenservice -->
+              <div class="support-box">
+                {% render 'delivery-estimator' %}
+                <label class="pickup-control">
+                  <input id="pickup-toggle" class="pickup-input" type="checkbox" checked>
+                  <span class="pickup-text">Click & Collect</span>
+                </label>
+              </div>
+
+              <!-- Right: Summary rows -->
+              <div class="summary-rows">
+                <div class="sr-line">
+                  <span class="sr-label">Zwischensumme</span>
+                </div>
+
+                <div>{% render 'formatted-price', price: cart.items_subtotal_price %}</div>
+
+                {% if cart.total_discount > 0 %}
+                  <div>Rabatt</div>
+                  <div>-{% render 'formatted-price', price: cart.total_discount %}</div>
+                {%- endif %}
+
+                <div>Lieferung</div>
+                <div>Berechnet nach PLZ</div>
+
+                {% if cart.total_tax > 0 %}
+                  <div>Umsatzsteuer</div>
+                  <div>{% render 'formatted-price', price: cart.total_tax %}</div>
+                {%- endif %}
+
+                <div class="total">Gesamt mit Lieferung</div>
+                <div class="total-price">{% render 'formatted-price', price: cart.total_price %}</div>
+              </div>
+            </div>
+
+            <!-- CTAs -->
+            <div class="cta-wrap-container">
+              <div class="cta-wrap">
+                <!-- {{ routes.all_products_collection_url | default: routes.root_url }} -->
+                <a class="btn-ghost flex flex-row items-center gap-[10px]" href="{{ routes.collections_url }}"
+                  >Weiter einkaufen
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g clip-path="url(#clip0_16503_4305)">
+                    <path d="M8.4858 3.53906H22.6452C23.0629 3.53906 23.4015 3.87767 23.4015 4.29537V6.52676C23.4015 6.94445 23.0629 7.28306 22.6452 7.28306H8.4858C8.0681 7.28306 7.72949 6.94445 7.72949 6.52676V4.29537C7.72949 3.87767 8.0681 3.53906 8.4858 3.53906Z" fill="#647167"/>
+                    <path d="M8.4858 10.1406H22.6452C23.0629 10.1406 23.4015 10.4792 23.4015 10.8969V13.1283C23.4015 13.546 23.0629 13.8846 22.6452 13.8846H8.4858C8.0681 13.8846 7.72949 13.546 7.72949 13.1283V10.8969C7.72949 10.4792 8.0681 10.1406 8.4858 10.1406Z" fill="#647167"/>
+                    <path d="M8.4858 16.7168H22.6452C23.0629 16.7168 23.4015 17.0554 23.4015 17.4731V19.7045C23.4015 20.1222 23.0629 20.4608 22.6452 20.4608H8.4858C8.0681 20.4608 7.72949 20.1222 7.72949 19.7045V17.4731C7.72949 17.0554 8.0681 16.7168 8.4858 16.7168Z" fill="#647167"/>
+                    <path d="M1.35787 3.53906H3.99726C4.41495 3.53906 4.75356 3.87767 4.75356 4.29537V6.52676C4.75356 6.94445 4.41495 7.28306 3.99726 7.28306H1.35787C0.940171 7.28306 0.601562 6.94445 0.601562 6.52676V4.29537C0.601562 3.87767 0.940171 3.53906 1.35787 3.53906Z" fill="#647167"/>
+                    <path d="M1.35787 10.1406H3.99726C4.41495 10.1406 4.75356 10.4792 4.75356 10.8969V13.1283C4.75356 13.546 4.41495 13.8846 3.99726 13.8846H1.35787C0.940171 13.8846 0.601562 13.546 0.601562 13.1283V10.8969C0.601562 10.4792 0.940171 10.1406 1.35787 10.1406Z" fill="#647167"/>
+                    <path d="M1.35787 16.7168H3.99726C4.41495 16.7168 4.75356 17.0554 4.75356 17.4731V19.7045C4.75356 20.1222 4.41495 20.4608 3.99726 20.4608H1.35787C0.940171 20.4608 0.601562 20.1222 0.601562 19.7045V17.4731C0.601562 17.0554 0.940171 16.7168 1.35787 16.7168Z" fill="#647167"/>
+                    </g>
+                    <defs>
+                    <clipPath id="clip0_16503_4305">
+                    <rect width="24" height="24" fill="white" transform="translate(0.00195312)"/>
+                    </clipPath>
+                    </defs>
+                  </svg>
+                </a>
+                <form class="btn-primary-cta-form" action="{{ routes.cart_url }}" method="post">
+                  <button class="btn-primary-cta" type="submit" name="checkout">
+                    Weiter zur Kasse
+                    <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M20.7346 0.350837C21.1417 -0.0515788 21.7351 -0.117477 22.0598 0.203376L23.7941 1.91724C24.1186 2.23809 24.0517 2.82447 23.6447 3.22681L10.9055 15.8157C10.8655 15.8746 10.8219 15.9341 10.7678 15.9876L9.03341 17.7014C8.70893 18.0221 8.25738 18.096 8.02462 17.8665L0.136922 10.0706C-0.0951851 9.84048 -0.0205071 9.39413 0.303914 9.07349L2.03829 7.35963C2.36292 7.03888 2.81444 6.96564 3.04708 7.19556L8.42794 12.5139L20.7346 0.350837Z" fill="white"/>
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            </div>
+            <div class="flex flex-row mt-[32px] md:mt-[60px] justify-end ">
+              <div class="flex flex-wrap justify-between items-center w-[594px]">
+                <a class="text-[18px] md:text-[20px] hover:underline" href="/pages/kontaktformular">Kundenservice</a>
+                <div class="support-contact">
+                  <span class="label">Tel:</span>
+                  <a class="support-tel" href="tel:+4925874665488">+49 25 874 665 488</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== End summary ===== -->
+      </div>
+    {%- endif -%}
+  </div>
+</main>
+
+<script src="{{ 'cart-core.js' | asset_url }}" defer></script>
+
+<script>
+  // Tell the cart module which section to refresh. Ensure it runs after the
+  // deferred cart-core.js has executed.
+  document.addEventListener('DOMContentLoaded', function () {
+    window.ShopCart?.ensureHint('main-cart');
+  });
+
+  // delegate clicks for +/- and trash on the cart page
+  document.addEventListener('click', (e) => {
+    const minus = e.target.closest('[data-cart-delta="-1"]');
+    const plus = e.target.closest('[data-cart-delta="1"]');
+    const trash = e.target.closest('[data-cart-remove]');
+
+    if (minus || plus) {
+      const btn = minus || plus;
+      const line = Number(btn.closest('.quantity-controls')?.dataset.line || 0);
+      const qtyText = btn.closest('.quantity-controls')?.querySelector('.qty-display')?.textContent || '1';
+      const current = parseInt(qtyText, 10) || 1;
+      const delta = Number(btn.dataset.cartDelta);
+      const next = Math.max(1, current + delta);
+      if (line > 0) window.ShopCart.changeLineSafe(line, next);
+      e.preventDefault();
+    } else if (trash) {
+      const group = trash.closest('.quantity-controls');
+      const line = Number(group?.dataset.line || 0);
+      if (line > 0) window.ShopCart.changeLineSafe(line, 0);
+      e.preventDefault();
+    }
+  });
+
+  function toggleSpecs(id, btn) {
+    const panel = document.getElementById(id);
+    if (!panel) return;
+
+    // toggle the "is-collapsed" class that hides the specs
+    const nowCollapsed = panel.classList.toggle('is-collapsed');
+
+    // aria-expanded must reflect the OPEN state
+    btn.setAttribute('aria-expanded', String(!nowCollapsed));
+  }
+
+  document.addEventListener(
+    'click',
+    function (e) {
+      const trigger = e.target.closest('.sr-promo-link, .sr-promo-long');
+      if (!trigger) return;
+
+      e.preventDefault();
+
+      // Respect aria-controls (should be "discount-form")
+      const panelId = trigger.getAttribute('aria-controls') || 'discount-form';
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Toggle collapsed class
+      const isNowOpen = panel.classList.toggle('collapsed') === false;
+
+      // Update aria-expanded on ALL matching triggers (desktop + mobile)
+      document
+        .querySelectorAll(`[aria-controls="${panelId}"]`)
+        .forEach((t) => t.setAttribute('aria-expanded', String(isNowOpen)));
+
+      // If opening this panel, collapse any other open discount forms
+      if (isNowOpen) {
+        document.querySelectorAll('.discount-form').forEach((form) => {
+          if (form !== panel) {
+            form.classList.add('collapsed');
+            const otherId = form.id;
+            if (otherId) {
+              document
+                .querySelectorAll(`[aria-controls="${otherId}"]`)
+                .forEach((t) => t.setAttribute('aria-expanded', 'false'));
+            }
+          }
+        });
+
+        // Focus first input inside the opened panel
+        panel.querySelector('input, select, textarea, button')?.focus();
+      }
+
+      // CSS handles rotation via [aria-expanded] selector; no image swap needed
+    },
+    true
+  );
+
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.spec-toggle');
+    if (!btn) return;
+    const id = btn.getAttribute('aria-controls');
+    const panel = document.getElementById(id);
+    if (!panel) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const nowCollapsed = panel.classList.toggle('is-collapsed');
+    btn.setAttribute('aria-expanded', String(!nowCollapsed));
+
+    // CSS handles rotation via [aria-expanded] selector; no image swap needed
+  });
+
+  // clear all
+  window.removeCartProducts = () => window.ShopCart.clear();
+</script>
+
+{% schema %}
+{
+  "name": "Cart (main)",
+  "settings": [
+    {
+      "type": "range",
+      "id": "free_ship_threshold",
+      "label": "Free shipping ab",
+      "min": 0,
+      "max": 2000,
+      "step": 20,
+      "unit": "€",
+      "default": 300
+    }
+  ]
+}
+{% endschema %}

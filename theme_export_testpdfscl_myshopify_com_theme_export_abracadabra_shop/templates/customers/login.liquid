@@ -1,0 +1,142 @@
+{{ 'section-breadcrumbs.css' | asset_url | stylesheet_tag }}
+{{ 'login.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs', current_title: 'customer.login_page.breadcrumb' | t %}
+
+<div class="customer-login page-width">
+  <main class="login-main">
+    <div class="login-container">
+      <h1 class="login-title">{{ 'customer.login_page.title' | t }}</h1>
+
+      <div class="wk-card">
+        {% form 'customer_login'
+          , id: 'customer_login_form' %}
+          {% if form.errors %}
+            <div class="errors">
+              {{ form.errors | default_errors }}
+            </div>
+          {% endif %}
+
+          <div class="field">
+            <input
+              type="email"
+              required
+              name="customer[email]"
+              id="customer_email"
+              placeholder="Email"
+              class="w-full h-[60px] mb-5 rounded-[12px] pl-4 pr-[10px] text-[14px] bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/10"
+              aria-label="Email"
+              aria-describedby="login-email-error">
+            <div
+              id="login-email-error"
+              class="login-error"
+              role="alert"
+              aria-live="polite">
+              <svg
+                width="16"
+                height="15"
+                viewBox="0 0 16 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M7.99992 4.83398V7.50065M7.99992 10.1673H8.00659M14.6666 7.50065C14.6666 11.1826 11.6818 14.1673 7.99992 14.1673C4.31802 14.1673 1.33325 11.1826 1.33325 7.50065C1.33325 3.81875 4.31802 0.833984 7.99992 0.833984C11.6818 0.833984 14.6666 3.81875 14.6666 7.50065Z"
+                  stroke="#D23126"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+              <span>Valid Email address is required</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <input
+              type="password"
+              name="customer[password]"
+              id="customer_password"
+              required
+              placeholder="Passwort"
+              class="w-full h-[60px] mb-5 rounded-[12px] pl-4 pr-[10px] text-[14px] bg-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-black/10"
+              aria-label="Passwort">
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button type="submit" class=" w-[140px] h-[50px] px-6 rounded-full bg-primary text-white text-[14px] hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/50">
+              Login
+            </button>
+            <a href="{{ routes.account_register_url }}">Ein Konto erstellen</a>
+          </div>
+          {% if form.errors %}
+            <div class="mt-5">
+              <a
+                href="#"
+                id="forgot-password-link"
+                class="text-[14px] hover:underline">{{ 'customer.account.forgot_password' | t }}</a>
+            </div>
+          {% endif %}
+        {% endform %}
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Recover password modal -->
+<div
+  id="recover-modal"
+  class="recover-modal-overlay"
+  style="display:none">
+  <div class="recover-modal">
+    <button
+      type="button"
+      class="recover-close"
+      aria-label="Close">×</button>
+    {% render 'recover' %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+
+    var link = document.getElementById('forgot-password-link');
+    var modal = document.getElementById('recover-modal');
+    var closeBtn = modal ? modal.querySelector('.recover-close') : null;
+    function openModal(e) {
+      if (e) {
+        e.preventDefault();
+      }
+      if (modal) {
+        modal.style.display = 'flex';
+        var i = document.getElementById('email');
+        if (i) { try { i.focus(); } catch (_) {} }
+      }
+    }
+    function closeModal() {
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+    if (link) {
+      link.addEventListener('click', openModal);
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeModal);
+    }
+    if (modal) {
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+    }
+    // Auto-open recover modal after successful submission
+    if (window.__recoverSuccess) {
+      openModal();
+      var ok = document.getElementById('recover-success-ok');
+      if (ok) {
+        ok.addEventListener('click', function(){
+          closeModal();
+        });
+      }
+    }
+  });
+</script>

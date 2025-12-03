@@ -1,0 +1,152 @@
+<!-- Full-width bar, content centered like the PDP -->
+{{ 'section-product-detail.css' | asset_url | stylesheet_tag }}
+{{ 'section-kontaktformular.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs' %}
+
+<section class="pt-[20px] md:pt-[30px]">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <h1 class="text-[36px] md:text-[48px] font-[400] mb-[20px] text-center">
+      {{ page.title | default: 'Kontaktformular' }}
+    </h1>
+
+    {% if page.content != blank %}
+      <div class="prose mb-8">{{ page.content }}</div>
+    {% endif %}
+
+    <div class="mx-auto bg-[#F5F5F5] border border-[#E5E5E5] rounded-[16px] p-[30px] md:p-[60px]">
+      <p class="text-[20px] mb-[30px]">Wir freuen uns auf Ihre Nachricht</p>
+      {% form 'contact', id: 'ContactForm' %}
+        {% if form.posted_successfully? %}
+          <div class="p-4 mb-6 rounded bg-green-50 text-green-800" role="status">
+            Danke! Ihre Nachricht wurde erfolgreich gesendet.
+          </div>
+        {% endif %}
+
+        {% if form.errors %}
+          <div class="p-4 mb-6 rounded bg-red-50 text-red-800" role="alert">
+            Bitte prüfen Sie die markierten Felder.
+          </div>
+        {% endif %}
+
+        <input type="hidden" name="contact[tags]" value="kontaktformular">
+
+        <div class="grid grid-cols-1 gap-[24px]">
+          <div>
+            <label for="ContactFormSalutation" class="kontakt-label">Anrede</label>
+            <input
+              id="ContactFormSalutation"
+              name="contact[salutation]"
+              value="{{ form.salutation | default: customer.salutation }}"
+              class="kontakt-input"
+              autocomplete="salutation"
+              required
+              aria-required="true"
+            >
+          </div>
+
+          <div>
+            <label for="ContactFormFirstName" class="kontakt-label">Vorname<span aria-hidden="true">*</span></label>
+            <input
+              id="ContactFormFirstName"
+              type="text"
+              name="contact[first_name]"
+              value="{{ form.first_name | default: customer.first_name }}"
+              class="kontakt-input"
+              autocomplete="given-name"
+              required
+              aria-required="true"
+            >
+          </div>
+
+          <div>
+            <label for="ContactFormLastName" class="kontakt-label">Nachname<span aria-hidden="true">*</span></label>
+            <input
+              id="ContactFormLastName"
+              type="text"
+              name="contact[last_name]"
+              value="{{ form.last_name | default: customer.last_name }}"
+              class="kontakt-input"
+              autocomplete="family-name"
+              required
+              aria-required="true"
+            >
+          </div>
+
+          <div>
+            <label for="ContactFormEmail" class="kontakt-label">E‑Mail<span aria-hidden="true">*</span></label>
+            <input
+              id="ContactFormEmail"
+              type="email"
+              name="contact[email]"
+              value="{{ form.email | default: customer.email }}"
+              class="kontakt-input {% if form.errors contains 'email' %}border-red-500{% endif %}"
+              autocomplete="email"
+              required
+              aria-required="true"
+            >
+          </div>
+
+          <div>
+            <label for="ContactFormSubject" class="kontakt-label">Betreff<span aria-hidden="true">*</span></label>
+            <input
+              id="ContactFormSubject"
+              type="text"
+              name="contact[subject]"
+              value="{{ form.subject }}"
+              class="kontakt-input"
+              required
+              aria-required="true"
+            >
+          </div>
+
+          <div>
+            <label for="ContactFormMessage" class="kontakt-label">Nachricht<span aria-hidden="true">*</span></label>
+            <textarea
+              id="ContactFormMessage"
+              name="contact[body]"
+              rows="6"
+              class="kontakt-input {% if form.errors contains 'body' %}border-red-500{% endif %}"
+              required
+              aria-required="true"
+            >{{ form.body }}</textarea>
+          </div>
+
+          <div class="kontakt-consent">
+            <h2 class="text-[16px] font-[700]">In personliche Kommunikation einwilligen:</h2>
+            <div class="flex items-start gap-2">
+              <input id="ConsentNewsletter" type="checkbox" name="contact[consent_newsletter]" class="mt-1">
+              <label for="ConsentNewsletter" class="text-[16px]"
+                ><span class="font-[700]">Roomio Newsletter abonnieren:</span> Ja, ich möchete jederzeit widerruflich
+                Werbung und Informationen über aktuelle Produkte, Dienstleistungen und Aktionen der
+                Einrichtungspartnerring VME GmbH & Co. KG im Bereich Möbel und zu verwandten Themen (z.B.
+                Wohnaccessoires, Inneneinrichtung oder Beleuchtung) an die von mir angegebene E-Mail (z.B. in Form eines
+                Newsletters) erhalten (optional).</label
+              >
+            </div>
+            <div class="flex items-start gap-2">
+              <input id="ConsentShare" type="checkbox" name="contact[consent_share]" class="mt-1">
+              <label for="ConsentShare"
+                ><span class="font-[700]">Meine Daten aufbewahren:</span> Ich bin einverstanden, dass die
+                Einrichtungspartnerring VME GmbH & Co. KG meine Daten auch über die Kontaktanfrage hinaus speichert, um
+                beim nächsten Kontakt auf vorherige Unterhaltungen Bezug nehmen zu können. Andernfalls werden
+                automatisch alle meine personenbezogenen Daten und Informationen zu früheren Gesprächen nach 30 Tagen
+                vollständig gelöscht (optional).*</label
+              >
+            </div>
+            <p>
+              Weitere Informationen zur Verarbeitung Ihrer personenbezogenen Daten finden in unseren
+              <a class="underline kontakt-link" href="/pages/catalogs" target="_blank" rel="noopener"
+                >Datenschutzrichtlinie</a
+              >.
+            </p>
+          </div>
+
+          <div class="mt-4">
+            <button type="submit" class="btn-primary">Absenden</button>
+          </div>
+        </div>
+      {% endform %}
+    </div>
+  </div>
+</section>

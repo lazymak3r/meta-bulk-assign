@@ -1,0 +1,153 @@
+{{ 'wishlist.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs' %}
+
+<main class="cart-main">
+  <div class="cart-container">
+    <h1 class="cart-title">Wunschliste</h1>
+
+    <div class="wk-card">
+      <!-- header -->
+      <div class="wk-head">
+        <div class="count">Artikel im Wunschliste</div>
+        <button class="clear-all" type="button" onclick="clearWishlist()" aria-label="Alles löschen">
+          Alles löschen
+        </button>
+      </div>
+
+      <div id="wishlist-container">Laden...</div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const handles = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+  if (handles.length === 0) {
+    document.getElementById('wishlist-container').innerHTML = '<p>Die Favoritenliste ist leer.</p>';
+  } else {
+    const url = `/pages/wishlist-json/${handles.join(',')}`;
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((products) => {
+        const html = products
+          .map(
+            (product) => `
+<article class="wk-line">
+    <div class="wk-line-grid">
+        <div class="wk-media">
+            <img
+              loading="lazy"
+              src="${product.image}"
+              alt="${product.title}"
+            >
+        </div>
+        <div>
+            <a href="/products/${product.handle}">
+            <h3 class="wk-title">${product.title}</h3>
+            </a>
+            <dl id="spec-${product.handle}" class="wk-specs is-collapsed">${product.specs_html || ''}</dl>
+            <div class="wk-actions">
+              <button
+                class="spec-toggle"
+                type="button"
+                aria-controls="spec-${product.handle}"
+                aria-expanded="false"
+              >
+                <span class="spec-title">Weitere Spezifikationen</span>
+                <span class="chev">
+                  <img
+                    src="{{ 'chevron-down.svg' | asset_url }}"
+                    width="16"
+                    height="9"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </span>
+              </button>
+              <a href="/products/${product.handle}">Bearbeiten</a>
+            </div>
+        </div>
+        <div class="wk-line-side">
+          <div>
+            <div class="wk-price">${product.price_html || product.price}</div>
+          </div>
+          <div class="flex flex-row gap-[20px]">
+          ${
+            product.variant_id
+              ? `
+              <button
+                class="wk-icon-btn"
+                aria-label="In den Warenkorb"
+                onclick="addVariantToCart(${product.variant_id})"
+              >
+                <img src="{{ 'cart.svg' | asset_url }}" alt="In den Warenkorb">
+              </button>`
+              : ''
+          }
+              <button
+                class="wk-icon-btn trash"
+                aria-label="Artikel entfernen"
+                onclick="removeFromWishlist('${product.handle}')"
+              >
+                <img src="{{ 'trash.svg' | asset_url }}" alt="Artikel entfernen">
+              </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+</article>
+        `
+          )
+          .join('');
+        document.getElementById('wishlist-container').innerHTML = html;
+      });
+  }
+</script>
+
+<script>
+  // Lightweight ATC for wishlist, reusing global cart helpers when available
+  function addVariantToCart(variantId) {
+    if (!variantId) return;
+
+    const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+
+    // Prefer global payload helper from cart.js if present
+    const payload =
+      typeof buildSectionsPayload === 'function'
+        ? { id: variantId, quantity: 1, ...buildSectionsPayload() }
+        : { id: variantId, quantity: 1, sections_url: window.location.pathname + window.location.search };
+
+    fetch('/cart/add.js', {
+      method: 'POST',
+      headers,
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && data.sections && typeof updateSections === 'function') {
+          updateSections(data.sections);
+        }
+        if (typeof updateCartInfo === 'function') {
+          updateCartInfo();
+        }
+      })
+      .catch((err) => console.error('ATC failed', err));
+  }
+
+  // Lightweight toggle for specs on wishlist items
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.spec-toggle');
+    if (!btn) return;
+    const id = btn.getAttribute('aria-controls');
+    const panel = id && document.getElementById(id);
+    if (!panel) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const nowCollapsed = panel.classList.toggle('is-collapsed');
+    btn.setAttribute('aria-expanded', String(!nowCollapsed));
+  });
+</script>

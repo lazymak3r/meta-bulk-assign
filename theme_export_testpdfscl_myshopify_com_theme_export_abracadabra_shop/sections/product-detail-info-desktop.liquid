@@ -1,0 +1,24 @@
+<!-- DETAILS -->
+<div class="lg:col-span-5">
+  <div
+    id="overviewBar"
+    class="items-center hidden lg:flex text-[18px] 2xl:text-[20px] font-medium text-[#2E2E2D]"
+  >
+    {% render 'product-detail-navigation' %}
+  </div>
+
+  <div class="hidden lg:block">
+    <h1
+      class="text-[32px] 2xl:text-[48px] leading-[1.5] mt-[30px] font-[400] text-brand"
+    >
+      {{ product.title }}
+    </h1>
+
+    <h2 class="font-[300]">
+      {{ product.metafields.attributes.subtitle }}
+    </h2>
+
+    {% render 'product-features', text_top_margin: 'mt-[30px]', text_size: 'text-[16px] 2xl:text-[20px]' %}
+ 
+  </div>
+</div>

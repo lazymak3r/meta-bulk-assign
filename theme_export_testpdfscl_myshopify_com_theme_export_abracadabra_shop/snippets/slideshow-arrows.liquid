@@ -1,0 +1,16 @@
+{% comment %}
+  Renders slideshow arrows for navigation
+
+  @param {string} [icon_style] - The style of the icon, defaults to 'arrow'
+  @param {string} [arrows_position] - The position of the arrows, defaults to 'bottom'
+{% endcomment %}
+
+<slideshow-arrows
+  {% if icon_style != blank %}
+    icon-style="{{ icon_style }}"
+  {% endif %}
+  {% if arrows_position != blank %}
+    arrows-position="{{ arrows_position }}"
+  {% endif %}
+>
+</slideshow-arrows>

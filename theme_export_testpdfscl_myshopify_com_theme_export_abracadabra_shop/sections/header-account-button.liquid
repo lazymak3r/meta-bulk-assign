@@ -1,0 +1,15 @@
+<a
+  href="{% if customer %}{{ routes.account_url }}{% else %}{{ routes.account_login_url }}{% endif %}"
+  aria-label="Mein Konto"
+  class="relative inline-flex items-center justify-center w-[20px] h-[20px] transition"
+>
+  <!-- profile svg -->
+  <img src="{{ 'profile.svg' | asset_url }}" alt="Profile" width="24" height="24">
+</a>
+
+{% schema %}
+{
+  "name": "Account-Button",
+  "settings": []
+}
+{% endschema %}

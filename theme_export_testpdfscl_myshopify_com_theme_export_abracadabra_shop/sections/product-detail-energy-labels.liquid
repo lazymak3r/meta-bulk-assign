@@ -1,0 +1,38 @@
+{% assign energylabels = product.metafields.energylabels %}
+
+<!-- Ratings + Datasheet links (one grid, larger badges) -->
+<div class="flex flex-row gap-[54px]">
+    {% for metafield in energylabels %}
+        {% assign energylabel = metafield[1].value | parse_json %}
+
+        <label class="cursor-pointer">
+            <div class="flex flex-col items-start">
+        <a
+            href="{{ energylabel.pdf_url }}"
+            class="underline text-gray-700 hover:text-brand text-[12px] md:text-[13px]"
+        >
+
+                <svg
+                    width="80"
+                    height="38"
+                    viewBox="0 0 80 38"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        d="M57.501 0L80 19L57.501 37.999V38H0.000976562V0H57.501Z"
+                        fill="{% render 'energy-label-color', label: energylabel.label %}"
+                    />
+                    <path
+                        d="{% render 'energy-label-letter', label: energylabel.label %}"
+                        fill="white"
+                    />
+                </svg>
+
+            {{ energylabel.type }}
+        </a>
+        </div>
+        </label>
+    {% endfor %}
+</div>
+

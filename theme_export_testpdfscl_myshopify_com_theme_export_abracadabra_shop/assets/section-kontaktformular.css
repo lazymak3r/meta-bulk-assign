@@ -1,0 +1,98 @@
+/* Scoped styles for the Kontaktformular page */
+
+#ContactForm label {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Reusable semantic classes for the contact page */
+.kontakt-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.kontakt-label > span[aria-hidden="true"] {
+    color: #ef4444;
+}
+
+.kontakt-input {
+    width: 100%;
+    height: 80px;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    padding: 8px 12px;
+    background: #fff;
+}
+
+/* Keep resizing but hide the WebKit corner gripper */
+textarea.kontakt-input {
+    resize: both;
+}
+
+/* Consent block typography and spacing */
+.kontakt-consent {
+    color: #2e2e2d;
+    margin-top: 8px;
+}
+.kontakt-consent > * + * {
+    margin-top: 24px;
+}
+.kontakt-consent h2 {
+    font-size: 16px;
+    font-weight: 700;
+}
+.kontakt-consent label,
+.kontakt-consent p,
+.kontakt-consent a {
+    font-size: 16px;
+    line-height: 1.625;
+}
+
+.kontakt-link,
+.kontakt-link:visited {
+    color: var(--link-blue, #2f6bff);
+    padding: 0;
+    margin: 0;
+    display: inline;
+    text-underline-offset: 2px;
+    text-decoration-color: currentColor;
+}
+.kontakt-link:hover,
+.kontakt-link:focus {
+    color: var(--link-blue-hover, #1f5eff);
+    text-decoration-color: currentColor;
+}
+
+/* Submit button */
+.kontakt-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 40px;
+    color: #fff;
+    background: #647167;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+.kontakt-button:hover {
+    opacity: 0.9;
+}
+
+/* Native checkbox color to match brand green */
+#OrderForm input[type="checkbox"],
+#ContactForm input[type="checkbox"] {
+    accent-color: var(--primary, #647167);
+}
+
+/* Card styling for form and info cards */
+.kl-card {
+    background-color: #fff;
+    border: 0.5px solid rgba(100, 146, 253, 0.2);
+    border-radius: 9px;
+    box-shadow: 0 11px 30px rgba(154, 161, 177, 0.2);
+    padding: 32px 25px;
+    width: 100%;
+}

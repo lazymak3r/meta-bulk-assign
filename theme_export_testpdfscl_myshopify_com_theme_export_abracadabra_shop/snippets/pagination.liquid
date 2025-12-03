@@ -1,0 +1,216 @@
+{%- comment -%}
+  Pagination snippet for Shopify
+  
+  Usage:
+  {% render 'pagination', paginate: paginate %}
+{%- endcomment -%}
+
+{%- if paginate.pages > 1 -%}
+  <div class="pagination-container">
+    <div class="pagination">
+      {%- if paginate.previous -%}
+        <a href="{{ paginate.previous.url }}" class="pagination-btn pagination-prev">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          <span class="pagination-text">{{ 'general.pagination.previous' | t }}</span>
+        </a>
+      {%- else -%}
+        <span class="pagination-btn pagination-prev" disabled>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          <span class="pagination-text">{{ 'general.pagination.previous' | t }}</span>
+        </span>
+      {%- endif -%}
+
+      <div class="pagination-numbers">
+        {%- assign visible_pages = 5 -%}
+        {%- assign half_visible = visible_pages | divided_by: 2 -%}
+        
+        {%- if paginate.pages <= visible_pages -%}
+          {%- for i in (1..paginate.pages) -%}
+            {%- if i == paginate.current_page -%}
+              <span class="pagination-number active">{{ i }}</span>
+            {%- else -%}
+              <a href="{{ paginate.parts[i].url }}" class="pagination-number">{{ i }}</a>
+            {%- endif -%}
+          {%- endfor -%}
+        {%- else -%}
+          {%- assign start_page = paginate.current_page | minus: half_visible -%}
+          {%- assign end_page = paginate.current_page | plus: half_visible -%}
+          
+          {%- if start_page < 1 -%}
+            {%- assign start_page = 1 -%}
+            {%- assign end_page = visible_pages -%}
+          {%- endif -%}
+          
+          {%- if end_page > paginate.pages -%}
+            {%- assign end_page = paginate.pages -%}
+            {%- assign start_page = paginate.pages | minus: visible_pages | plus: 1 -%}
+          {%- endif -%}
+          
+          {%- if start_page > 1 -%}
+            <a href="{{ paginate.parts[1].url }}" class="pagination-number">1</a>
+            {%- if start_page > 2 -%}
+              <span class="pagination-dots">...</span>
+            {%- endif -%}
+          {%- endif -%}
+          
+          {%- for i in (start_page..end_page) -%}
+            {%- if i == paginate.current_page -%}
+              <span class="pagination-number active">{{ i }}</span>
+            {%- else -%}
+              <a href="{{ paginate.parts[i].url }}" class="pagination-number">{{ i }}</a>
+            {%- endif -%}
+          {%- endfor -%}
+          
+          {%- if end_page < paginate.pages -%}
+            {%- if end_page < paginate.pages | minus: 1 -%}
+              <span class="pagination-dots">...</span>
+            {%- endif -%}
+            <a href="{{ paginate.parts[paginate.pages].url }}" class="pagination-number">{{ paginate.pages }}</a>
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+
+      {%- if paginate.next -%}
+        <a href="{{ paginate.next.url }}" class="pagination-btn pagination-next">
+          <span class="pagination-text">{{ 'general.pagination.next' | t }}</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </a>
+      {%- else -%}
+        <span class="pagination-btn pagination-next" disabled>
+          <span class="pagination-text">{{ 'general.pagination.next' | t }}</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </span>
+      {%- endif -%}
+    </div>
+    
+    <div class="pagination-info">
+      {{ 'general.pagination.showing' | t }} 
+      {{ paginate.current_offset | plus: 1 }}-{{ paginate.current_offset | plus: paginate.page_size | at_most: paginate.items }} 
+      {{ 'general.pagination.of' | t }} 
+      {{ paginate.items }} 
+      {{ 'general.pagination.products' | t }}
+    </div>
+  </div>
+
+  <style>
+    .pagination-container {
+      margin-top: 3rem;
+      padding: 2rem 0;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .pagination-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: rgb(var(--color-background));
+      border: 1px solid rgba(var(--color-foreground), 0.2);
+      border-radius: 0.5rem;
+      color: rgb(var(--color-foreground));
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .pagination-btn:hover:not([disabled]) {
+      background: rgba(var(--color-foreground), 0.05);
+      border-color: rgba(var(--color-foreground), 0.3);
+    }
+
+    .pagination-btn[disabled] {
+      background: rgba(var(--color-foreground), 0.05);
+      color: rgba(var(--color-foreground), 0.4);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .pagination-numbers {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .pagination-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: rgb(var(--color-background));
+      border: 1px solid rgba(var(--color-foreground), 0.2);
+      border-radius: 0.5rem;
+      color: rgb(var(--color-foreground));
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .pagination-number:hover {
+      background: rgba(var(--color-foreground), 0.05);
+      border-color: rgba(var(--color-foreground), 0.3);
+    }
+
+    .pagination-number.active {
+      background: rgb(var(--color-base-accent-2));
+      border-color: rgb(var(--color-base-accent-2));
+      color: rgb(var(--color-background));
+    }
+
+    .pagination-dots {
+      padding: 0 0.5rem;
+      color: rgba(var(--color-foreground), 0.4);
+      font-weight: 500;
+    }
+
+    .pagination-text {
+      font-size: 0.875rem;
+    }
+
+    .pagination-info {
+      text-align: center;
+      color: rgba(var(--color-foreground), 0.6);
+      font-size: 0.875rem;
+    }
+
+    @media screen and (max-width: 640px) {
+      .pagination {
+        gap: 0.25rem;
+      }
+      
+      .pagination-btn {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      .pagination-text {
+        display: none;
+      }
+      
+      .pagination-number {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.875rem;
+      }
+      
+      .pagination-numbers {
+        gap: 0.125rem;
+      }
+    }
+  </style>
+{%- endif -%} 

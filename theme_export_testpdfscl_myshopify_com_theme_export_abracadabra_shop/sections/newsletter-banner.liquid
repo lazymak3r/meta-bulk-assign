@@ -1,0 +1,104 @@
+<section class="newsletter-main">
+    <div class="container">
+        <div class="newsletter-content">
+            <div class="newsletter-text">
+                <span class="discount-tag" id="discount-tag">🎉 SPECIAL OFFER</span>
+                <h2 id="newsletter-title">Get 10% OFF Your First Order!</h2>
+                <p id="newsletter-description">Subscribe to our newsletter and receive an exclusive discount code. Plus, be the first to know about new arrivals, sales, and interior design tips.</p>
+            </div>
+            <div class="newsletter-form-wrapper">
+                <form class="newsletter-form" onsubmit="subscribeNewsletter(event)">
+                    <div class="form-row">
+                        <input type="email" id="newsletter-email" placeholder="Enter your email" required>
+                        <button type="submit">
+                            <span class="btn-text" id="submit-btn-text">GET MY 10% OFF</span>
+                            <span class="btn-loader" style="display: none;">✓</span>
+                        </button>
+                    </div>
+                    <div class="form-row">
+                        <input type="email" id="newsletter-only-email" placeholder="Subscribe for newsletter only" required>
+                        <div class="newsletter-spacer"></div>
+                    </div>
+                    <div class="discount-code" id="discount-code" style="display: none;">
+                        <div class="code-reveal">
+                            <span class="code-label">Your discount code:</span>
+                            <span class="code-value">WELCOME10</span>
+                            <button type="button" class="copy-code" onclick="copyDiscountCode()">Copy</button>
+                        </div>
+                    </div>
+                </form>
+                <p class="privacy-note">We respect your privacy. Unsubscribe at any time.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script type="text/javascript">
+
+        // Newsletter Functions
+        function subscribeNewsletter(event) {
+            event.preventDefault();
+            const form = event.target;
+            const emailInput = document.getElementById('newsletter-email');
+            const btnText = form.querySelector('.btn-text');
+            const btnLoader = form.querySelector('.btn-loader');
+            const discountCode = document.getElementById('discount-code');
+
+            if (!emailInput.value || !emailInput.validity.valid) {
+                emailInput.style.borderColor = '#3E3E3D';
+                emailInput.focus();
+                return;
+            }
+
+            // Simulate form submission
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            form.querySelector('button').disabled = true;
+
+            setTimeout(() => {
+                // Always show discount code
+                discountCode.style.display = 'block';
+                btnText.textContent = 'Subscribed & Code Sent! ✓';
+
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+                form.querySelector('button').style.background = 'linear-gradient(135deg, #71877d, #71877d)';
+
+                // Store subscription status
+                localStorage.setItem('newsletter-subscribed', 'true');
+                localStorage.setItem('newsletter-email', emailInput.value);
+                localStorage.setItem('newsletter-type', 'with-discount');
+
+                // Collapse sticky newsletter if it's expanded
+                const stickyNewsletter = document.getElementById('sticky-newsletter');
+                if (stickyNewsletter && stickyNewsletter.classList.contains('show')) {
+                    collapseStickyNewsletter();
+                }
+            }, 1500);
+        }
+
+
+
+
+                // Email validation function
+                function isValidEmail(email) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    return emailRegex.test(email);
+                }
+
+                        function copyDiscountCode() {
+                            const codeValue = 'WELCOME10';
+                            navigator.clipboard.writeText(codeValue).then(() => {
+                                const copyBtn = document.querySelector('.copy-code');
+                                const originalText = copyBtn.textContent;
+                                copyBtn.textContent = 'Copied!';
+                                copyBtn.style.background = '#71877d';
+
+                                setTimeout(() => {
+                                    copyBtn.textContent = originalText;
+                                    copyBtn.style.background = '#71877d';
+                                }, 2000);
+                            });
+                        }
+
+</script>

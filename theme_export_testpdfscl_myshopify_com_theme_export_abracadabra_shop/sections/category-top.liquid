@@ -1,0 +1,891 @@
+{% comment %} Category – Filters and sorting {% endcomment %}
+
+<section class="mt-[20px] md:mt-[56px]" id="category-products-top-{{ section.id }}">
+  <div class="w-full max-w-[var(--container)] mx-auto">
+    <!-- Heading + simple controls -->
+
+    <div class="flex flex-col md:flex-row items-center md:items-center justify-between gap-3 md:gap-4">
+      <h2 class="text-[28px] md:text-[36px] leading-tight text-brand text-center md:text-left">Ausgewählte Produkte</h2>
+
+      <div class="flex items-center gap-3 flex-wrap justify-center w-full md:w-auto filters-controls">
+        <!-- 1) Filter trigger button (shows the dialog) -->
+        <button
+          class="grid h-[50px] w-[44px] place-items-center border border-[#D9D9D9] bg-white hover:bg-[#F3F1EC] hover:border-transparent transition-colors"
+          type="button"
+          aria-label="Filter öffnen"
+          data-filter-trigger
+        >
+          <svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9.12505 19.625C8.92614 19.625 8.73538 19.546 8.59472 19.4053C8.45407 19.2647 8.37505 19.0739 8.37505 18.875V11.6637L1.42255 4.0175C1.14887 3.71591 0.968607 3.34136 0.903645 2.93931C0.838684 2.53727 0.891816 2.12501 1.05659 1.75257C1.22137 1.38013 1.49071 1.06353 1.83192 0.841188C2.17313 0.618845 2.57154 0.500321 2.9788 0.5H19.0213C19.4286 0.500321 19.827 0.618845 20.1682 0.841188C20.5094 1.06353 20.7787 1.38013 20.9435 1.75257C21.1083 2.12501 21.1614 2.53727 21.0965 2.93931C21.0315 3.34136 20.8512 3.71591 20.5776 4.0175L13.6251 11.6637V15.875C13.625 15.9873 13.5997 16.0982 13.551 16.1995C13.5023 16.3008 13.4315 16.3898 13.3438 16.46L9.5938 19.46C9.46084 19.5667 9.29552 19.6249 9.12505 19.625ZM2.9788 2C2.8621 2.00029 2.74798 2.0344 2.65025 2.0982C2.55253 2.16201 2.47539 2.25276 2.42818 2.35949C2.38096 2.46622 2.36569 2.58435 2.38422 2.69958C2.40274 2.81481 2.45427 2.9222 2.53255 3.00875L9.68005 10.8837C9.80251 11.0184 9.87182 11.193 9.87505 11.375V17.315L12.1251 15.5V11.375C12.1246 11.1878 12.1942 11.0073 12.3201 10.8688L19.4676 2.99375C19.5412 2.90681 19.5887 2.80081 19.6046 2.688C19.6206 2.57519 19.6043 2.46018 19.5576 2.35625C19.5109 2.25232 19.4358 2.16372 19.3409 2.10068C19.246 2.03764 19.1352 2.00273 19.0213 2H2.9788Z"
+                  fill="black"/>
+          </svg>
+        </button>
+
+        <!-- Filters dialog (opens from your current JS) -->
+        <dialog id="filters-drawer" class="filters-modal" aria-labelledby="filters-title">
+          <!-- clickable backdrop (for browsers without ::backdrop click) -->
+          <form method="dialog" class="filters-modal__backdrop" data-close></form>
+
+          <div class="filters-modal__panel" role="document">
+            <header class="filters-modal__header">
+              <button type="button" class="filters-modal__close" aria-label="Schließen" data-close>&times;</button>
+            </header>
+
+            <div class="filters-modal__body no-scrollbar">
+              {% if collection.filters.size > 0 %}
+                {% for filter in collection.filters %}
+                  {% unless filter.type == 'price_range' %}
+                    {%- assign selected_count = 0 -%}
+                    {%- if filter.type == 'list' or filter.type == 'boolean' -%}
+                      {%- for v in filter.values -%}
+                        {%- if v.active -%}
+                          {%- assign selected_count = selected_count | plus: 1 -%}
+                        {%- endif -%}
+                      {%- endfor -%}
+                    {%- endif -%}
+
+                    <details
+                      class="fgrp"
+                      {% if forloop.first or selected_count > 0 %}
+                        open
+                      {% endif %}
+                    >
+                      <summary class="fgrp__sum">
+                        <span class="inline-flex items-center gap-1">
+                          {{- filter.label -}}
+                          {%- if selected_count > 0 -%}
+                            <span class="text-[#545A64] text-[12px] align-end leading-none"
+                              >({{ selected_count }})</span
+                            >
+                          {%- endif -%}
+                        </span>
+                        <svg
+                          width="16"
+                          height="8"
+                          viewBox="0 0 16 8"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path d="M14.5999 0.999997L9.16657 6.43333C8.5249 7.075 7.4749 7.075 6.83324 6.43333L1.3999 0.999997"
+                                stroke="#545A64" stroke-width="1.5" stroke-miterlimit="10"
+                                stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </summary>
+
+                      <div class="fgrp__content">
+                        {% case filter.type %}
+                          {% when 'list' %}
+                            {% for value in filter.values %}
+                              {% assign add_url = value.url_to_add %}
+                              {% assign remove_url = value.url_to_remove %}
+                              {% assign href_url = add_url %}
+                              {% if value.active %}{% assign href_url = remove_url %}{% endif %}
+                              {% if request.locale.iso_code != shop.primary_locale %}
+                                {% if add_url contains '?' %}
+                                  {% assign add_url = add_url | append: '&locale=' | append: request.locale.iso_code %}
+                                {% else %}
+                                  {% assign add_url = add_url | append: '?locale=' | append: request.locale.iso_code %}
+                                {% endif %}
+                                {% if remove_url contains '?' %}
+                                  {% assign remove_url = remove_url
+                                    | append: '&locale='
+                                    | append: request.locale.iso_code
+                                  %}
+                                {% else %}
+                                  {% assign remove_url = remove_url
+                                    | append: '?locale='
+                                    | append: request.locale.iso_code
+                                  %}
+                                {% endif %}
+                              {% endif %}
+                              {% assign href_url = add_url %}
+                              {% if value.active %}{% assign href_url = remove_url %}{% endif %}
+
+                              <label class="fchk">
+                                <input
+                                  type="checkbox"
+                                  {% if value.active %}
+                                    checked
+                                  {% endif %}
+                                  {% if value.count == 0 and value.active == false %}
+                                    disabled
+                                  {% endif %}
+                                  data-facet-input
+                                  data-href="{{ href_url }}"
+                                >
+                                {{ value.label }}
+                              </label>
+                            {% endfor %}
+
+                          {% when 'boolean' %}
+                            {% for value in filter.values %}
+                              {% assign add_url = value.url_to_add %}
+                              {% assign remove_url = value.url_to_remove %}
+                              {% assign href_url = add_url %}
+                              {% if value.active %}{% assign href_url = remove_url %}{% endif %}
+                              {% if request.locale.iso_code != shop.primary_locale %}
+                                {% if add_url contains '?' %}
+                                  {% assign add_url = add_url | append: '&locale=' | append: request.locale.iso_code %}
+                                {% else %}
+                                  {% assign add_url = add_url | append: '?locale=' | append: request.locale.iso_code %}
+                                {% endif %}
+                                {% if remove_url contains '?' %}
+                                  {% assign remove_url = remove_url
+                                    | append: '&locale='
+                                    | append: request.locale.iso_code
+                                  %}
+                                {% else %}
+                                  {% assign remove_url = remove_url
+                                    | append: '?locale='
+                                    | append: request.locale.iso_code
+                                  %}
+                                {% endif %}
+                              {% endif %}
+                              {% assign href_url = add_url %}
+                              {% if value.active %}{% assign href_url = remove_url %}{% endif %}
+                              <label class="fchk">
+                                <input
+                                  type="checkbox"
+                                  {% if value.active %}
+                                    checked
+                                  {% endif %}
+                                  data-facet-input
+                                  data-href="{{ href_url }}"
+                                >
+                                {{ value.label }}
+                              </label>
+                            {% endfor %}
+                        {% endcase %}
+                      </div>
+                    </details>
+                  {% endunless %}
+                {% endfor %}
+              {% else %}
+                <div class="text-sm text-gray-500">
+                  {{ 'collections.general.no_filters' | t: default: 'Keine Filter verfügbar.' }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </dialog>
+
+        <!-- 2) Sort dropdown — keeps your old SVGs -->
+        <div class="relative" data-menu="sort">
+          <button
+            type="button"
+            class="flex gap-[15px] w-full h-[50px] px-4 items-center border border-[#D9D9D9] customGray bg-white hover:bg-[#F3F1EC] hover:border-transparent transition-colors"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            data-menu-button
+          >
+            <!-- left icon (unchanged) -->
+            <svg width="20" height="21" viewBox="0 0 20 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1.43989 13.3381C1.19209 13.5786 1.18599 13.9741 1.42646 14.2219L3.83003 16.6993C3.83018 16.6995 3.83041 16.6996 3.83056 16.6997C3.94417 16.8173 4.10202 16.8916 4.27864 16.8916C4.45526 16.8916 4.61311 16.8173 4.72671 16.6997C4.72686 16.6996 4.72709 16.6995 4.72725 16.6993L7.13142 14.2219C7.3719 13.9741 7.3658 13.5786 7.11799 13.3381C6.87019 13.0977 6.47468 13.1038 6.2342 13.3516L4.90364 14.7228V4.7334C4.90364 4.38794 4.6241 4.1084 4.27864 4.1084C3.93318 4.1084 3.65364 4.38794 3.65364 4.7334V14.7226L2.32368 13.3516C2.0832 13.1038 1.6877 13.0977 1.43989 13.3381Z"
+                    fill="#2E2E2D"/>
+              <path d="M16.7998 8.57678C16.7998 8.23132 16.5203 7.95178 16.1748 7.95178H9.39258C9.04712 7.95178 8.76758 8.23132 8.76758 8.57678C8.76758 8.92224 9.04712 9.20178 9.39258 9.20178H16.1748C16.5203 9.20178 16.7998 8.92224 16.7998 8.57678Z"
+                    fill="#2E2E2D"/>
+              <path d="M14.8497 12.4208C14.8497 12.0753 14.5702 11.7958 14.2247 11.7958H9.39258C9.04712 11.7958 8.76758 12.0753 8.76758 12.4208C8.76758 12.7662 9.04712 13.0458 9.39258 13.0458H14.2247C14.5702 13.0458 14.8497 12.7662 14.8497 12.4208Z"
+                    fill="#2E2E2D"/>
+              <path d="M9.39258 15.6416C9.04712 15.6416 8.76758 15.9211 8.76758 16.2666C8.76758 16.6121 9.04712 16.8916 9.39258 16.8916H12.2747C12.6201 16.8916 12.8997 16.6121 12.8997 16.2666C12.8997 15.9211 12.6201 15.6416 12.2747 15.6416H9.39258Z"
+                    fill="#2E2E2D"/>
+              <path d="M18.1249 4.1084H9.39258C9.04712 4.1084 8.76758 4.38794 8.76758 4.7334C8.76758 5.07886 9.04712 5.3584 9.39258 5.3584H18.1249C18.4703 5.3584 18.7499 5.07886 18.7499 4.7334C18.7499 4.38794 18.4703 4.1084 18.1249 4.1084Z"
+                    fill="#2E2E2D"/>
+            </svg>
+
+            <span data-sort-label>Beliebt</span>
+            <!-- caret (unchanged) -->
+            <svg width="16" height="8" viewBox="0 0 16 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14.5999 0.999997L9.16657 6.43333C8.5249 7.075 7.4749 7.075 6.83324 6.43333L1.3999 0.999997"
+                    stroke="#545A64" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round"
+                    stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <div
+            class="absolute z-30 mt-2 w-[160px] md:w-[230px] left-1/2 -translate-x-1/2 transform bg-white shadow-sm px-[10px] py-[8px] hidden"
+            role="menu"
+            tabindex="-1"
+            data-menu-panel
+          >
+            <a
+              class="block hover:bg-[#F3F1EC] px-2 py-2"
+              href="{{ collection.url }}?sort_by=price-ascending"
+              data-sort-option="{{ 'sections.category_top.sort.price_ascending' | t | default: 'Preis (niedrigster zuerst)' }}"
+            >
+              <span
+                class="
+                  relative inline-block pb-[9px]
+                  after:content-[''] after:absolute after:left-0 after:bottom-0
+                  after:w-[100px] after:h-[1px] after:bg-[#CCCCCC]
+                "
+              >
+                {{ 'sections.category_top.sort.price_ascending' | t | default: 'Preis (niedrigster zuerst)' }}
+              </span>
+            </a>
+
+            <a
+              class="block px-2 py-2 hover:bg-[#F3F1EC]"
+              href="{{ collection.url }}?sort_by=price-descending"
+              data-sort-option="{{ 'sections.category_top.sort.price_descending' | t | default: 'Preis (höchster zuerst)' }}"
+            >
+              <span class="relative inline-block pb-[9px] after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-[100px] after:h-px after:bg-[#CCCCCC]">
+                {{ 'sections.category_top.sort.price_descending' | t | default: 'Preis (höchster zuerst)' }}
+              </span>
+            </a>
+
+            <a
+              class="block px-2 py-2 hover:bg-[#F3F1EC]"
+              href="{{ collection.url }}?sort_by=best-selling"
+              data-sort-option="{{ 'sections.category_top.sort.discount_descending' | t | default: 'Rabatt (höchster zuerst)' }}"
+            >
+              <span class="relative inline-block">
+                {{- 'sections.category_top.sort.discount_descending' | t | default: 'Rabatt (höchster zuerst)' -}}
+              </span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 3) Columns dropdown — keeps your old SVGs -->
+        <!-- Columns dropdown (refactored to match sort styles) -->
+        <div class="relative" data-menu="cols">
+          <button
+            type="button"
+            class="
+              flex gap-2 text-[16px] w-full h-[50px] px-4 items-center border border-[#D9D9D9] bg-white text-[#2E2E2D]
+              hover:bg-[#F3F1EC] hover:border-transparent transition-colors
+            "
+            aria-haspopup="menu"
+            aria-expanded="false"
+            data-menu-button
+          >
+            <!-- grid icon -->
+            <svg
+              width="20"
+              height="21"
+              viewBox="0 0 20 21"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <g clip-path="url(#clip0_4011_742)">
+                  <path d="M6.90594 0.5H2.31281C1.03754 0.5 0 1.53754 0 2.81281V7.40594C0 8.68121 1.03754 9.71875 2.31281 9.71875H6.90594C8.18121 9.71875 9.21875 8.68121 9.21875 7.40594V2.81281C9.21875 1.53754 8.18121 0.5 6.90594 0.5ZM7.65625 7.40594C7.65625 7.81965 7.31965 8.15625 6.90594 8.15625H2.31281C1.8991 8.15625 1.5625 7.81965 1.5625 7.40594V2.81281C1.5625 2.3991 1.8991 2.0625 2.31281 2.0625H6.90594C7.31965 2.0625 7.65625 2.3991 7.65625 2.81281V7.40594Z" fill="#2E2E2D"/>
+                  <path d="M17.6562 0.5H13.125C11.8327 0.5 10.7812 1.55141 10.7812 2.84375V7.375C10.7812 8.66734 11.8327 9.71875 13.125 9.71875H17.6562C18.9486 9.71875 20 8.66734 20 7.375V2.84375C20 1.55141 18.9486 0.5 17.6562 0.5ZM18.4375 7.375C18.4375 7.80578 18.087 8.15625 17.6562 8.15625H13.125C12.6942 8.15625 12.3438 7.80578 12.3438 7.375V2.84375C12.3438 2.41297 12.6942 2.0625 13.125 2.0625H17.6562C18.087 2.0625 18.4375 2.41297 18.4375 2.84375V7.375Z" fill="#2E2E2D"/>
+                  <path d="M6.90594 11.2812H2.31281C1.03754 11.2812 0 12.3188 0 13.5941V18.1872C0 19.4625 1.03754 20.5 2.31281 20.5H6.90594C8.18121 20.5 9.21875 19.4625 9.21875 18.1872V13.5941C9.21875 12.3188 8.18121 11.2812 6.90594 11.2812ZM7.65625 18.1872C7.65625 18.6009 7.31965 18.9375 6.90594 18.9375H2.31281C1.8991 18.9375 1.5625 18.6009 1.5625 18.1872V13.5941C1.5625 13.1804 1.8991 12.8438 2.31281 12.8438H6.90594C7.31965 12.8438 7.65625 13.1804 7.65625 13.5941V18.1872Z" fill="#2E2E2D"/>
+                  <path d="M17.6562 11.2812H13.125C11.8327 11.2812 10.7812 12.3327 10.7812 13.625V18.1562C10.7812 19.4486 11.8327 20.5 13.125 20.5H17.6562C18.9486 20.5 20 19.4486 20 18.1562V13.625C20 12.3327 18.9486 11.2812 17.6562 11.2812ZM18.4375 18.1562C18.4375 18.587 18.087 18.9375 17.6562 18.9375H13.125C12.6942 18.9375 12.3438 18.587 12.3438 18.1562V13.625C12.3438 13.1942 12.6942 12.8438 13.125 12.8438H17.6562C18.087 12.8438 18.4375 13.1942 18.4375 13.625V18.1562Z" fill="#2E2E2D"/>
+              </g>
+              <defs><clipPath id="clip0_4011_742"><rect width="20" height="20" fill="white" transform="translate(0 0.5)"/></clipPath></defs>
+            </svg>
+
+            <span data-cols-label>5 Spalten</span>
+
+            <!-- caret -->
+            <svg
+              width="20"
+              height="21"
+              viewBox="0 0 20 21"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              class="ml-auto"
+            >
+              <path d="M16.5999 8L11.1666 13.4333C10.5249 14.075 9.4749 14.075 8.83324 13.4333L3.3999 8"
+                    stroke="#545A64" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <!-- panel -->
+          <div
+            class="absolute flex flex-col z-30 mt-2 w-[130px] md:w-[160px] left-1/2 -translate-x-1/2 transform bg-white shadow-sm px-2 py-2 hidden gap-2"
+            role="menu"
+            tabindex="-1"
+            data-menu-panel
+          >
+            <button
+              class="block w-full text-left px-2 py-2 hover:bg-[#F3F1EC] md:hidden"
+              role="menuitem"
+              data-cols="1"
+              data-label="1 Spalte"
+            >
+              <span
+                class="
+                  relative inline-block pb-[9px]
+                  after:content-[''] after:absolute after:left-0 after:bottom-0
+                  after:w-[100px] after:h-[1px] after:bg-[#CCCCCC]
+                "
+                >1 Spalte</span
+              >
+            </button>
+
+            <button
+              class="block w-full text-left px-2 py-2 hover:bg-[#F3F1EC] md:hidden"
+              role="menuitem"
+              data-cols="2"
+              data-label="2 Spalten"
+            >
+              <span
+                class="                  relative inline-block pb-[9px]"
+              >
+                2 Spalten
+              </span>
+            </button>
+
+            <button
+              class="block w-full text-left px-3 py-2 hover:bg-[#F3F1EC] hidden md:block"
+              role="menuitem"
+              data-cols="5"
+              data-label="5 Spalten"
+            >
+              <span
+                class="
+                  relative inline-block pb-[9px]
+                  after:content-[''] after:absolute after:left-0 after:bottom-0
+                  after:w-[100px] after:h-[1px] after:bg-[#CCCCCC]
+                "
+              >
+                5 Spalten
+              </span>
+            </button>
+
+            <button
+              class="block w-full text-left px-3 py-2 hover:bg-[#F3F1EC] hidden md:block"
+              role="menuitem"
+              data-cols="4"
+              data-label="4 Spalten"
+            >
+              <span
+                class="                  relative inline-block"
+              >
+                4 Spalten
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {%- assign active_count = 0 -%}
+    {%- for f in collection.filters -%}
+      {%- for v in f.values -%}
+        {%- if v.active -%}{%- assign active_count = active_count | plus: 1 -%}{%- endif -%}
+      {%- endfor -%}
+    {%- endfor -%}
+
+    <div
+      id="active-filters"
+      class="mt-[20px] md:mt-[32px] md:mt-0 w-full md:w-auto flex flex-wrap gap-2 justify-center md:justify-end{% unless active_count > 0 %} hidden{% endunless %}"
+    >
+      {%- comment -%} wrapper always rendered; hidden when none {%- endcomment -%}
+      {%- if active_count > 0 -%}
+        <!-- Clear all -->
+        <button
+          type="button"
+          class="rounded-full h-fit border border-[#647167] text-[#647167] px-[16px] py-[12px] md:px-[24px] md:py-[16px] text-[16px] md:text-[20px] leading-none flex items-center gap-2"
+          data-clear-filters
+        >
+          Alle Filter entfernen
+          <span aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7.09938 6.00009L11.7719 1.32729C12.076 1.02334 12.076 0.531906 11.7719 0.22796C11.468 -0.0759865 10.9766 -0.0759865 10.6726 0.22796L5.99993 4.90076L1.32737 0.22796C1.02329 -0.0759865 0.532001 -0.0759865 0.228062 0.22796C-0.0760205 0.531906 -0.0760205 1.02334 0.228062 1.32729L4.90062 6.00009L0.228062 10.6729C-0.0760205 10.9768 -0.0760205 11.4683 0.228062 11.7722C0.379533 11.9238 0.578696 12 0.777716 12C0.976736 12 1.17576 11.9238 1.32737 11.7722L5.99993 7.09942L10.6726 11.7722C10.8242 11.9238 11.0233 12 11.2223 12C11.4213 12 11.6203 11.9238 11.7719 11.7722C12.076 11.4683 12.076 10.9768 11.7719 10.6729L7.09938 6.00009Z" fill="#647167"/>
+            </svg>
+          </span>
+        </button>
+      {%- endif -%}
+
+      {%- for f in collection.filters -%}
+        {%- if f.type == 'list' or f.type == 'boolean' -%}
+          {%- for v in f.values -%}
+            {%- if v.active -%}
+              {%- assign remove_url = v.url_to_remove -%}
+              {%- if request.locale.iso_code != shop.primary_locale -%}
+                {%- if remove_url contains '?' -%}
+                  {%- assign remove_url = remove_url | append: '&locale=' | append: request.locale.iso_code -%}
+                {%- else -%}
+                  {%- assign remove_url = remove_url | append: '?locale=' | append: request.locale.iso_code -%}
+                {%- endif -%}
+              {%- endif -%}
+              <a
+                href="{{ remove_url }}"
+                data-href="{{ remove_url }}"
+                data-filter-bubble
+                class="rounded-full h-fit border border-[#647167] text-[#647167] px-[16px] py-[12px] md:px-[24px] md:py-[16px] text-[16px] md:text-[20px] leading-none flex items-center gap-2"
+              >
+                {{ v.label }}
+                <span aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7.09938 6.00009L11.7719 1.32729C12.076 1.02334 12.076 0.531906 11.7719 0.22796C11.468 -0.0759865 10.9766 -0.0759865 10.6726 0.22796L5.99993 4.90076L1.32737 0.22796C1.02329 -0.0759865 0.532001 -0.0759865 0.228062 0.22796C-0.0760205 0.531906 -0.0760205 1.02334 0.228062 1.32729L4.90062 6.00009L0.228062 10.6729C-0.0760205 10.9768 -0.0760205 11.4683 0.228062 11.7722C0.379533 11.9238 0.578696 12 0.777716 12C0.976736 12 1.17576 11.9238 1.32737 11.7722L5.99993 7.09942L10.6726 11.7722C10.8242 11.9238 11.0233 12 11.2223 12C11.4213 12 11.6203 11.9238 11.7719 11.7722C12.076 11.4683 12.076 10.9768 11.7719 10.6729L7.09938 6.00009Z" fill="#647167"/>
+                  </svg>
+                </span>
+                <span class="sr-only">entfernen</span>
+              </a>
+            {%- endif -%}
+          {%- endfor -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const root = document.getElementById('category-products-top-{{ section.id }}');
+    if (!root) return;
+
+    // Column mode: track current and whether the user explicitly chose it
+    let currentColsMode = null;
+    let userSelectedCols = false;
+
+    // grid targets are queried dynamically inside setCols()
+
+    /*  =========================
+        DROPDOWNS (sort / columns)
+        ========================= */
+    function closeAll() {
+      root.querySelectorAll('[data-menu-panel]').forEach((p) => p.classList.add('hidden'));
+      root.querySelectorAll('[data-menu-button]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    }
+
+    root.querySelectorAll('[data-menu]').forEach((menu) => {
+      const btn = menu.querySelector('[data-menu-button]');
+      const panel = menu.querySelector('[data-menu-panel]');
+      if (!btn || !panel) return;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = !panel.classList.contains('hidden');
+        closeAll();
+        panel.classList.toggle('hidden', open);
+        btn.setAttribute('aria-expanded', String(!open));
+      });
+    });
+
+    document.addEventListener('click', closeAll);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAll();
+    });
+
+    // reflect current sort_by
+    const sortMap = {
+      'price-ascending':
+        "{{ 'sections.category_top.sort.price_ascending' | t | default: 'Preis (niedrigster zuerst)' }}",
+      'price-descending':
+        "{{ 'sections.category_top.sort.price_descending' | t | default: 'Preis (höchster zuerst)' }}",
+      'best-selling':
+        "{{ 'sections.category_top.sort.discount_descending' | t | default: 'Rabatt (höchster zuerst)' }}",
+    };
+    const sortBy = new URLSearchParams(location.search).get('sort_by');
+    const sortLabel = root.querySelector('[data-sort-label]');
+    if (sortLabel && sortMap[sortBy]) sortLabel.textContent = sortMap[sortBy];
+
+    function highlightSortActive() {
+      const currentSort = new URLSearchParams(location.search).get('sort_by');
+      const links = root.querySelectorAll('[data-menu="sort"] [data-menu-panel] a[href]');
+      links.forEach((a) => {
+        let href = a.getAttribute('href');
+        const hrefSort = new URL(href, location.origin).searchParams.get('sort_by');
+        const isActive = hrefSort === currentSort;
+        a.classList.toggle('is-active', isActive);
+      });
+    }
+    highlightSortActive();
+
+    /* ==============
+        COLUMN SWITCHER
+        ==============
+    */
+    const colsLabel = root.querySelector('[data-cols-label]');
+    const colsMenu = root.querySelector('[data-menu="cols"]');
+    const colBtnsAll = colsMenu ? [...colsMenu.querySelectorAll('[data-cols]')] : [];
+    const mobileModes = colBtnsAll.filter((b) => b.classList.contains('md:hidden')).map((b) => b.dataset.cols);
+    const desktopModes = colBtnsAll.filter((b) => b.classList.contains('md:block')).map((b) => b.dataset.cols);
+
+    // Map a stored mode to the correct mode for the current viewport
+    function normalizeModeForViewport(mode) {
+      const mobileDefault = mobileModes[0] || '1';
+      const desktopDefault = desktopModes[0] || '5';
+      if (!mode) return mq.matches ? mobileDefault : desktopDefault;
+      if (mq.matches) return mobileModes.includes(mode) ? mode : mobileDefault;
+      return desktopModes.includes(mode) ? mode : desktopDefault;
+    }
+
+    function setCols(mode) {
+      currentColsMode = mode;
+      const activeBtn = root.querySelector(`[data-cols="${mode}"]`);
+      const targets = document.querySelectorAll('[data-products-grid]');
+
+      targets.forEach((grid) => {
+        // remove any column classes that could override at current breakpoints
+        grid.classList.remove(
+          'grid-cols-1',
+          'grid-cols-2',
+          'sm:grid-cols-1',
+          'sm:grid-cols-2',
+          'md:grid-cols-1',
+          'md:grid-cols-2',
+          'md:grid-cols-3',
+          'md:grid-cols-4',
+          'md:grid-cols-5',
+          'lg:grid-cols-1',
+          'lg:grid-cols-2',
+          'lg:grid-cols-3',
+          'lg:grid-cols-4',
+          'lg:grid-cols-5'
+        );
+
+        if (mode === '1' || mode === '2') {
+          const base = mode === '1' ? 'grid-cols-1' : 'grid-cols-2';
+          grid.classList.add(base);
+          grid.removeAttribute('data-mobile-cols');
+        } else {
+          grid.classList.remove(
+            'grid-cols-1',
+            'grid-cols-2',
+            'grid-cols-3',
+            'grid-cols-4',
+            'grid-cols-5',
+            'md:grid-cols-4',
+            'md:grid-cols-5',
+            'lg:grid-cols-4',
+            'lg:grid-cols-5',
+            'xl:grid-cols-4',
+            'xl:grid-cols-5'
+          );
+          const colClass = mode === '4' ? 'grid-cols-4' : 'grid-cols-5';
+
+          grid.classList.add(`md:${colClass}`, `lg:${colClass}`, `xl:${colClass}`);
+          grid.removeAttribute('data-mobile-cols');
+        }
+      });
+
+      if (colsLabel && activeBtn) colsLabel.textContent = activeBtn.dataset.label || activeBtn.textContent.trim();
+
+      root.querySelectorAll('[data-cols]').forEach((btn) => {
+        const isActive = btn.dataset.cols === mode;
+        btn.classList.toggle('bg-[#F3F1EC]', isActive);
+        btn.classList.toggle('font-semibold', isActive);
+      });
+    }
+
+    // Set default based on viewport using available options (fallback: 1/5)
+    // Use 767px to avoid boundary ambiguity at exactly 768px.
+    const mq = window.matchMedia('(max-width: 767px)');
+    let initialCols = mq.matches ? mobileModes[0] || '1' : desktopModes[0] || '5';
+    // restore from attribute on container if present (e.g., after server render)
+    const rootStored = root.getAttribute('data-cols-mode');
+    if (rootStored) {
+      initialCols = rootStored;
+      userSelectedCols = true;
+    }
+    setCols(initialCols);
+
+    // Set initial visual selection
+    root.querySelectorAll('[data-cols]').forEach((btn) => {
+      if (btn.dataset.cols === initialCols) {
+        btn.classList.add('bg-[#F3F1EC]', 'font-semibold');
+      }
+    });
+
+    // Auto-switch on responsiveness changes
+    const onMqChange = (e) => {
+      // Always normalize the currently remembered mode for the new viewport.
+      // If the user picked a mobile-only or desktop-only option, we map to a sensible default.
+      const next = normalizeModeForViewport(currentColsMode);
+      setCols(next);
+    };
+    try {
+      mq.addEventListener('change', onMqChange);
+    } catch (_) {
+      // Safari fallback
+      mq.addListener(onMqChange);
+    }
+
+    root.querySelectorAll('[data-cols]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        setCols(btn.dataset.cols);
+        userSelectedCols = true;
+        root.setAttribute('data-cols-mode', btn.dataset.cols);
+        closeAll();
+      });
+    });
+
+    const trigger = document.querySelector('[data-filter-trigger]');
+    const dlg = document.getElementById('filters-drawer');
+    if (!trigger || !dlg) return;
+
+    // Prevent double-binding if this snippet is injected twice
+    if (dlg.__filtersBound) return;
+    dlg.__filtersBound = true;
+
+    const PANEL_W = 320;
+    const GAP = 8;
+
+    function panelHeight() {
+      return Math.min(window.innerHeight * 0.7, 640);
+    }
+
+    function place() {
+      const r = trigger.getBoundingClientRect();
+      let top = r.bottom + GAP + window.scrollY;
+
+      // Flip above if not enough room below
+      const below = window.innerHeight - r.bottom;
+      if (below < panelHeight() + GAP && r.top > panelHeight() + GAP) {
+        top = r.top - panelHeight() - GAP + window.scrollY;
+      }
+
+      // Clamp horizontally
+      let left = r.left + window.scrollX;
+      const minLeft = window.scrollX + GAP;
+      const maxLeft = window.scrollX + window.innerWidth - PANEL_W - GAP;
+      if (left < minLeft) left = minLeft;
+      if (left > maxLeft) left = maxLeft;
+
+      dlg.style.setProperty('--filters-top', top + 'px');
+      dlg.style.setProperty('--filters-left', left + 'px');
+    }
+
+    function openRealModal() {
+      if (dlg.open) {
+        place();
+        return true;
+      }
+      // must be in <body> to be eligible for top layer
+      if (dlg.parentNode !== document.body) document.body.appendChild(dlg);
+      place();
+      dlg.showModal(); // throws if already open or unsupported
+      return true;
+    }
+
+    function openPolyfill() {
+      // fallback: emulate modal with our own backdrop
+      dlg.setAttribute('data-polyfill', '');
+      if (dlg.parentNode !== document.body) document.body.appendChild(dlg);
+      place();
+      dlg.classList.add('is-open');
+    }
+
+    function closePolyfill() {
+      dlg.classList.remove('is-open');
+    }
+
+    function open(e) {
+      e.preventDefault();
+      try {
+        if (openRealModal()) return;
+      } catch (err) {
+        // If showModal failed, use polyfill mode
+        openPolyfill();
+      }
+    }
+
+    function close() {
+      if (dlg.hasAttribute('data-polyfill')) {
+        closePolyfill();
+      } else {
+        try {
+          dlg.close();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    trigger.addEventListener('click', open);
+    window.addEventListener('resize', () => (dlg.open || dlg.classList.contains('is-open')) && place());
+    window.addEventListener('scroll', () => (dlg.open || dlg.classList.contains('is-open')) && place(), {
+      passive: true,
+    });
+
+    function getOpenFacetKeys() {
+      return [...dlg.querySelectorAll('.fgrp[open]')].map(
+        (d) => d.getAttribute('data-facet') || d.querySelector('.fgrp__sum')?.textContent?.trim() || ''
+      );
+    }
+
+    // Helper: AJAX load and swap collection grid + filters body
+    async function ajaxUpdate(urlString) {
+      const openKeys = getOpenFacetKeys();
+
+      try {
+        const url = new URL(urlString, location.origin);
+        // indicate loading on grid container if present
+        const container = document.getElementById('AjaxinateContainer');
+        if (container) container.classList.add('opacity-60', 'pointer-events-none');
+        const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'fetch' } });
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // swap product container
+        const newContainer = doc.getElementById('AjaxinateContainer');
+        if (container && newContainer) {
+          container.innerHTML = newContainer.innerHTML;
+        }
+
+        // swap filters body so counts/active states refresh
+        const newFiltersBody = doc.querySelector('#filters-drawer .filters-modal__body');
+        const curFiltersBody = dlg.querySelector('.filters-modal__body');
+        if (newFiltersBody && curFiltersBody) {
+          curFiltersBody.innerHTML = newFiltersBody.innerHTML;
+          wireDialog();
+        }
+
+        const newActive = doc.getElementById('active-filters');
+        const curActive = document.getElementById('active-filters');
+        if (newActive && curActive) {
+          curActive.innerHTML = newActive.innerHTML;
+          // mirror hidden/visible state from server-rendered HTML
+          curActive.classList.toggle('hidden', newActive.classList.contains('hidden'));
+          wireActiveFilters();
+        }
+
+        // re-init Ajaxinate if present
+        if (window.Ajaxinate) {
+          try {
+            new Ajaxinate({
+              method: '{{ section.settings.pagination_mode }}',
+              loadingText: "{{ 'sections.category_products_grid.loading_text' | t: default: 'Loading...' }}",
+            });
+          } catch {}
+        }
+
+        // Re-apply columns after DOM swap using viewport-normalized mode
+        setCols(normalizeModeForViewport(currentColsMode));
+
+        // update sort label
+        const sortByNow = url.searchParams.get('sort_by');
+        const sortLabelNode = root.querySelector('[data-sort-label]');
+        if (sortLabelNode && sortMap[sortByNow]) sortLabelNode.textContent = sortMap[sortByNow];
+
+        // update URL without reload
+        history.replaceState(null, '', url.toString());
+        // refresh active state highlights
+        highlightSortActive();
+      } finally {
+        const container = document.getElementById('AjaxinateContainer');
+        if (container) container.classList.remove('opacity-60', 'pointer-events-none');
+      }
+    }
+
+    // Wire handlers inside dialog (can be called after HTML swap)
+    function wireDialog() {
+      // Close on clicks with [data-close]
+      dlg.querySelectorAll('[data-close]').forEach((el) => {
+        if (el.__bound) return;
+        el.__bound = true;
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Reset: clear filter params via AJAX
+          if (el.classList.contains('btn-secondary')) {
+            const url = new URL(location.href);
+            [...url.searchParams.keys()].forEach((k) => {
+              if (k.startsWith('filter.')) url.searchParams.delete(k);
+              if (k === 'page') url.searchParams.delete(k);
+            });
+            ajaxUpdate(url.toString());
+            close();
+            return;
+          }
+          close();
+        });
+      });
+
+      // Navigate when a facet checkbox toggles (AJAX)
+      dlg.querySelectorAll('input[data-facet-input]').forEach((input) => {
+        if (input.__bound) return;
+        input.__bound = true;
+        input.addEventListener('change', () => {
+          const href = input.getAttribute('data-href');
+          if (!href) return;
+          const target = new URL(href, location.origin);
+          const current = new URL(location.href);
+          // preserve sort_by and locale if not present
+          const s = current.searchParams.get('sort_by');
+          if (s && !target.searchParams.get('sort_by')) target.searchParams.set('sort_by', s);
+          const loc = current.searchParams.get('locale');
+          if (loc && !target.searchParams.get('locale')) target.searchParams.set('locale', loc);
+          ajaxUpdate(target.toString());
+        });
+      });
+    }
+
+    // initial wiring
+    wireDialog();
+    wireActiveFilters();
+
+    // Apply button now simply closes; individual changes update via AJAX
+    const applyBtn = dlg.querySelector('#filters-apply');
+    if (applyBtn) {
+      applyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+      });
+    }
+
+    // Sort: intercept clicks and update via AJAX while preserving active filters
+    root.querySelectorAll('[data-menu="sort"] a[href]').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const desired = new URL(a.href, location.origin).searchParams.get('sort_by');
+        const url = new URL(location.href);
+        if (desired) url.searchParams.set('sort_by', desired);
+        // optimistic UI: mark this item active
+        root
+          .querySelectorAll('[data-menu="sort"] [data-menu-panel] a.is-active')
+          .forEach((x) => x.classList.remove('is-active'));
+        a.classList.add('is-active');
+        ajaxUpdate(url.toString());
+        closeAll();
+      });
+    });
+
+    // ESC closes in real-dialog mode
+    dlg.addEventListener('cancel', (ev) => {
+      ev.preventDefault();
+      close();
+    });
+
+    // Defensive: avoid opening twice quickly
+    dlg.addEventListener('toggle', () => {
+      /* useful for debugging if needed */
+    });
+
+    // --- Add below your existing helpers ---
+    function wireActiveFilters() {
+      const wrap = document.getElementById('active-filters');
+      if (!wrap) return;
+
+      // Single-bubble remove (AJAX)
+      wrap.querySelectorAll('[data-filter-bubble]').forEach((a) => {
+        if (a.__bound) return;
+        a.__bound = true;
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = new URL(a.getAttribute('data-href'), location.origin);
+          const current = new URL(location.href);
+          const s = current.searchParams.get('sort_by');
+          const loc = current.searchParams.get('locale');
+          if (s && !target.searchParams.get('sort_by')) target.searchParams.set('sort_by', s);
+          if (loc && !target.searchParams.get('locale')) target.searchParams.set('locale', loc);
+          ajaxUpdate(target.toString());
+        });
+      });
+
+      // Clear-all (AJAX)
+      wrap.querySelectorAll('[data-clear-filters]').forEach((btn) => {
+        if (btn.__bound) return;
+        btn.__bound = true;
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const url = new URL(location.href);
+          [...url.searchParams.keys()].forEach((k) => {
+            if (k.startsWith('filter.')) url.searchParams.delete(k);
+            if (k === 'page') url.searchParams.delete(k);
+          });
+          ajaxUpdate(url.toString());
+        });
+      });
+    }
+  })();
+</script>

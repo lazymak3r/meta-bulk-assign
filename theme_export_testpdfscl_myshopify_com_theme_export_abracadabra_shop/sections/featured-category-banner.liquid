@@ -1,0 +1,81 @@
+<!-- SEASON DESIGNS -->
+<section class="relative overflow-hidden max-w-[var(--container)] mx-auto md:mt-[80px] mt-[60px]">
+  <div
+    class="relative overflow-hidden"
+  >
+    <!-- Background image -->
+    <img
+      src="{{ section.settings.image | img_url: '1920x1080' }}"
+      alt="{{ section.settings.title }}"
+      class="absolute inset-0 h-full w-full object-cover aspect-[16/9]"
+      width="1920"
+      height="1080"
+    >
+
+    <!-- Dark overlay (wash) -->
+    <div class="absolute inset-0 bg-black/55"></div>
+
+    <!-- Content -->
+    <div class="relative">
+      <div
+        class="flex min-h-[605px] md:min-h-[580px] items-center justify-center text-center px-4"
+      >
+        <div class="w-full max-w-[350px] md:max-w-4xl self-end md:self-center mb-[50px] md:!mb-0 flex flex-col items-center">
+          <div class="inline-block">
+            <h2
+              class="text-white !text-[32px] leading-[1.5] md:!text-[48px]"
+            >
+              {{ section.settings.title }}
+            </h2>
+            <p
+              class="mt-[12px] text-white !text-[14px] md:!text-[20px] font-[400]"
+            >
+              {{ section.settings.description }}
+            </p>
+          </div>
+          <a href="{{ section.settings.collection.url }}" class="mt-[24px] md:mt-12 w-full btn-secondary">
+            {{ section.settings.button }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Kategorie-Banner",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Bild"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titel"
+    },
+    {
+      "type": "text",
+      "id": "button",
+      "label": "Taste"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Beschreibung"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Kollektion"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Kategorie-Banner"
+    }
+  ]
+}
+{% endschema %}

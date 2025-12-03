@@ -1,0 +1,156 @@
+{% comment %}
+  =====================================================================================
+  CUSTOM SLIDER SNIPPET (V5.4 - Finale, Multi-Assign korrigiert)
+  - KORRIGIERT: Der 'multi-assign on one line' Syntax-Fehler wurde endgültig behoben.
+  - Enthält Übergangseffekte und den iPhone-Video-Fix.
+  =====================================================================================
+{% endcomment %}
+
+{%- liquid
+  assign show_desktop = section.settings.show_desktop_slider
+  assign show_mobile = section.settings.show_mobile_slider
+  assign desktop_slides = section.blocks | where: 'type', 'desktop_slide'
+  assign mobile_slides = section.blocks | where: 'type', 'mobile_slide'
+
+  case section.settings.desktop_aspect_ratio
+    when '16:8'
+      assign desktop_padding_percentage = 50
+    when '16:7'
+      assign desktop_padding_percentage = 43.75
+    when '16:6'
+      assign desktop_padding_percentage = 37.5
+    else
+      assign desktop_padding_percentage = 56.25
+  endcase
+  case section.settings.mobile_aspect_ratio
+    when '1:1'
+      assign mobile_padding_percentage = 100
+    else
+      assign mobile_padding_percentage = 177.77
+  endcase
+-%}
+
+<style>
+  .custom-slider__wrapper { position: relative; width: 100%; line-height: 0; }
+  .custom-slider__mobile { display: none; }
+  @media (max-width: 768px) { .custom-slider__desktop { display: none; } .custom-slider__mobile { display: block; } }
+  .custom-slider__slide { position: relative; display: block; overflow: hidden; background-color: #f0f0f0; height: 0; }
+  .custom-slider__slide-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .custom-slider__slide-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  .custom-slider__slide-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 800px; padding: 20px; box-sizing: border-box; z-index: 2; }
+  .custom-slider__slide-content--left { text-align: left; left: 10%; transform: translate(0, -50%); }
+  .custom-slider__slide-content--center { text-align: center; left: 50%; transform: translate(-50%, -50%); }
+  .custom-slider__slide-content--right { text-align: right; left: 90%; transform: translate(-100%, -50%); }
+  .custom-slider__heading { color: white; font-size: 2.5rem; font-weight: bold; margin: 0 0 15px 0; line-height: 1.2; }
+  .custom-slider__subheading { color: white; font-size: 1.2rem; margin: 0 0 25px 0; line-height: 1.5; }
+  .custom-slider__button { display: inline-block; padding: 12px 24px; font-size: 1rem; text-decoration: none; line-height: normal; border-radius: 5px; transition: opacity 0.3s ease; position: relative; z-index: 4; }
+  .custom-slider__button:hover { opacity: 0.85; }
+  .custom-slider__video-trigger { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; cursor: pointer; }
+  .custom-slider__play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: auto; transition: transform 0.2s ease-in-out; }
+  .custom-slider__video-trigger:hover .custom-slider__play-icon { transform: translate(-50%, -50%) scale(1.1); }
+  .custom-slider__video-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
+  .custom-slider__video-modal.is-active { display: flex; }
+  .custom-slider__video-modal-close { position: absolute; bottom: 20px; right: 20px; width: 40px; height: 40px; background-color: rgba(0, 0, 0, 0.5); border-radius: 50%; cursor: pointer; z-index: 2; transition: background-color 0.2s ease; }
+  .custom-slider__video-modal-close:hover { background-color: rgba(0, 0, 0, 0.8); }
+  .custom-slider__video-modal-close:before, .custom-slider__video-modal-close:after { content: ''; position: absolute; top: 19px; left: 10px; width: 20px; height: 2px; background-color: white; }
+  .custom-slider__video-modal-close:before { transform: rotate(45deg); }
+  .custom-slider__video-modal-close:after { transform: rotate(-45deg); }
+  .custom-slider__video-container { position: relative; width: 90%; max-width: 1200px; aspect-ratio: 16 / 9; }
+  .custom-slider__video-container iframe, .custom-slider__video-container video, .custom-slider__yt-player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .splide__arrow { background-color: rgba(0, 0, 0, 0.5); }
+  .splide__arrow svg { fill: white; }
+  .splide__pagination__page.is-active { background-color: #333; }
+</style>
+
+<div data-section-id="{{ section.id }}" class="custom-slider-section">
+  {%- assign slider_types = 'desktop,mobile' | split: ',' -%}
+  {%- for slider_type in slider_types -%}
+    {%- liquid
+      if slider_type == 'desktop'
+        assign slides = desktop_slides
+        assign padding_percentage = desktop_padding_percentage
+        assign image_width = 1920
+        assign slider_id = 'splide-desktop-' | append: section.id
+        assign is_visible = show_desktop
+      else
+        assign slides = mobile_slides
+        assign padding_percentage = mobile_padding_percentage
+        assign image_width = 800
+        assign slider_id = 'splide-mobile-' | append: section.id
+        assign is_visible = show_mobile
+      endif
+    -%}
+    {%- if is_visible and slides.size > 0 -%}
+      <div class="custom-slider__wrapper custom-slider__{{ slider_type }}">
+        <div class="splide" id="{{ slider_id }}">
+          <div class="splide__track"><ul class="splide__list">
+              {%- for block in slides -%}
+                <li class="splide__slide" style="padding-bottom: {{ padding_percentage }}%;" {{ block.shopify_attributes }}>
+                  <div class="custom-slider__slide-inner">
+                    {%- assign has_video = false -%}
+                    {%- if block.settings.video_cover_image != blank -%}{%- if block.settings.video_hosted != blank or block.settings.video_url_external != blank -%}{%- assign has_video = true -%}{%- endif -%}{%- endif -%}
+                    {%- if has_video -%}
+                      <img class="custom-slider__slide-image" src="{{ block.settings.video_cover_image | image_url: width: image_width }}" alt="{{ block.settings.video_cover_image.alt | default: 'Video cover' | escape }}" loading="lazy" width="{{ image_width }}" height="{{ image_width | divided_by: block.settings.video_cover_image.aspect_ratio | round }}">
+                      <div class="custom-slider__video-trigger" data-modal-id="modal-{{ block.id }}">{%- if block.settings.video_play_icon != blank -%}<img class="custom-slider__play-icon" src="{{ block.settings.video_play_icon | image_url: width: 160 }}" alt="Play Video" loading="lazy" width="160" height="{{ 160 | divided_by: block.settings.video_play_icon.aspect_ratio | round }}">{%- endif -%}</div>
+                    {%- elsif block.settings.image != blank -%}
+                      <img class="custom-slider__slide-image" src="{{ block.settings.image | image_url: width: image_width }}" alt="{{ block.settings.image.alt | default: 'Slide image' | escape }}" loading="lazy" width="{{ image_width }}" height="{{ image_width | divided_by: block.settings.image.aspect_ratio | round }}">
+                    {%- endif -%}
+                    <div class="custom-slider__slide-content custom-slider__slide-content--{{ block.settings.text_alignment }}">
+                      {%- if block.settings.heading != blank -%}<h2 class="custom-slider__heading" style="color: {{ block.settings.text_color }};">{{ block.settings.heading | escape }}</h2>{%- endif -%}
+                      {%- if block.settings.subheading != blank -%}<p class="custom-slider__subheading" style="color: {{ block.settings.text_color }};">{{ block.settings.subheading | escape }}</p>{%- endif -%}
+                      {%- unless has_video %}{%- if block.settings.button_text != blank and block.settings.button_link != blank -%}<a href="{{ block.settings.button_link }}" class="custom-slider__button" style="background-color: {{ block.settings.button_bg_color }}; color: {{ block.settings.button_text_color }};">{{ block.settings.button_text | escape }}</a>{%- endif -%}{%- endunless -%}
+                    </div>
+                    {%- if has_video == false -%}{%- if block.settings.button_link != blank -%}<a href="{{ block.settings.button_link }}" aria-label="{{ block.settings.heading | escape }}" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index: 3;"></a>{%- endif -%}{%- endif -%}
+                  </div>
+                </li>
+              {%- endfor -%}
+          </ul></div>
+        </div>
+      </div>
+    {%- endif -%}
+  {%- endfor -%}
+  {%- for block in section.blocks -%}
+    {%- assign create_modal = false -%}
+    {%- if block.settings.video_cover_image != blank -%}{%- if block.settings.video_hosted != blank or block.settings.video_url_external != blank -%}{%- assign create_modal = true -%}{%- endif -%}{%- endif -%}
+    {%- if create_modal -%}
+      <div class="custom-slider__video-modal" id="modal-{{ block.id }}">
+        <div class="custom-slider__video-modal-close"></div>
+        <div class="custom-slider__video-container">
+          {%- if block.settings.video_hosted != blank -%}
+            {{ block.settings.video_hosted | video_tag: autoplay: true, controls: true }}
+          {%- elsif block.settings.video_url_external.type == 'youtube' -%}
+            <div class="custom-slider__yt-player" id="ytplayer-{{ block.id }}" data-video-id="{{ block.settings.video_url_external.id }}"></div>
+          {%- elsif block.settings.video_url_external.type == 'vimeo' -%}
+            <iframe src="https://player.vimeo.com/video/{{ block.settings.video_url_external.id }}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endif -%}
+  {%- endfor -%}
+</div>
+
+<script>
+  window.splideInstances = window.splideInstances || {};
+  window.ytPlayers = window.ytPlayers || {};
+  function initHfSlider(selector) {
+    var sliderElement = document.querySelector(selector);
+    if (sliderElement && !sliderElement.classList.contains('is-initialized')) {
+      var effect = {{ section.settings.transition_effect | json }};
+      var splideOptions = {
+        perPage: 1, autoplay: {{ section.settings.autoplay | json }},
+        interval: {{ section.settings.autoplay_speed | json }}, speed: {{ section.settings.transition_speed | json }},
+        arrows: {{ section.settings.show_arrows | json }}, pagination: {{ section.settings.show_pagination | json }},
+        pauseOnHover: true, drag: true,
+      };
+      if (effect === 'fade') { splideOptions.type = 'fade'; splideOptions.rewind = true; }
+      else { splideOptions.type = 'loop'; }
+      var splide = new Splide(selector, splideOptions).mount();
+      sliderElement.classList.add('is-initialized');
+      window.splideInstances[selector] = splide;
+    }
+  }
+  function setupVideoTriggers_{{ section.id | replace: '-', '_' }}() { var sectionEl = document.getElementById('shopify-section-{{ section.id }}'); sectionEl.querySelectorAll('.custom-slider__video-trigger').forEach(trigger => { trigger.addEventListener('click', function() { var modalId = this.getAttribute('data-modal-id'); var modal = document.getElementById(modalId); var sliderEl = this.closest('.splide'); if (!modal || !sliderEl) return; var sliderId = '#' + sliderEl.id; if (window.splideInstances[sliderId]) { window.splideInstances[sliderId].Components.Autoplay.pause(); } modal.classList.add('is-active'); var ytPlayerEl = modal.querySelector('.custom-slider__yt-player'); if (ytPlayerEl) { var playerId = ytPlayerEl.id; var videoId = ytPlayerEl.dataset.videoId; if (window.ytPlayers[playerId]) { window.ytPlayers[playerId].playVideo(); } else { window.ytPlayers[playerId] = new YT.Player(playerId, { height: '100%', width: '100%', videoId: videoId, playerVars: { 'playsinline': 1, 'autoplay': 1, 'controls': 1, 'rel': 0 }, events: { 'onReady': (event) => event.target.playVideo() } }); } } var hostedVideo = modal.querySelector('video'); if (hostedVideo) { hostedVideo.play(); } }); }); sectionEl.querySelectorAll('.custom-slider__video-modal-close').forEach(closeBtn => { closeBtn.addEventListener('click', function() { var modal = this.closest('.custom-slider__video-modal'); if (!modal) return; modal.classList.remove('is-active'); var ytPlayerEl = modal.querySelector('.custom-slider__yt-player'); if (ytPlayerEl && window.ytPlayers[ytPlayerEl.id]) { window.ytPlayers[ytPlayerEl.id].stopVideo(); } var iframe = modal.querySelector('iframe'); if (iframe) { iframe.src = iframe.src; } var hostedVideo = modal.querySelector('video'); if (hostedVideo) { hostedVideo.pause(); hostedVideo.currentTime = 0; } var sliderDesktop = window.splideInstances['#splide-desktop-{{ section.id }}']; var sliderMobile = window.splideInstances['#splide-mobile-{{ section.id }}']; if (sliderDesktop) sliderDesktop.Components.Autoplay.play(); if (sliderMobile) sliderMobile.Components.Autoplay.play(); }); }); }
+  document.addEventListener('DOMContentLoaded', function() { initHfSlider('#splide-desktop-{{ section.id }}'); initHfSlider('#splide-mobile-{{ section.id }}'); if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') { window.onYouTubeIframeAPIReady = () => setupVideoTriggers_{{ section.id | replace: '-', '_' }}(); } else { setupVideoTriggers_{{ section.id | replace: '-', '_' }}(); } });
+  document.addEventListener('shopify:section:load', function() { initHfSlider('#splide-desktop-{{ section.id }}'); initHfSlider('#splide-mobile-{{ section.id }}'); if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') { window.onYouTubeIframeAPIReady = () => setupVideoTriggers_{{ section.id | replace: '-', '_' }}(); } else { setupVideoTriggers_{{ section.id | replace: '-', '_' }}(); } });
+</script>
+

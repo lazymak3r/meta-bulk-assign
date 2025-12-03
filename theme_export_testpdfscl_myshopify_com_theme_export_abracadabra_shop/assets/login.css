@@ -1,0 +1,330 @@
+.login-breadcrumbs {
+    padding: 20px 0;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fff;
+}
+
+.login-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.login-main {
+    background: #fff;
+    padding: 36px 0;
+}
+
+.login-title {
+    font-size: 40px;
+    font-weight: 400;
+    margin: 0 0 26px;
+    color: #2e2e2d;
+    text-align: center;
+}
+
+.wk-card {
+    background: #f3f3f3;
+    border: 1px solid #e7e5e0;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 600px;
+    margin: auto;
+}
+
+.wk-card a:hover {
+    text-decoration: underline;
+}
+
+/* Error text (server-side) */
+.customer-login .wk-card .errors {
+    display: block;
+    margin: 0 0 12px;
+    color: #d14343;
+    font-size: 12px;
+}
+
+/* Input interaction, success and failure states (email + password) */
+.customer-login .wk-card input[type="email"],
+.customer-login .wk-card input[type="password"] {
+    border: 1px solid #d5cfc4 !important; /* neutral border */
+    background-color: #ffffff; /* neutral background */
+    transition: border-color 0.2s ease, background-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+/* Focus - neutral highlight */
+.customer-login .wk-card input[type="email"]:focus,
+.customer-login .wk-card input[type="password"]:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+/* Success (valid) */
+.customer-login .wk-card input[type="email"]:valid,
+.customer-login .wk-card input[type="password"]:valid {
+    border-color: #95b57c !important; /* green border */
+    background-color: #f2fee9 !important; /* green background */
+    box-shadow: none !important;
+}
+
+/* Failure (invalid but not empty) */
+.customer-login
+    .wk-card
+    input[type="email"]:required:invalid:not(:placeholder-shown),
+.customer-login
+    .wk-card
+    input[type="password"]:required:invalid:not(:placeholder-shown) {
+    border-color: #d79b9b !important; /* red border */
+    background-color: #fee9e9 !important; /* red background */
+    box-shadow: none !important;
+}
+
+/* Inline login invalid helper */
+.login-error {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: #d23126;
+    font-size: 12px;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.customer-login
+    .wk-card
+    input[type="email"]:required:invalid:not(:placeholder-shown)
+    ~ .login-error {
+    display: flex;
+    align-items: center;
+}
+
+.login-error span {
+    line-height: 1;
+}
+.login-error svg {
+    flex-shrink: 0;
+}
+
+/* Reduce gap under email input when inline error is visible */
+.customer-login
+    .wk-card
+    input[type="email"]:required:invalid:not(:placeholder-shown) {
+    margin-bottom: 4px !important;
+}
+
+/* Recover password modal + form */
+.recover-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Helper to show overlay when used outside login script */
+.recover-modal-overlay.is-open {
+    display: flex;
+}
+
+.recover-modal {
+    width: 100%;
+    max-width: 720px;
+    background: #f3f3f3;
+    border: 1px solid #e7e5e0;
+    border-radius: 16px;
+    padding: 60px;
+    position: relative;
+}
+
+.recover-modal .field {
+    position: relative;
+}
+.recover-modal .toggle-visibility {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.recover-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: transparent;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.recover-title {
+    font-size: 48px !important;
+    font-weight: 400;
+    color: #2e2e2d;
+    text-align: center;
+    margin: 4px 0 8px;
+}
+
+.recover-subtitle,
+.reset-subtitle {
+    text-align: center;
+    color: #4b4b4a;
+    font-size: 20px !important;
+    margin-bottom: 40px;
+}
+
+.recover-input {
+    width: 100%;
+    height: 60px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px 18px;
+    font-size: 20px;
+    transition: border-color 0.2s ease, background-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.recover-input:focus {
+    outline: none;
+    box-shadow: none !important;
+}
+
+/* Success and failure states, same as login inputs */
+.recover-input:valid {
+    border-color: #95b57c !important;
+    background-color: #f2fee9 !important;
+}
+
+.recover-input:required:invalid:not(:placeholder-shown) {
+    border-color: #d79b9b !important;
+    background-color: #fee9e9 !important;
+}
+
+.recover-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 24px;
+    margin-top: 24px;
+
+    .btn-primary {
+        font-size: 20px !important;
+        font-weight: 400 !important;
+        height: 60px !important;
+    }
+}
+
+.recover-error {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    color: #d23126;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: 8px;
+}
+
+/* Show error only when invalid and not empty */
+.recover-input:required:invalid:not(:placeholder-shown) ~ .recover-error {
+    display: flex;
+}
+.recover-error span {
+    line-height: 1;
+}
+.recover-error svg {
+    flex-shrink: 0;
+}
+
+.recover-cancel {
+    font-size: 20px !important;
+    color: #222;
+    text-decoration: underline;
+}
+
+/* Context-specific primary button widths */
+.recover-form .btn-primary {
+    width: 353px !important; /* Passwort zurücksetzen (recover form) */
+}
+
+.recover-success .btn-primary {
+    width: 185px !important; /* Überprüfen Sie Ihre E-Mails (success) */
+}
+
+.reset-password-modal .btn-primary {
+    width: 325px !important; /* Neues Passwort festlegen (reset page) */
+}
+
+/* Reset success screen button width */
+.reset-success .btn-primary {
+    width: 249px !important;
+}
+
+/* Reset success AJAX form width */
+.reset-success-ajax .btn-primary {
+    width: 249px !important;
+}
+
+/* Remove any vendor autofill background that may alter design */
+.customer-login .wk-card input[type="email"]:-webkit-autofill,
+.customer-login .wk-card input[type="password"]:-webkit-autofill,
+.customer-login .wk-card input[type="email"]:-webkit-autofill:hover,
+.customer-login .wk-card input[type="password"]:-webkit-autofill:hover,
+.customer-login .wk-card input[type="email"]:-webkit-autofill:focus,
+.customer-login .wk-card input[type="password"]:-webkit-autofill:focus,
+.customer-login .wk-card input[type="email"]:-webkit-autofill:active,
+.customer-login .wk-card input[type="password"]:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+    box-shadow: 0 0 0px 1000px #ffffff inset;
+    -webkit-text-fill-color: inherit;
+}
+
+@media (max-width: 768px) {
+    .login-main {
+        padding: 10px 0;
+    }
+
+    .login-title {
+        font-size: 26px !important;
+        margin: 0 0 23px;
+    }
+
+    .recover-subtitle {
+        font-size: 16px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .reset-subtitle {
+        font-size: 16px !important;
+    }
+
+    .recover-actions .btn-primary {
+        font-size: 16px !important;
+    }
+
+    .recover-modal {
+        padding: 60px 15px;
+        margin: 20px;
+        max-width: calc(100vw - 40px);
+        width: calc(100vw - 40px);
+    }
+
+    .recover-modal-overlay {
+        padding-top: 10vh;
+    }
+
+    .recover-success .btn-primary {
+        width: 180px !important;
+    }
+
+    .reset-success-ajax .btn-primary {
+        width: 231px !important;
+    }
+}

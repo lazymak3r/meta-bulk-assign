@@ -1,0 +1,45 @@
+<div id="catalog-detail"></div>
+
+
+      <link rel="stylesheet" href="https://e-catalog-frontend.app615423e.interbranche.com/assets/index.css?v=1" />
+      <script src="https://e-catalog-frontend.app615423e.interbranche.com/assets/index.js?v=1"></script>
+
+<style>
+#catalog-detail {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 100%;
+}
+footer {
+	display: none;
+}
+</style>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const container = document.getElementById("catalog-detail");
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  container.style.top = document.querySelector('body > header').offsetHeight + 'px';
+
+  if (!id) {
+    container.innerHTML = "<p>-</p>";
+    return;
+  }
+
+  try {
+    const res = await fetch(`{{ settings.api_host }}/api/public/ecatalog/catalogs/${id}`);
+
+    const item = (await res.json()).data;
+
+    container.innerHTML = `
+
+      <e-catalog-viewer-multipage  catalog-id="${item.id}"></e-catalog-viewer-multipage>
+
+    `;
+  } catch (err) {
+    container.innerHTML = "<p>Ошибка загрузки деталей</p>";
+  }
+});
+</script>

@@ -1,0 +1,174 @@
+:root {
+    --cursor-size: 72px; /* arrow size */
+    --cursor-color: #1f1f1f; /* arrow color */
+    --cursor-shadow: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+}
+
+#pdpMainWrap.use-custom-cursor {
+    cursor: none;
+}
+#pdpMainWrap.use-custom-cursor * {
+    cursor: none !important;
+}
+
+/* Floating custom cursor that follows the mouse */
+.hover-cursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: var(--cursor-size);
+    height: var(--cursor-size);
+    transform: translate(-50%, -50%); /* center on pointer */
+    z-index: 50;
+    pointer-events: none;
+    background: transparent;
+    transition: opacity 0.12s ease;
+}
+.hover-cursor.hidden {
+    opacity: 0;
+}
+
+/* one arrow asset for both directions (same as TS version) */
+.hover-cursor::before {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--cursor-color);
+    filter: var(--cursor-shadow);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M15 6l-6 6 6 6' fill='none' stroke='%23000' stroke-width='%%' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M15 6l-6 6 6 6' fill='none' stroke='%23000' stroke-width='%%' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+}
+/* flip to point right */
+.hover-cursor[data-dir="next"]::before {
+    transform: scaleX(-1);
+}
+
+/* Put the lightbox above everything */
+#pdpLightbox {
+    z-index: 999;
+}
+
+#pdpLightbox.use-custom-cursor,
+#pdpLightbox.use-custom-cursor * {
+    cursor: none !important;
+}
+
+#pdpLightbox.use-custom-cursor #pdpLbClose {
+    z-index: 2147483000;
+    cursor: pointer !important;
+}
+
+/* Make prev/next sit above the image and show chevrons */
+#pdpLbPrev,
+#pdpLbNext {
+    z-index: 2;
+    outline: none;
+}
+
+/* place bubbles left/right and flip mask for "next" */
+#pdpLbPrev::after {
+    left: 24px;
+}
+#pdpLbNext::after {
+    right: 24px;
+    transform: translateY(-50%) scaleX(-1);
+}
+
+/* nice hover */
+#pdpLbPrev:hover::after,
+#pdpLbNext:hover::after {
+    background: #fff;
+}
+
+/* visible focus for keyboard users */
+#pdpLbPrev:focus-visible::after,
+#pdpLbNext:focus-visible::after {
+    outline: 3px solid #fff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.6);
+}
+
+/* arrow (existing) uses the chevron path; keep as-is */
+
+/* plus icon for zoom state */
+.hovering-plus .hover-cursor::before,
+.hover-cursor[data-dir="zoom"]::before {
+    /* cleaner one-liner mask for a plus icon */
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4v16M4 12h16' fill='none' stroke='%23000' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4v16M4 12h16' fill='none' stroke='%23000' stroke-width='1' stroke-linecap='round'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    transform: none; /* no flip */
+}
+
+/* make the cursor smaller for the plus, optional */
+.hover-cursor[data-dir="zoom"] {
+    width: 56px;
+    height: 56px;
+}
+
+#pdpThumbs::-webkit-scrollbar {
+    display: none;
+}
+
+.lightbox-close-btn {
+    position: fixed;
+    right: calc(1rem + 8px);
+    z-index: 9999;
+}
+
+.thumb {
+    position: relative;
+    overflow: hidden;
+}
+
+/* selected */
+.thumb[aria-current="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 2px rgba(17, 24, 39, 0.7),
+        0 1px 4px rgba(17, 24, 39, 0.12);
+}
+
+/* mobile / tablet pagination dots on main image */
+.pdp-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* dots themselves enable events */
+}
+
+.pdp-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    border: 1px solid #ffffff;
+    background-color: transparent;
+    opacity: 0.9;
+    pointer-events: auto;
+    padding: 0;
+}
+
+.pdp-dot.is-active {
+    background-color: #ffffff;
+}
+
+@media (min-width: 1024px) {
+    .pdp-dots {
+        display: none;
+    }
+}
