@@ -32,6 +32,7 @@ export function PriorityEditor({ priority, onSave, configId }) {
   }, [value, priority, configId, onSave]);
 
   const handleCancel = useCallback(() => {
+    console.log('test');
     setValue(String(priority));
     setIsEditing(false);
   }, [priority]);
