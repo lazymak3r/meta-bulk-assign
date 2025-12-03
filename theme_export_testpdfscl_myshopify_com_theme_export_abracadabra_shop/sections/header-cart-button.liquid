@@ -1,0 +1,40 @@
+<div class="cart-popover relative">
+  <a
+    href="{{ routes.cart_url }}"
+    aria-label="{{ section.settings.title }}"
+    class="relative inline-flex items-center justify-center w-[20px] h-[20px] transition"
+  >
+    <!-- bag icon -->
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1.66797 1.66602H2.75644C2.96145 1.66602 3.06396 1.66602 3.14645 1.70372C3.21915 1.73694 3.28076 1.79037 3.32393 1.85764C3.37291 1.93397 3.38741 2.03545 3.4164 2.2384L3.81083 4.99935M3.81083 4.99935L4.6874 11.4422C4.79864 12.2598 4.85426 12.6686 5.04972 12.9763C5.22195 13.2475 5.46887 13.4631 5.76076 13.5972C6.09202 13.7493 6.50459 13.7493 7.32972 13.7493H14.4613C15.2468 13.7493 15.6395 13.7493 15.9604 13.608C16.2434 13.4834 16.4862 13.2825 16.6615 13.0279C16.8604 12.739 16.9339 12.3532 17.0809 11.5816L18.1839 5.79076C18.2356 5.51919 18.2615 5.3834 18.224 5.27727C18.1911 5.18416 18.1262 5.10575 18.0409 5.05603C17.9437 4.99935 17.8054 4.99935 17.529 4.99935H3.81083ZM8.33464 17.4993C8.33464 17.9596 7.96154 18.3327 7.5013 18.3327C7.04106 18.3327 6.66797 17.9596 6.66797 17.4993C6.66797 17.0391 7.04106 16.666 7.5013 16.666C7.96154 16.666 8.33464 17.0391 8.33464 17.4993ZM15.0013 17.4993C15.0013 17.9596 14.6282 18.3327 14.168 18.3327C13.7077 18.3327 13.3346 17.9596 13.3346 17.4993C13.3346 17.0391 13.7077 16.666 14.168 16.666C14.6282 16.666 15.0013 17.0391 15.0013 17.4993Z" stroke="#1B2124" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="7.5" cy="17.5" r="0.5" fill="#1B2124"/>
+      <circle cx="14.5" cy="17.5" r="0.5" fill="#1B2124"/>
+    </svg>
+
+    <!-- count badge -->
+    <span
+      id="cartCount"
+      class="cart-badge absolute -top-1 -right-1 w-[15px] h-[15px] px-[2px] rounded-full text-[9px] leading-[15px] text-white text-center bg-[#647167] hidden"
+    ></span>
+  </a>
+
+  <!-- Popover -->
+  <div id="miniCartPopover" class="mini-cart-popover" aria-hidden="true">
+    <div class="mc-content">
+      <div id="miniCartItems" class="mc-items"></div>
+      <div class="mc-divider"></div>
+      <div class="mc-footer">
+        <div class="mc-total-label">Gesamt</div>
+        <div class="mc-total-value"><span class="mc-total-prefix">ab</span><span id="miniCartTotal"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Warenkorb-Button",
+  "settings": [{ "type": "text", "id": "title", "label": "Titel", "default": "Warenkorb" }],
+  "presets": [{ "name": "Warenkorb-Button" }]
+}
+{% endschema %}

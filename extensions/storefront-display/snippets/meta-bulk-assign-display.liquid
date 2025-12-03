@@ -38,65 +38,6 @@
     }
   }
 
-  // Render HTML for different metafield types
-  function renderMetafield(metafield) {
-    const { displayType, value, namespace, key } = metafield;
-
-    if (!value) return '';
-
-    const className = `mba-metafield mba-metafield--${displayType}`;
-
-    switch (displayType) {
-      case 'text':
-        return `<div class="${className}" data-mba-field="${namespace}.${key}">
-          <div class="mba-metafield__content">${escapeHtml(value)}</div>
-        </div>`;
-
-      case 'image':
-        return `<div class="${className}" data-mba-field="${namespace}.${key}">
-          <img src="${escapeHtml(value)}" alt="${namespace}.${key}" class="mba-metafield__image" loading="lazy">
-        </div>`;
-
-      case 'file':
-        const fileName = value.split('/').pop() || 'Download File';
-        return `<div class="${className}" data-mba-field="${namespace}.${key}">
-          <a href="${escapeHtml(value)}" class="mba-metafield__file-link" target="_blank" rel="noopener">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M5.83331 8.33333L9.99998 12.5L14.1666 8.33333" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M10 12.5V2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>${escapeHtml(fileName)}</span>
-          </a>
-        </div>`;
-
-      case 'metaobject':
-        try {
-          const metaobj = typeof value === 'string' ? JSON.parse(value) : value;
-          let html = `<div class="${className}" data-mba-field="${namespace}.${key}">
-            <div class="mba-metafield__metaobject">`;
-
-          if (metaobj && typeof metaobj === 'object') {
-            for (const [fieldKey, fieldValue] of Object.entries(metaobj)) {
-              html += `<div class="mba-metafield__metaobject-field">
-                <span class="mba-metafield__metaobject-key">${escapeHtml(fieldKey)}:</span>
-                <span class="mba-metafield__metaobject-value">${escapeHtml(String(fieldValue))}</span>
-              </div>`;
-            }
-          }
-
-          html += `</div></div>`;
-          return html;
-        } catch (e) {
-          console.error('[MBA] Error rendering metaobject:', e);
-          return '';
-        }
-
-      default:
-        return '';
-    }
-  }
-
   // Escape HTML to prevent XSS
   function escapeHtml(text) {
     const div = document.createElement('div');
@@ -104,93 +45,393 @@
     return div.innerHTML;
   }
 
-  // Find injection point based on position
-  function findInjectionPoint(position) {
-    const selectors = {
-      'after_price': [
-        '.product__price',
-        '.product-price',
-        '[class*="price"]',
-        '.product-form__price',
-        '.price-container',
-        '.price',
-        '[data-price]',
-        '.money',
-        // Tailwind-based themes
-        'p.whitespace-nowrap',
-        'p[class*="text-["]',
-        '.flex.flex-col.flex-wrap p',
-        'p.leading-\\[1\\.5\\]'
-      ],
-      'before_cart': [
-        'form[action*="/cart/add"]',
-        '.product-form',
-        '[class*="add-to-cart"]',
-        'button[name="add"]',
-        '.product-form__submit',
-        '[type="submit"]'
-      ],
-      'after_description': [
-        '.product__description',
-        '.product-description',
-        '[class*="description"]',
-        '.rte'
-      ],
-      'after_title': [
-        '.product__title',
-        '.product-title',
-        'h1[class*="product"]',
-        '.product-single__title',
-        'h1'
-      ]
+  // Detect field by type patterns
+  function detectFieldType(key, value) {
+    const keyLower = key.toLowerCase();
+
+    // Check if value looks like a URL
+    const isUrl = typeof value === 'string' && (
+      value.startsWith('http://') ||
+      value.startsWith('https://') ||
+      value.startsWith('//')
+    );
+
+    // Image/Icon fields
+    if (isUrl && (value.includes('.png') || value.includes('.jpg') || value.includes('.jpeg') || value.includes('.svg') || value.includes('.gif') || value.includes('.webp'))) {
+      if (keyLower.includes('icon') || keyLower.includes('image') || keyLower.includes('img') || keyLower.includes('bild')) {
+        return 'icon';
+      }
+      return 'image';
+    }
+
+    // PDF/File fields
+    if (isUrl && (value.includes('.pdf') || keyLower.includes('pdf') || keyLower.includes('file') || keyLower.includes('datei'))) {
+      return 'pdf';
+    }
+
+    // Text fields
+    if (keyLower.includes('label') || keyLower.includes('title') || keyLower.includes('name') || keyLower.includes('text') || keyLower.includes('titel')) {
+      return 'text';
+    }
+
+    return 'unknown';
+  }
+
+  // Map metaobject fields by type
+  function mapMetaobjectFields(metaobject) {
+    const mapped = {
+      icon: null,
+      text: null,
+      pdf: null,
+      image: null
     };
 
-    const selectorList = selectors[position] || selectors['after_price'];
+    if (!metaobject || typeof metaobject !== 'object') {
+      return mapped;
+    }
 
-    for (const selector of selectorList) {
-      try {
-        const element = document.querySelector(selector);
-        if (element) {
-          return element;
-        }
-      } catch (e) {
-        // Continue to next selector
+    for (const [key, value] of Object.entries(metaobject)) {
+      const fieldType = detectFieldType(key, value);
+
+      if (fieldType === 'icon' && !mapped.icon) {
+        mapped.icon = value;
+      } else if (fieldType === 'pdf' && !mapped.pdf) {
+        mapped.pdf = value;
+      } else if (fieldType === 'text' && !mapped.text) {
+        mapped.text = value;
+      } else if (fieldType === 'image' && !mapped.image) {
+        mapped.image = value;
       }
     }
 
-    return null;
+    return mapped;
   }
 
-  // Inject metafield display
-  function injectMetafield(metafield, position) {
-    const html = renderMetafield(metafield);
-    if (!html) return;
+  // Render Energy Label component
+  function renderEnergyLabel(metafield) {
+    const { value, namespace, key } = metafield;
 
-    const target = findInjectionPoint(position);
-    if (!target) return;
+    try {
+      // Parse the metaobject value (could be single object or array)
+      const parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
 
-    // Create container
-    const container = document.createElement('div');
-    container.className = 'mba-container';
+      console.log('[MBA] Energy Label data:', parsedValue);
+
+      // Handle both single object and array of objects
+      const energyLabels = Array.isArray(parsedValue) ? parsedValue : [parsedValue];
+
+      if (energyLabels.length === 0) {
+        console.warn('[MBA] No energy labels to display');
+        return '';
+      }
+
+      // Render each energy label
+      const htmlParts = energyLabels.map(energyLabel => {
+        if (!energyLabel || typeof energyLabel !== 'object') {
+          console.warn('[MBA] Invalid energy label data');
+          return '';
+        }
+
+        // Map fields by type detection
+        const fields = mapMetaobjectFields(energyLabel);
+        const iconUrl = fields.icon || fields.image || '';
+        const labelText = fields.text || '';
+        const pdfUrl = fields.pdf || '';
+
+        console.log('[MBA] Mapped fields:', fields);
+
+        if (!iconUrl && !labelText && !pdfUrl) {
+          console.warn('[MBA] No displayable fields found');
+          return '';
+        }
+
+        // Render: icon on top, label below, whole thing clickable
+        return `
+          <a href="${escapeHtml(pdfUrl)}" class="flex flex-col items-center gap-2" target="_blank" rel="noopener" style="text-decoration: none;">
+            ${iconUrl ? `<img src="${escapeHtml(iconUrl)}" alt="${escapeHtml(labelText)}" style="max-width: 80px; max-height: 80px; object-fit: contain;">` : ''}
+            ${labelText ? `<span class="text-[12px] md:text-[14px] text-gray-700">${escapeHtml(labelText)}</span>` : ''}
+          </a>
+        `;
+      }).filter(html => html !== '');
+
+      return htmlParts.join('');
+    } catch (e) {
+      console.error('[MBA] Error rendering energy label:', e);
+      return '';
+    }
+  }
+
+  // Render Product Detail Icon component
+  function renderProductDetailIcon(metafield) {
+    const { value, namespace, key } = metafield;
+
+    console.log('[MBA] Product Detail Icon data:', { namespace, key, value });
+
+    if (!value) {
+      console.warn('[MBA] No value for product detail icon');
+      return '';
+    }
+
+    try {
+      // Parse the metaobject value (could be single object or array)
+      const parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
+
+      console.log('[MBA] Parsed icon data:', parsedValue);
+
+      // Handle both single object and array of objects
+      const icons = Array.isArray(parsedValue) ? parsedValue : [parsedValue];
+
+      if (icons.length === 0) {
+        console.warn('[MBA] No icons to display');
+        return '';
+      }
+
+      // Render each icon
+      const htmlParts = icons.map(iconData => {
+        let imageUrl = '';
+
+        // Check if it's a simple URL string (list.file_reference)
+        if (typeof iconData === 'string') {
+          imageUrl = iconData;
+        }
+        // Check if it's an object with fields (list.metaobject_reference)
+        else if (iconData && typeof iconData === 'object') {
+          const fields = mapMetaobjectFields(iconData);
+          imageUrl = fields.icon || fields.image || '';
+        } else {
+          console.warn('[MBA] Invalid icon data:', iconData);
+          return '';
+        }
+
+        console.log('[MBA] Image URL:', imageUrl);
+
+        if (!imageUrl) {
+          console.warn('[MBA] No image URL found in icon data');
+          return '';
+        }
+
+        return `
+          <div class="mba-icon-item">
+            <img src="${escapeHtml(imageUrl)}" alt="Product Detail" loading="lazy">
+          </div>
+        `;
+      }).filter(html => html !== '');
+
+      return htmlParts.join('');
+    } catch (e) {
+      console.error('[MBA] Error rendering product detail icon:', e);
+      return '';
+    }
+  }
+
+  // Render warranty document component
+  function renderWarrantyDocument(metafield) {
+    try {
+      const { value, namespace, key } = metafield;
+
+      console.log('[MBA] Warranty Document data:', { namespace, key, value });
+
+      if (!value) {
+        console.warn('[MBA] No value for warranty document');
+        return '';
+      }
+
+      // Parse value if it's a string
+      const parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
+
+      console.log('[MBA] Parsed warranty data:', parsedValue);
+
+      // Handle array of file URLs
+      const files = Array.isArray(parsedValue) ? parsedValue : [parsedValue];
+
+      if (files.length === 0) {
+        console.warn('[MBA] No warranty documents to display');
+        return '';
+      }
+
+      // Render each document
+      const htmlParts = files.map((fileUrl, index) => {
+        if (!fileUrl || typeof fileUrl !== 'string') {
+          console.warn('[MBA] Invalid file URL:', fileUrl);
+          return '';
+        }
+
+        // Extract filename from URL
+        const urlParts = fileUrl.split('/');
+        const filename = urlParts[urlParts.length - 1] || `Document ${index + 1}`;
+
+        // Clean up filename (remove hash if present)
+        const cleanFilename = filename.split('?')[0].replace(/^\d+_/, '') || `Document ${index + 1}`;
+
+        return `
+          <a href="${escapeHtml(fileUrl)}" target="_blank" rel="noopener noreferrer" class="mba-warranty-link">
+            <svg class="mba-pdf-icon" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5.48887 8.98047H4.125C3.95373 8.98047 3.78946 9.04866 3.6685 9.16996C3.54755 9.29126 3.47991 9.45575 3.48047 9.62706L3.48997 14.5231C3.48997 14.8791 3.77855 15.1677 4.1345 15.1677C4.49045 15.1677 4.77903 14.8791 4.77903 14.5231V13.0365C5.04256 13.0352 5.32409 13.0341 5.48887 13.0341C6.62136 13.0341 7.54274 12.1248 7.54274 11.0073C7.54274 9.88969 6.62136 8.98047 5.48887 8.98047ZM5.48887 11.745C5.32263 11.745 5.04007 11.7462 4.77551 11.7475C4.77413 11.4731 4.77293 11.1776 4.77293 11.0073C4.77293 10.8615 4.7722 10.5563 4.77143 10.2695H5.48883C5.90339 10.2695 6.25363 10.6074 6.25363 11.0073C6.25363 11.4072 5.90344 11.745 5.48887 11.745Z" fill="#2E2E2D"/>
+              <path d="M10.9712 8.98047H9.625C9.45386 8.98047 9.28972 9.04853 9.1688 9.16966C9.04789 9.29079 8.98013 9.45506 8.98047 9.6262C8.98047 9.62625 8.99005 14.3633 8.9901 14.3805C8.99074 14.5515 9.05923 14.7152 9.18058 14.8356C9.30136 14.9555 9.46456 15.0227 9.63463 15.0227H9.63708C9.67777 15.0226 10.638 15.0189 11.0219 15.0122C12.4783 14.9868 13.5353 13.7206 13.5353 12.0016C13.5352 10.1946 12.5049 8.98047 10.9712 8.98047ZM10.9994 13.7234C10.8324 13.7263 10.5452 13.7286 10.277 13.7304C10.2752 13.1705 10.2717 10.8513 10.2707 10.2695H10.9712C12.1543 10.2695 12.2462 11.5953 12.2462 12.0016C12.2462 12.8478 11.8607 13.7083 10.9994 13.7234Z" fill="#2E2E2D"/>
+              <path d="M17.7832 10.2197C18.1391 10.2197 18.4277 9.93115 18.4277 9.5752C18.4277 9.21924 18.1391 8.93066 17.7832 8.93066H15.8125C15.4565 8.93066 15.168 9.21924 15.168 9.5752V14.4375C15.168 14.7934 15.4565 15.082 15.8125 15.082C16.1685 15.082 16.457 14.7934 16.457 14.4375V12.6048H17.6266C17.9826 12.6048 18.2712 12.3163 18.2712 11.9603C18.2712 11.6044 17.9826 11.3158 17.6266 11.3158H16.457V10.2197H17.7832Z" fill="#2E2E2D"/>
+              <path d="M19.6797 6.23047H19.207V6.04661C19.207 5.21808 18.8931 4.43068 18.3231 3.82938L15.6459 1.00543C15.0401 0.36648 14.1877 0 13.3072 0H4.72656C3.66038 0 2.79297 0.86741 2.79297 1.93359V6.23047H2.32031C1.25413 6.23047 0.386719 7.09788 0.386719 8.16406V15.8984C0.386719 16.9646 1.25413 17.832 2.32031 17.832H2.79297V20.0664C2.79297 21.1326 3.66038 22 4.72656 22H17.2734C18.3396 22 19.207 21.1326 19.207 20.0664V17.832H19.6797C20.7459 17.832 21.6133 16.9646 21.6133 15.8984V8.16406C21.6133 7.09788 20.7459 6.23047 19.6797 6.23047ZM4.08203 1.93359C4.08203 1.5782 4.37117 1.28906 4.72656 1.28906H13.3072C13.8355 1.28906 14.347 1.50893 14.7104 1.89234L17.3876 4.71629C17.7296 5.07706 17.918 5.5495 17.918 6.04661V6.23047H4.08203V1.93359ZM17.918 20.0664C17.918 20.4218 17.6288 20.7109 17.2734 20.7109H4.72656C4.37117 20.7109 4.08203 20.4218 4.08203 20.0664V17.832H17.918V20.0664ZM20.3242 15.8984C20.3242 16.2538 20.0351 16.543 19.6797 16.543H2.32031C1.96492 16.543 1.67578 16.2538 1.67578 15.8984V8.16406C1.67578 7.80867 1.96492 7.51953 2.32031 7.51953H19.6797C20.0351 7.51953 20.3242 7.80867 20.3242 8.16406V15.8984Z" fill="#2E2E2D"/>
+            </svg>
+            <span class="mba-warranty-name">${escapeHtml(cleanFilename)}</span>
+          </a>
+        `;
+      }).filter(html => html !== '');
+
+      return htmlParts.join('');
+    } catch (e) {
+      console.error('[MBA] Error rendering warranty document:', e);
+      return '';
+    }
+  }
+
+  // Render component based on display type
+  function renderComponent(metafield) {
+    const { displayType } = metafield;
+
+    switch (displayType) {
+      case 'energy_label':
+        return renderEnergyLabel(metafield);
+
+      case 'product_detail_icon':
+        return renderProductDetailIcon(metafield);
+
+      case 'warranty_document':
+        return renderWarrantyDocument(metafield);
+
+      default:
+        console.warn('[MBA] Unknown display type:', displayType);
+        return '';
+    }
+  }
+
+  // Find container for a specific display type
+  function findContainer(displayType) {
+    return document.querySelector(`[data-meta-bulk-assign-container="${displayType}"]`);
+  }
+
+  // Show loading skeleton in container
+  function showLoadingSkeleton(container, displayType) {
+    if (!container) return;
+
+    let skeletonHTML = '';
+
+    if (displayType === 'product_detail_icon') {
+      // Show 3 icon skeletons
+      skeletonHTML = `
+        <div class="mba-skeleton-container">
+          <div class="mba-skeleton-icon"></div>
+          <div class="mba-skeleton-icon"></div>
+          <div class="mba-skeleton-icon"></div>
+        </div>
+      `;
+    } else if (displayType === 'energy_label') {
+      // Show 2 label skeletons
+      skeletonHTML = `
+        <div class="mba-skeleton-container">
+          <div class="mba-skeleton-label"></div>
+          <div class="mba-skeleton-label"></div>
+        </div>
+      `;
+    } else if (displayType === 'warranty_document') {
+      // Show 2 document skeletons
+      skeletonHTML = `
+        <div class="mba-skeleton-container mba-warranty-skeleton">
+          <div class="mba-skeleton-doc"></div>
+          <div class="mba-skeleton-doc"></div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = skeletonHTML;
+    container.classList.add('mba-loading');
+  }
+
+  // Remove loading skeleton and show content
+  function showContent(container, html) {
+    if (!container) return;
+
+    container.classList.remove('mba-loading');
+    container.classList.add('mba-fade-in');
     container.innerHTML = html;
+  }
 
-    // Insert after the target element
-    target.insertAdjacentElement('afterend', container);
+  // Group metafields by display type
+  function groupByDisplayType(metafields) {
+    const groups = {};
+
+    metafields.forEach(metafield => {
+      // Skip if no display type is set (empty string or null)
+      if (!metafield.displayType) {
+        return;
+      }
+
+      if (!groups[metafield.displayType]) {
+        groups[metafield.displayType] = [];
+      }
+
+      groups[metafield.displayType].push(metafield);
+    });
+
+    return groups;
+  }
+
+  // Inject components into their respective containers
+  function injectComponents(metafieldGroups) {
+    Object.entries(metafieldGroups).forEach(([displayType, metafields]) => {
+      const container = findContainer(displayType);
+
+      if (!container) {
+        console.warn(`[MBA] Container not found for display type: ${displayType}`);
+        return;
+      }
+
+      // Render all metafields of this type
+      const htmlParts = metafields.map(mf => renderComponent(mf)).filter(html => html !== '');
+
+      if (htmlParts.length > 0) {
+        showContent(container, htmlParts.join(''));
+      }
+    });
+  }
+
+  // Show loading skeletons only for containers that will have data
+  function showLoadingSkeletons(displayTypesWithData) {
+    const containers = document.querySelectorAll('[data-meta-bulk-assign-container]');
+    containers.forEach(container => {
+      const displayType = container.getAttribute('data-meta-bulk-assign-container');
+
+      // Only show skeleton if this display type has data
+      if (displayTypesWithData.includes(displayType)) {
+        showLoadingSkeleton(container, displayType);
+      }
+    });
   }
 
   // Initialize
   async function init() {
     const config = await fetchConfig();
+
+    console.log('[MBA] Full config received:', config);
+
     if (!config || !config.metafields || config.metafields.length === 0) {
+      console.log('[MBA] No metafields to display');
       return;
     }
 
-    // Inject each configured metafield
-    config.metafields.forEach(metafield => {
-      if (metafield.showOnStorefront) {
-        injectMetafield(metafield, metafield.position || 'after_price');
-      }
-    });
+    console.log('[MBA] Metafields to display:', config.metafields);
+
+    // Group metafields by display type
+    const metafieldGroups = groupByDisplayType(config.metafields);
+
+    console.log('[MBA] Grouped by display type:', metafieldGroups);
+
+    // Get display types that have data
+    const displayTypesWithData = Object.keys(metafieldGroups);
+
+    // Show skeletons only for containers that will have data
+    showLoadingSkeletons(displayTypesWithData);
+
+    // Inject components
+    injectComponents(metafieldGroups);
   }
 
   // Run when DOM is ready
@@ -204,92 +445,182 @@
 
 {% comment %} Inline styles for metafield display {% endcomment %}
 <style>
-.mba-container {
-  margin: 1rem 0;
+[data-meta-bulk-assign-container] {
+  min-height: 0;
 }
 
-.mba-metafield {
-  margin: 0.75rem 0;
+[data-meta-bulk-assign-container]:empty {
+  display: none;
 }
 
-.mba-metafield--text .mba-metafield__content {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #333;
+/* Product Detail Icons Container */
+[data-meta-bulk-assign-container="product_detail_icon"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
 }
 
-.mba-metafield--image {
-  text-align: center;
-}
-
-.mba-metafield__image {
-  max-width: 100%;
-  height: auto;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.mba-metafield__file-link {
+/* Individual Icon Item */
+.mba-icon-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: #f7f7f7;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  text-decoration: none;
-  color: #333;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.mba-metafield__file-link:hover {
-  background: #eee;
-  border-color: #bbb;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.mba-metafield__file-link svg {
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.mba-metafield__metaobject {
-  background: #f9f9f9;
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
-  padding: 1rem;
+.mba-icon-item img {
+  height: 48px;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
-.mba-metafield__metaobject-field {
+/* Responsive sizing */
+@media (min-width: 768px) {
+  .mba-icon-item img {
+    height: 56px;
+    max-width: 140px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mba-icon-item img {
+    height: 64px;
+    max-width: 160px;
+  }
+}
+
+/* Skeleton Loading States */
+.mba-skeleton-container {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
 }
 
-.mba-metafield__metaobject-field:last-child {
-  border-bottom: none;
+.mba-skeleton-icon,
+.mba-skeleton-label {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: mba-shimmer 1.5s infinite;
+  border-radius: 4px;
 }
 
-.mba-metafield__metaobject-key {
-  font-weight: 600;
-  color: #666;
-  min-width: 120px;
+.mba-skeleton-icon {
+  width: 80px;
+  height: 48px;
 }
 
-.mba-metafield__metaobject-value {
-  color: #333;
+.mba-skeleton-label {
+  width: 100px;
+  height: 40px;
 }
 
-@media (max-width: 768px) {
-  .mba-metafield__metaobject-field {
-    flex-direction: column;
-    gap: 0.25rem;
+@media (min-width: 768px) {
+  .mba-skeleton-icon {
+    height: 56px;
+  }
+  .mba-skeleton-label {
+    width: 120px;
+    height: 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mba-skeleton-icon {
+    height: 64px;
+  }
+  .mba-skeleton-label {
+    width: 140px;
+    height: 56px;
+  }
+}
+
+/* Shimmer animation */
+@keyframes mba-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Fade in animation for content */
+.mba-fade-in {
+  animation: mba-fadeIn 0.3s ease-in;
+}
+
+@keyframes mba-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Warranty Documents */
+[data-meta-bulk-assign-container="warranty_document"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 12px 0;
+}
+
+.mba-warranty-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: #2E2E2D;
+  transition: opacity 0.2s ease;
+  max-width: fit-content;
+}
+
+.mba-warranty-link:hover {
+  opacity: 0.7;
+}
+
+.mba-pdf-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.mba-warranty-name {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #2E2E2D;
+  word-break: break-word;
+}
+
+/* Warranty skeleton */
+.mba-warranty-skeleton {
+  flex-direction: column !important;
+}
+
+.mba-skeleton-doc {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: mba-shimmer 1.5s infinite;
+  border-radius: 4px;
+  width: 200px;
+  height: 40px;
+}
+
+@media (min-width: 768px) {
+  .mba-warranty-name {
+    font-size: 15px;
   }
 
-  .mba-metafield__metaobject-key {
-    min-width: auto;
+  .mba-skeleton-doc {
+    width: 250px;
+    height: 44px;
   }
 }
 </style>

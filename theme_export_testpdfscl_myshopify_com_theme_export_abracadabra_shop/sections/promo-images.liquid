@@ -1,0 +1,96 @@
+<!-- SEASON HIGHLIGHT + COLLAGE (layout like the 2nd reference) -->
+<section class="mt-[60px] 2xl:mt-[100px]">
+  <div class="max-w-[var(--container)] mx-auto">
+    <div class="grid grid-cols-2 gap-[10px] md:grid-cols-12 md:gap-[20px]">
+      <!-- Left: BIG image (taller/wider feel on desktop) -->
+      <figure class="col-span-2 md:col-span-5 overflow-hidden">
+        {% if section.settings.image1 != blank %}
+          <img
+            src="{{ section.settings.image1 | img_url: '1200x' }}"
+            alt="{{ section.settings.alt1 | escape }}"
+            class="w-full h-full md:h-full aspect-[16/9] md:aspect-auto object-cover"
+          >
+        {% else %}
+          <div
+            class="w-full md:h-full aspect-[16/9] md:aspect-auto grid place-items-center bg-neutral-100 text-neutral-400"
+          >
+            <span>No image</span>
+          </div>
+        {% endif %}
+      </figure>
+
+      <!-- Right: 2 small on top, 1 wide on bottom -->
+      <div class="col-span-2 md:col-span-7 grid grid-cols-2 gap-[10px] md:gap-[20px]">
+        <!-- Top-left small -->
+        <div class="col-span-1 overflow-hidden">
+          {% if section.settings.image2 != blank %}
+            <img
+              src="{{ section.settings.image2 | img_url: '600x' }}"
+              alt="{{ section.settings.alt2 | escape }}"
+              class="w-full h-full md:h-[350px] aspect-[16/9] md:aspect-auto object-cover"
+            >
+          {% else %}
+            <div
+              class="w-full md:h-[350px] aspect-[16/9] md:aspect-auto grid place-items-center bg-neutral-100 text-neutral-400"
+            >
+              <span>No image</span>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Top-right small -->
+        <div class="col-span-1 overflow-hidden">
+          {% if section.settings.image3 != blank %}
+            <img
+              src="{{ section.settings.image3 | img_url: '600x' }}"
+              alt="{{ section.settings.alt3 | escape }}"
+              class="w-full h-full md:h-[350px] aspect-[16/9] md:aspect-auto object-cover"
+            >
+          {% else %}
+            <div
+              class="w-full md:h-[350px] aspect-[16/9] md:aspect-auto grid place-items-center bg-neutral-100 text-neutral-400"
+            >
+              <span>No image</span>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Bottom: spans both columns -->
+        <div class="col-span-2 overflow-hidden">
+          {% if section.settings.image4 != blank %}
+            <img
+              src="{{ section.settings.image4 | img_url: '900x' }}"
+              alt="{{ section.settings.alt4 | escape }}"
+              class="w-full h-full md:h-[350px] aspect-[16/9] md:aspect-auto object-cover"
+            >
+          {% else %}
+            <div
+              class="w-full md:h-[350px] aspect-[16/9] md:aspect-auto grid place-items-center bg-neutral-100 text-neutral-300"
+            >
+              <span>No image</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Produkt-Werbebilder",
+  "settings": [
+    { "type": "image_picker", "id": "image1", "label": "Bild links groß" },
+    { "type": "text", "id": "alt1", "label": "Alt-Text Bild links groß" },
+
+    { "type": "image_picker", "id": "image2", "label": "Rechts oben – Bild 1" },
+    { "type": "text", "id": "alt2", "label": "Alt-Text Rechts oben – Bild 1" },
+
+    { "type": "image_picker", "id": "image3", "label": "Rechts oben – Bild 2" },
+    { "type": "text", "id": "alt3", "label": "Alt-Text Rechts oben – Bild 2" },
+
+    { "type": "image_picker", "id": "image4", "label": "Rechts unten – Breit" },
+    { "type": "text", "id": "alt4", "label": "Alt-Text Rechts unten – Breit" }
+  ]
+}
+{% endschema %}

@@ -148,7 +148,7 @@ router.put("/:id", async (req, res) => {
   try {
     const session = res.locals.shopify.session;
     const { id } = req.params;
-    const { name, metafieldConfigs, rules, showOnStorefront, storefrontPosition } = req.body;
+    const { name, metafieldConfigs, rules } = req.body;
 
     const existing = await database.getConfigurationById(id);
     if (!existing) {
@@ -167,14 +167,12 @@ router.put("/:id", async (req, res) => {
     // Generate name if not provided
     const finalName = name || generateConfigurationName(rules || []);
 
-    // Update configuration with storefront settings
+    // Update configuration
     await database.updateConfiguration(
       id,
       finalName,
       type,
-      processedConfigs,
-      showOnStorefront || false,
-      storefrontPosition || 'after_price'
+      processedConfigs
     );
 
     // Delete old rules and create new ones
@@ -403,10 +401,87 @@ async function processMetafieldConfigs(session, metafieldConfigs) {
   for (const config of metafieldConfigs) {
     const processedConfig = { ...config };
 
-    // If this is a metaobject_reference, create/update the metaobject
-    if (config.type === "metaobject_reference") {
+    // Handle list.metaobject_reference - create multiple metaobjects
+    if (config.type === "list.metaobject_reference") {
+      // Value should be an array
+      const isValueArray = Array.isArray(config.value);
+
+      if (isValueArray && config.value.length > 0) {
+        // Check if values are already GIDs (from saved config) or field values (from new config)
+        const isGidArray = config.value.every(v =>
+          typeof v === 'string' && v.startsWith('gid://shopify/Metaobject/')
+        );
+
+        if (isGidArray) {
+          // Values are already GIDs - use them as-is
+          console.log(`Using existing metaobject GIDs for ${config.namespace}.${config.key}`);
+          processedConfig.value = config.value;
+          processedConfig.metaobjectIds = config.value;
+        } else {
+          // Values are field objects - need to create metaobjects
+          try {
+            // Get metaobject definition ID
+            let metaobjectDefinitionId = config.metaobjectDefinitionId;
+
+            if (!metaobjectDefinitionId && config.definitionId) {
+              console.log(`Fetching metaobject definition ID for ${config.namespace}.${config.key}`);
+              metaobjectDefinitionId = await getMetaobjectDefinitionIdFromMetafield(
+                session,
+                config.definitionId
+              );
+            }
+
+            if (!metaobjectDefinitionId) {
+              console.warn(
+                `Skipping list.metaobject_reference ${config.namespace}.${config.key} - no metaobject definition ID`
+              );
+              processed.push(processedConfig);
+              continue;
+            }
+
+            // Create a metaobject for each entry in the array
+            const metaobjectGids = [];
+            for (let i = 0; i < config.value.length; i++) {
+              const entryValue = config.value[i];
+
+              // Skip empty objects
+              if (typeof entryValue !== "object" || Object.keys(entryValue).length === 0) {
+                continue;
+              }
+
+              const metaobject = await createOrUpdateMetaobject(
+                session,
+                metaobjectDefinitionId,
+                entryValue,
+                null // Always create new metaobjects for list entries
+              );
+
+              metaobjectGids.push(metaobject.id);
+            }
+
+            // Store array of GIDs as the value
+            processedConfig.value = metaobjectGids;
+            processedConfig.metaobjectIds = metaobjectGids;
+
+            console.log(`Created ${metaobjectGids.length} metaobjects for ${config.namespace}.${config.key}`);
+          } catch (error) {
+            console.error(
+              `Failed to create metaobjects for list ${config.namespace}.${config.key}:`,
+              error
+            );
+            throw error;
+          }
+        }
+      } else {
+        console.warn(
+          `Skipping list.metaobject_reference ${config.namespace}.${config.key} - value is not an array or is empty`
+        );
+      }
+    }
+    // Handle single metaobject_reference
+    else if (config.type === "metaobject_reference") {
       // Check if value is an object (field values) or already a GID
-      const isValueObject = typeof config.value === "object" && config.value !== null;
+      const isValueObject = typeof config.value === "object" && config.value !== null && !Array.isArray(config.value);
       const isValueGid = typeof config.value === "string" && config.value.startsWith("gid://shopify/Metaobject/");
 
       if (isValueObject && Object.keys(config.value).length > 0) {

@@ -1,0 +1,19 @@
+{% assign label = label | upcase -%}
+
+{% capture out -%}
+  {% case label -%}
+    {% when "A+++" -%}#009933
+    {% when "A++" -%}#009933
+    {% when "A+" -%}#009933
+    {% when "A" -%}#b5d052
+    {% when "B" -%}#33cc33
+    {% when "C" -%}#cccc00
+    {% when "D" -%}#ffcc00
+    {% when "E" -%}#ff9933
+    {% when "F" -%}#ff6600
+    {% when "G" -%}#cc0000
+    {% else -%}#FFAAFF
+  {% endcase -%}
+{% endcapture -%}
+
+{{ out | strip }}

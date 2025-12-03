@@ -1,0 +1,755 @@
+{{ 'section-product-detail-gallery.css' | asset_url | stylesheet_tag }}
+
+<div id="pdpMainWrap" class="col-span-12 bg-[#F5F5F5] border border-gray-200 relative max-h-[75vh]">
+  <img
+    id="pdpMainImg"
+    src="{{ product.featured_image | img_url: '1100x' }}"
+    alt="{{ product.title }}"
+    width="{{ product.featured_image.width }}"
+    height="{{ product.featured_image.height }}"
+    class="w-full h-auto object-contain select-none pointer-events-none"
+  >
+
+  <!-- Mobile slider arrows (use same SVGs as product-card) -->
+  <button
+    type="button"
+    id="pdpMainPrev"
+    class="lg:hidden absolute left-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-8 h-8"
+    aria-label="Vorheriges Bild"
+  >
+    <svg
+      width="8"
+      height="15"
+      viewBox="0 0 8 15"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style="transform: rotate(180deg);"
+    >
+      <path
+        d="M0.749478 0.749219L6.18281 6.18255C6.82448 6.82422 6.82448 7.87422 6.18281 8.51589L0.749479 13.9492"
+        stroke="#647167"
+        stroke-width="1.5"
+        stroke-miterlimit="10"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
+  <button
+    type="button"
+    id="pdpMainNext"
+    class="lg:hidden absolute right-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-8 h-8"
+    aria-label="Nächstes Bild"
+  >
+    <svg width="8" height="15" viewBox="0 0 8 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M0.749478 0.749219L6.18281 6.18255C6.82448 6.82422 6.82448 7.87422 6.18281 8.51589L0.749479 13.9492"
+        stroke="#647167"
+        stroke-width="1.5"
+        stroke-miterlimit="10"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  </button>
+
+  <!-- custom cursor (created in DOM so tailwind doesn't purge classes) -->
+  <div id="pdpHoverCursor" class="hover-cursor hidden"></div>
+
+  <!-- pagination dots (mobile/tablet) -->
+  <div id="pdpDots" class="pdp-dots"></div>
+
+  <!-- Wohnbeispiel badge for MAIN image (toggles per active image) -->
+  <span
+    id="wohnMainBadge"
+    role="button"
+    tabindex="0"
+    data-wohn-trigger
+    aria-haspopup="dialog"
+    aria-label="Wohnbeispiel-Hinweis"
+    class="absolute cursor-pointer left-0 bottom-0 px-[12px] 2xl:px-[24px] py-[8px] 2xl:py-[12px] text-[16px] 2xl:text-[24px] leading-[1.1] bg-[#DEDCD8] text-[#000000] flex items-center gap-[4px] 2xl:gap-[8px] 2xl:gap-[12px] select-none hidden"
+  >
+    Wohnbeispiel
+    <svg
+      class="w-[15px] h-[15px] 2xl:w-[22px] 2xl:h-[22px]"
+      viewBox="0 0 22 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M10.75 20.75C16.2728 20.75 20.75 16.2728 20.75 10.75C20.75 5.22715 16.2728 0.75 10.75 0.75C5.22715 0.75 0.75 5.22715 0.75 10.75C0.75 16.2728 5.22715 20.75 10.75 20.75Z" stroke="black" stroke-width="1.5"/>
+      <path d="M10.749 15.75V9.75" stroke="black" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M10.75 5.75C11.3023 5.75 11.75 6.19772 11.75 6.75C11.75 7.30228 11.3023 7.75 10.75 7.75C10.1977 7.75 9.75 7.30228 9.75 6.75C9.75 6.19772 10.1977 5.75 10.75 5.75Z" fill="black"/>
+    </svg>
+  </span>
+</div>
+
+<!-- Thumbnails with desktop prev/next controls (hidden on mobile) -->
+<div class="col-span-12 mt-3 relative hidden 2xl:block">
+  <!-- fades at edges (desktop) -->
+  <div
+    class="pointer-events-none hidden md:block absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white/95 to-transparent z-10"
+  ></div>
+  <div
+    class="pointer-events-none hidden md:block absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white/95 to-transparent z-10"
+  ></div>
+
+  <!-- LEFT button -->
+  <button
+    type="button"
+    id="pdpThumbPrev"
+    class="hidden lg:flex items-center justify-center absolute left-0 top-0 z-20 h-full w-10 bg-[#5F6B60] text-white disabled:hidden disabled:cursor-default"
+    aria-label="Vorheriges Bild"
+  >
+    <svg width="14" height="24" viewBox="0 0 14 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M0.8573 12.0007c0-.2619.1001-.524.3000-.7239L11.0958 1.0383c.4001-.4001 1.0479-.4001 1.4477 0 .3998.4001.4001 1.0479 0 1.4478L3.0289 12.0007l9.5146 9.5146c.4001.4001.4001 1.0479 0 1.4477-.4001.3998-1.0479.4001-1.4477 0L1.1573 12.7246c-.1999-.1999-.3000-.462-.3000-.7239Z"
+        fill="white" />
+    </svg>
+  </button>
+
+  <!-- STRIP -->
+  <div
+    id="pdpThumbs"
+    class="flex gap-2 overflow-x-auto 2xl:px-12 snap-x snap-mandatory scroll-smooth"
+    style="scrollbar-width:none;-ms-overflow-style:none;"
+  >
+    {% for image in product.images %}
+      {%- assign alt_lower = image.alt | downcase -%}
+      <button
+        type="button"
+        data-index="{{ forloop.index0 }}"
+        data-src="{{ image | img_url: '1100x' }}"
+        {%- if image.alt and image.alt != blank and alt_lower contains 'example-of-living' -%}
+          data-wohn="1"
+        {%- endif -%}
+        class="thumb relative w-[80px] 2xl:w-[130px] h-[80px] 2xl:h-[120px] shrink-0 bg-[#F5F5F5] overflow-hidden snap-start"
+        {% if forloop.first %}
+          aria-current="true"
+        {% endif %}
+      >
+        <img src="{{ image | img_url: '240x240' }}" alt="" width="240" height="240" class="w-full h-full object-cover">
+        <!-- badge -->
+        {%- if image.alt and image.alt != blank and alt_lower contains 'example-of-living' -%}
+          <span
+            role="button"
+            tabindex="0"
+            data-wohn-trigger
+            aria-haspopup="dialog"
+            aria-label="Wohnbeispiel-Hinweis"
+            class="hidden lg:absolute left-0 bottom-0 px-[12px] py-[8px] text-[11px] leading-[1.1] bg-[#DEDCD8] text-[#000000] flex items-center gap-[4px] lg:gap-[8px] cursor-pointer select-none"
+          >
+            Wohnbeispiel
+            <svg
+              class="w-[8px] h-[8px] 2xl:w-[11px] 2xl:h-[11px]"
+              viewBox="0 0 11 11"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M5.375 10.375C8.13642 10.375 10.375 8.13642 10.375 5.375C10.375 2.61358 8.13642 0.375 5.375 0.375C2.61358 0.375 0.375 2.61358 0.375 5.375C0.375 8.13642 2.61358 10.375 5.375 10.375Z" stroke="black" stroke-width="0.75"/>
+              <path d="M5.37402 7.875V4.875" stroke="black" stroke-width="0.75" stroke-linecap="round"/>
+              <path d="M5.375 2.875C5.65114 2.875 5.875 3.09886 5.875 3.375C5.875 3.65114 5.65114 3.875 5.375 3.875C5.09886 3.875 4.875 3.65114 4.875 3.375C4.875 3.09886 5.09886 2.875 5.375 2.875Z" fill="black"/>
+            </svg>
+          </span>
+        {%- endif -%}
+      </button>
+    {% endfor %}
+  </div>
+
+  <!-- RIGHT button -->
+  <button
+    type="button"
+    id="pdpThumbNext"
+    class="hidden lg:flex items-center justify-center absolute right-[0px] top-0 z-20 h-full w-10 bg-[#5F6B60] text-white disabled:opacity-40 disabled:cursor-default"
+    aria-label="Nächstes Bild"
+  >
+    <svg width="14" height="24" viewBox="0 0 14 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M13.1427 11.9993C13.1427 12.2612 13.0426 12.5233 12.8427 12.7232L2.60422 22.9617C2.20415 23.3617 1.55631 23.3617 1.1565 22.9617C0.756684 22.5616 0.756428 21.9138 1.1565 21.5139L10.6711 11.9993L1.1565 2.4847C0.756427 2.08463 0.756427 1.43679 1.1565 1.03697C1.55656 0.637161 2.2044 0.636904 2.60422 1.03697L12.8427 11.2755C13.0426 11.4754 13.1427 11.7375 13.1427 11.9993Z"
+        fill="white" />
+    </svg>
+  </button>
+</div>
+
+<!-- Lightbox / fullscreen viewer -->
+<div id="pdpLightbox" class="fixed inset-0 z-[999] hidden">
+  <div class="absolute inset-0 bg-black/80 z-0"></div>
+
+  <!-- Close button -->
+  <button
+    type="button"
+    id="pdpLbClose"
+    class="lightbox-close-btn text-white text-[60px] leading-none"
+    aria-label="Schließen"
+  >
+    ×
+  </button>
+
+  <div id="pdpLbCursor" class="hover-cursor hidden z-40"></div>
+
+  <!-- Image container with height constraint -->
+  <div
+    id="pdpLbImgWrap"
+    class="absolute left-0 right-0 flex items-center justify-center z-20"
+    style="max-width: 90vw; margin: 0 auto;"
+  >
+    <img
+      id="pdpLbImg"
+      class="w-auto h-auto max-w-full max-h-full object-contain select-none"
+      width="1600"
+      height="1200"
+      alt=""
+    >
+  </div>
+
+  <!-- Prev / Next hit zones (mouse/touch) -->
+  <button type="button" id="pdpLbPrev" class="absolute left-0 top-0 h-full w-1/2 z-10"></button>
+  <button type="button" id="pdpLbNext" class="absolute right-0 top-0 h-full w-1/2 z-10"></button>
+</div>
+
+<!-- Wohnbeispiel modal -->
+<style>
+  /* Smooth fade + slide-in for Wohnbeispiel modal */
+  #wohnModal .wohn-backdrop {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #wohnModal.is-visible .wohn-backdrop {
+    opacity: 1;
+  }
+  #wohnModal .wohn-modal-card {
+    transform: translateY(10px) scale(0.98);
+    opacity: 0;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+  #wohnModal.is-visible .wohn-modal-card {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  /* Ensure the modal layers remain clickable during transition */
+  #wohnModal {
+    pointer-events: none;
+  }
+  #wohnModal.is-visible {
+    pointer-events: auto;
+  }
+  /* Disable transitions when the element is hidden to avoid flicker on first paint */
+  #wohnModal.hidden .wohn-backdrop,
+  #wohnModal.hidden .wohn-modal-card {
+    transition: none;
+  }
+</style>
+<div id="wohnModal" class="fixed inset-0 z-[998] hidden">
+  <div class="absolute inset-0 bg-black/50 wohn-backdrop"></div>
+  <div class="relative z-10 w-full h-full grid place-items-center p-4">
+    <div
+      class="relative bg-white w-[280px] md:w-[380px] py-[40px] px-[24px] wohn-modal-card"
+      style="box-shadow: 0 2px 50px rgba(0,0,0,0.17);"
+    >
+      <button
+        type="button"
+        id="wohnClose"
+        class="absolute top-[20px] right-[20px] text-black text-[16px] leading-none cursor-pointer"
+        aria-label="Schließen"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9.46585 7.99996L15.6959 1.76969C16.1014 1.36443 16.1014 0.709193 15.6959 0.30394C15.2907 -0.101313 14.6354 -0.101313 14.2302 0.30394L7.99991 6.53421L1.76983 0.30394C1.36438 -0.101313 0.709336 -0.101313 0.304082 0.30394C-0.101361 0.709193 -0.101361 1.36443 0.304082 1.76969L6.53416 7.99996L0.304082 14.2302C-0.101361 14.6355 -0.101361 15.2907 0.304082 15.696C0.506045 15.8981 0.771595 15.9997 1.03695 15.9997C1.30232 15.9997 1.56768 15.8981 1.76983 15.696L7.99991 9.4657L14.2302 15.696C14.4323 15.8981 14.6977 15.9997 14.9631 15.9997C15.2284 15.9997 15.4938 15.8981 15.6959 15.696C16.1014 15.2907 16.1014 14.6355 15.6959 14.2302L9.46585 7.99996Z" fill="#898989"/>
+        </svg>
+      </button>
+      <div class="text-[#2E2E2D] text-[16px] mt-[4px] leading-[1.5]">
+        <p>
+          Die Abbildung zeigt ein Wohnbeispiel, welches auch Dekoration sowie separat erhältliches Zubehör enthält. Im
+          Lieferumfang enthalten ist eine Hängeleuchte.
+        </p>
+        <p class="mt-[24px]">
+          Leuchtmittel sowie weitere dargestellte Einrichtungsgegenstände sind separat gegen Mehrpreis bestellbar.
+        </p>
+      </div>
+    </div>
+  </div>
+  <!-- end modal -->
+</div>
+
+<script>
+  (() => {
+    const main = document.getElementById('pdpMainImg');
+    const wrap = document.getElementById('pdpMainWrap');
+    const cursor = document.getElementById('pdpHoverCursor');
+    const thumbsWrap = document.getElementById('pdpThumbs');
+    const thumbs = Array.from(document.querySelectorAll('.thumb'));
+    const prevBtn = document.getElementById('pdpThumbPrev');
+    const nextBtn = document.getElementById('pdpThumbNext');
+    const mainPrev = document.getElementById('pdpMainPrev');
+    const mainNext = document.getElementById('pdpMainNext');
+    const dotsWrap = document.getElementById('pdpDots');
+    const wohnMain = document.getElementById('wohnMainBadge');
+
+    // Active index tracks selected thumbnail; used for button enable/disable
+    let index = thumbs.findIndex((b) => b.getAttribute('aria-current') === 'true');
+    if (index < 0) index = 0;
+
+    // Disable nav buttons only at first/last image (not based on scroll position)
+    function updateNavState() {
+      if (!prevBtn || !nextBtn) return;
+      prevBtn.disabled = index <= 0;
+      nextBtn.disabled = index >= thumbs.length - 1;
+    }
+
+    // scroll amount per click (roughly a viewport of the strip)
+    function scrollChunk(dir = 1) {
+      if (!thumbsWrap) return;
+      const delta = Math.max(thumbsWrap.clientWidth * 0.9, 240);
+      thumbsWrap.scrollBy({ left: dir * delta, behavior: 'smooth' });
+      // defer state update slightly so we read the new position
+      setTimeout(updateNavState, 0);
+    }
+
+    prevBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      scrollChunk(-1);
+    });
+    nextBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      scrollChunk(1);
+    });
+    // helper to sync pagination dots with active image
+    function updateDots() {
+      if (!dotsWrap) return;
+      const dots = Array.from(dotsWrap.querySelectorAll('.pdp-dot'));
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('is-active', i === index);
+      });
+    }
+
+    // build pagination dots once
+    if (dotsWrap && thumbs.length > 1) {
+      dotsWrap.innerHTML = '';
+      thumbs.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'pdp-dot';
+        dot.setAttribute('aria-label', `Bild ${i + 1}`);
+        dot.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          applyActive(i);
+        });
+        dotsWrap.appendChild(dot);
+      });
+    }
+
+    // keep button state in sync on load
+    updateNavState();
+
+    if (!main || !wrap || !cursor || !thumbs.length) return;
+
+    // Lightbox nodes
+    const lb = document.getElementById('pdpLightbox');
+    if (lb && lb.parentElement !== document.body) {
+      document.body.appendChild(lb); // portal to <body>
+    }
+    const lbImg = document.getElementById('pdpLbImg');
+    const lbClose = document.getElementById('pdpLbClose');
+    const lbPrev = document.getElementById('pdpLbPrev');
+    const lbNext = document.getElementById('pdpLbNext');
+    const lbCursor = document.getElementById('pdpLbCursor');
+
+    // Build an array of full-size srcs
+    const sources = thumbs.map((b) => b.dataset.src);
+
+    // Simple debounce so browsers that fire duplicate click events (e.g. Firefox)
+    // don't advance the gallery by two images at once.
+    let lastStepTs = 0;
+    function safeStep(delta) {
+      const now = Date.now();
+      if (now - lastStepTs < 120) return;
+      lastStepTs = now;
+      applyActive(index + delta);
+    }
+
+    function applyActive(i) {
+      index = (i + thumbs.length) % thumbs.length;
+      const btn = thumbs[index];
+      const src = btn?.dataset.src;
+      if (src) main.src = src;
+
+      thumbs.forEach((b) => {
+        b.removeAttribute('aria-current');
+      });
+      btn.setAttribute('aria-current', 'true');
+
+      if (thumbsWrap) {
+        const br = btn.getBoundingClientRect();
+        const wr = thumbsWrap.getBoundingClientRect();
+        if (br.left < wr.left) thumbsWrap.scrollBy({ left: br.left - wr.left - 8, behavior: 'smooth' });
+        else if (br.right > wr.right) thumbsWrap.scrollBy({ left: br.right - wr.right + 8, behavior: 'smooth' });
+      }
+
+      // update button states based on new index
+      updateNavState();
+
+      // update pagination dots
+      updateDots();
+
+      // toggle Wohnbeispiel on MAIN image based on selected thumb
+      try {
+        const hasWohn = !!btn?.dataset?.wohn;
+        if (wohnMain) {
+          if (hasWohn) wohnMain.classList.remove('hidden');
+          else wohnMain.classList.add('hidden');
+        }
+      } catch (e) {}
+    }
+
+    // thumb click
+    thumbs.forEach((b, i) => b.addEventListener('click', () => applyActive(i)));
+
+    // desktop arrow buttons to switch images (thumbnail strip)
+    prevBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      applyActive(index - 1);
+    });
+    nextBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      applyActive(index + 1);
+    });
+
+    // main image arrows for mobile / tablet
+    mainPrev?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      safeStep(-1);
+    });
+    mainNext?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      safeStep(1);
+    });
+
+    // --- custom cursor with "zoom" in the middle ---
+    // Treat desktop widths as "fine" pointer so the custom cursor only appears
+    // on larger screens, regardless of actual input device.
+    const pointerMql = window.matchMedia('(min-width: 1024px)');
+    let isFinePointer = pointerMql.matches;
+    let raf;
+    const DEAD = 28;
+
+    function enableDesktopCursor() {
+      if (wrap.__desktopCursorEnabled) return;
+      wrap.__desktopCursorEnabled = true;
+      wrap.addEventListener('mouseenter', showCursor);
+      wrap.addEventListener('mousemove', onMove);
+      wrap.addEventListener('mouseleave', hideCursor);
+      wrap.addEventListener('click', onClick);
+    }
+
+    function disableDesktopCursor() {
+      if (!wrap.__desktopCursorEnabled) return;
+      wrap.__desktopCursorEnabled = false;
+      wrap.removeEventListener('mouseenter', showCursor);
+      wrap.removeEventListener('mousemove', onMove);
+      wrap.removeEventListener('mouseleave', hideCursor);
+      wrap.removeEventListener('click', onClick);
+      hideCursor();
+    }
+
+    // Initial binding based on current viewport width
+    if (isFinePointer) {
+      enableDesktopCursor();
+    } else {
+      disableDesktopCursor();
+    }
+
+    // When viewport width crosses the desktop breakpoint, toggle cursor behavior
+    const pointerChangeHandler = (ev) => {
+      isFinePointer = !!ev.matches;
+      if (isFinePointer) {
+        enableDesktopCursor();
+      } else {
+        disableDesktopCursor();
+      }
+    };
+    if (pointerMql.addEventListener) {
+      pointerMql.addEventListener('change', pointerChangeHandler);
+    } else if (pointerMql.addListener) {
+      // Safari fallback
+      pointerMql.addListener(pointerChangeHandler);
+    }
+
+    function showCursor() {
+      cursor.classList.remove('hidden');
+      wrap.classList.add('use-custom-cursor');
+    }
+    function hideCursor() {
+      cursor.classList.add('hidden');
+      wrap.classList.remove('use-custom-cursor');
+    }
+
+    function onMove(e) {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const rect = wrap.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+        const half = rect.width / 2;
+
+        // decide cursor dir: prev / next / zoom (center)
+        let dir = cursor.dataset.dir || 'next';
+        if (x < half - DEAD) dir = 'prev';
+        else if (x > half + DEAD) dir = 'next';
+        else dir = 'zoom';
+        cursor.dataset.dir = dir;
+      });
+    }
+
+    // Lightbox helpers
+    function lbShow(i = index) {
+      index = (i + sources.length) % sources.length;
+      lbImg.src = sources[index];
+      lb.classList.remove('hidden');
+      document.documentElement.classList.add('overflow-hidden');
+      lb.setAttribute('aria-modal', 'true');
+      lb.setAttribute('role', 'dialog');
+
+      // Position close button dynamically based on header height
+      const header = document.querySelector('header');
+      const headerHeight = header ? header.getBoundingClientRect().height : 70;
+      const closeBtn = document.getElementById('pdpLbClose');
+      if (closeBtn) {
+        closeBtn.style.top = `calc(${headerHeight}px + 1rem)`;
+      }
+      // ensure image wrapper stays below header with proper max-height
+      const lbImgWrap = document.getElementById('pdpLbImgWrap');
+      if (lbImgWrap) {
+        const padding = 32; // breathing room (top + bottom)
+        const topOffset = Math.round(headerHeight) + 16;
+        lbImgWrap.style.top = `${topOffset}px`;
+        lbImgWrap.style.bottom = `16px`;
+        lbImgWrap.style.maxHeight = `calc(100vh - ${topOffset + 16}px)`;
+      }
+      lbImg.focus?.();
+
+      if (isFinePointer) {
+        lb.classList.add('use-custom-cursor');
+        lbCursor?.classList.remove('hidden');
+      }
+    }
+    function lbHide() {
+      lb.classList.add('hidden');
+      document.documentElement.classList.remove('overflow-hidden');
+      lb.removeAttribute('aria-modal');
+      lb.removeAttribute('role');
+
+      if (lbCursor) {
+        lb.classList.remove('use-custom-cursor');
+        lbCursor?.classList.add('hidden');
+      }
+    }
+
+    function onLbMove(e) {
+      if (!lbCursor) return;
+      const rect = lb.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+
+      lbCursor.style.left = e.clientX + 'px';
+      lbCursor.style.top = e.clientY + 'px';
+
+      lbCursor.dataset.dir = x < rect.width / 2 ? 'prev' : 'next';
+    }
+
+    function onLbEnter() {
+      if (isFinePointer) lbCursor?.classList.remove('hidden');
+    }
+    function onLbLeave() {
+      lbCursor?.classList.add('hidden');
+    }
+    function onLbClick(e) {
+      const rect = lb.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      if (x < rect.width / 2) lbPrevImg();
+      else lbNextImg();
+    }
+
+    function lbPrevImg() {
+      lbShow(index - 1);
+    }
+    function lbNextImg() {
+      lbShow(index + 1);
+    }
+
+    function onClick(e) {
+      const rect = wrap.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const half = rect.width / 2;
+
+      // if we're in the middle dead-zone, open zoom; else navigate
+      if (Math.abs(x - half) <= DEAD) {
+        lbShow(index);
+        return;
+      }
+      if (x < half) safeStep(-1);
+      else safeStep(1);
+    }
+
+    // keyboard: global left/right (gallery) + lightbox nav & ESC
+    document.addEventListener('keydown', (e) => {
+      const target = e.target;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+
+      if (!lb.classList.contains('hidden')) {
+        if (e.key === 'Escape') {
+          lbHide();
+          return;
+        }
+        if (e.key === 'ArrowLeft') {
+          lbPrevImg();
+          return;
+        }
+        if (e.key === 'ArrowRight') {
+          lbNextImg();
+          return;
+        }
+      } else {
+        if (e.key === 'ArrowLeft') applyActive(index - 1);
+        if (e.key === 'ArrowRight') applyActive(index + 1);
+      }
+    });
+
+    // Lightbox clicks
+    lbClose?.addEventListener('click', lbHide);
+    // Hook up cursor + click on the overlay (not the dark bg child)
+    lb.addEventListener('mousemove', onLbMove);
+    lb.addEventListener('mouseenter', onLbEnter);
+    lb.addEventListener('mouseleave', onLbLeave);
+    // keep existing prev/next button listeners; also allow click anywhere
+    lb.addEventListener('click', (e) => {
+      // Close if they clicked the dark backdrop only (your existing handler):
+      if (e.target === lb) {
+        lbHide();
+        return;
+      }
+    });
+    // Click anywhere above/below image also navigates
+    lbImg.addEventListener('click', onLbClick);
+    // In case clicks land on the overlay (not backdrop child):
+    lb.querySelector('.absolute.inset-0.bg-black\\/80')?.addEventListener('click', (e) => {
+      // backdrop already closes via the earlier handler; do nothing here
+    });
+    // Support prev/next hit-zones too (keyboard/focus)
+    lbPrev?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lbPrevImg();
+    });
+    lbNext?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lbNextImg();
+    });
+    lb.addEventListener('click', (e) => {
+      // click outside image closes
+      if (e.target === lb) lbHide();
+    });
+
+    lbClose?.addEventListener('mouseenter', () => lbCursor?.classList.add('hidden'));
+    lbClose?.addEventListener('mouseleave', () => lbCursor?.classList.remove('hidden'));
+    lbClose?.addEventListener('focusin', () => lbCursor?.classList.add('hidden'));
+    lbClose?.addEventListener('focusout', () => lbCursor?.classList.remove('hidden'));
+
+    // Update close button position on resize
+    let resizeRAF;
+    const updateCloseButtonPosition = () => {
+      if (!lb.classList.contains('hidden')) {
+        const header = document.querySelector('header');
+        const headerHeight = header ? header.getBoundingClientRect().height : 70;
+        const closeBtn = document.getElementById('pdpLbClose');
+        if (closeBtn) {
+          closeBtn.style.top = `calc(${headerHeight}px + 1rem)`;
+        }
+        const lbImgWrap = document.getElementById('pdpLbImgWrap');
+        if (lbImgWrap) {
+          const topOffset = Math.round(headerHeight) + 16;
+          lbImgWrap.style.top = `${topOffset}px`;
+          lbImgWrap.style.bottom = `16px`;
+          lbImgWrap.style.maxHeight = `calc(100vh - ${topOffset + 16}px)`;
+        }
+      }
+    };
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(resizeRAF);
+      resizeRAF = requestAnimationFrame(updateCloseButtonPosition);
+    });
+
+    // --- Wohnbeispiel modal wiring ---
+    const wohnModal = document.getElementById('wohnModal');
+    if (wohnModal && wohnModal.parentElement !== document.body) {
+      document.body.appendChild(wohnModal); // portal to body so it overlays everything
+    }
+    const wohnClose = document.getElementById('wohnClose');
+    const wohnTriggers = Array.from(document.querySelectorAll('[data-wohn-trigger]'));
+
+    function wohnShow() {
+      if (!wohnModal) return;
+      // ensure starting state
+      wohnModal.classList.remove('is-visible');
+      wohnModal.classList.remove('hidden');
+      // force a reflow so the browser registers the starting styles
+      void wohnModal.offsetWidth;
+      // then promote to visible in the next frame for a smooth transition
+      requestAnimationFrame(() => {
+        wohnModal.classList.add('is-visible');
+      });
+      document.documentElement.classList.add('overflow-hidden');
+      wohnModal.setAttribute('aria-modal', 'true');
+      wohnModal.setAttribute('role', 'dialog');
+    }
+    function wohnHide() {
+      if (!wohnModal) return;
+      // start fade-out
+      wohnModal.classList.remove('is-visible');
+      // wait for transition to finish before hiding and cleaning up
+      setTimeout(() => {
+        wohnModal.classList.add('hidden');
+        document.documentElement.classList.remove('overflow-hidden');
+        wohnModal.removeAttribute('aria-modal');
+        wohnModal.removeAttribute('role');
+      }, 250);
+    }
+    wohnTriggers.forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wohnShow();
+      });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          wohnShow();
+        }
+      });
+    });
+    wohnClose?.addEventListener('click', wohnHide);
+    wohnModal?.addEventListener('click', (e) => {
+      if (e.target === wohnModal) wohnHide();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && wohnModal && !wohnModal.classList.contains('hidden')) {
+        wohnHide();
+      }
+    });
+
+    // Ensure native pointer cursor over the main Wohnbeispiel badge (disable custom cursor)
+    if (wohnMain) {
+      wohnMain.addEventListener('mouseenter', () => {
+        cursor?.classList.add('hidden');
+        wrap.classList.remove('use-custom-cursor');
+      });
+      wohnMain.addEventListener('mouseleave', () => {
+        if (isFinePointer) {
+          wrap.classList.add('use-custom-cursor');
+          cursor?.classList.remove('hidden');
+        }
+      });
+    }
+
+    // init
+    applyActive(index);
+  })();
+</script>

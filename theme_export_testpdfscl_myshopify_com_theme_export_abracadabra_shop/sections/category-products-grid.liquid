@@ -1,0 +1,112 @@
+{% comment %} Category – Products {% endcomment %}
+<script src="{{ 'ajaxinate.js' | asset_url }}" defer></script>
+{% assign limit = 9 %}
+{% assign limit_load_more = 5 %}
+{% assign total = collection.products.size %}
+
+<section class="mt-0 md:mt-[40px]" id="category-products-grid">
+  <div id="AjaxinateContainer" class="relative w-full max-w-[var(--container)] mx-auto">
+    {% paginate collection.products by total %}
+      <!-- Grid (no load more) -->
+      <div
+        id="cat-grid-{{ section.id }}"
+        data-products-grid
+        class="grid gap-4 pt-5 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+      >
+        {% for product in collection.products limit: limit %}
+          {% render 'product-card', product: product %}
+        {% endfor %}
+        <div class="gc-grid-item">
+          {% render 'gift-card' %}
+        </div>
+      </div>
+
+      {% render 'category-video' %}
+
+      <div
+        class="grid gap-4 mt-5 md:gap-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        data-products-grid
+      >
+        {% for product in collection.products offset: limit_load_more limit: total %}
+          {% render 'product-card', product: product %}
+        {% endfor %}
+      </div>
+
+      {% if paginate.next %}
+        <div
+          class="peek-fade mt-5 pointer-events-none absolute inset-x-0 bottom-5 h-20 md:h-24 bg-gradient-to-t from-white via-white/80 to-transparent"
+        ></div>
+
+        <div id="AjaxinatePagination">
+          {% assign next_url = paginate.next.url %}
+
+          {% if request.locale.iso_code != shop.primary_locale %}
+            {% if next_url contains '?' %}
+              {% assign sep = '&' %}
+            {% else %}
+              {% assign sep = '?' %}
+            {% endif %}
+            {% assign next_url = next_url | append: sep | append: 'locale=' | append: request.locale.iso_code %}
+          {% endif %}
+          <button
+            class="mt-6 w-full max-w-full mx-auto flex items-center gap-4 text-xs md:text-sm text-gray-500 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+            data-peek-toggle="#bestViewport-{{ section.id }}"
+            data-loadmore-for="bestGridAfter-{{ section.id }}"
+            data-url="{{ next_url }}"
+          >
+            <span class="h-px grow bg-[#BAB9B7]"></span>
+            {% comment %}
+              <span class="shrink-0 text-black text-[20px]" data-label>
+                {{ 'sections.category_products_grid.load_more' | t: default: 'Laden mehr' }}
+              </span>
+            {% endcomment %}
+            <span class="shrink-0 text-black text-[20px]" data-label>
+              {{- 'sections.category_products_grid.load_more' | t: default: 'Load more' -}}
+            </span>
+            <span class="h-px grow bg-[#BAB9B7]"></span>
+          </button>
+        </div>
+      {% endif %}
+    {% endpaginate %}
+  </div>
+</section>
+
+<script>
+  (function () {
+    document.addEventListener('DOMContentLoaded', () => {
+      var endlessScroll = new Ajaxinate({
+        method: '{{ section.settings.pagination_mode }}',
+        loadingText: "{{ 'sections.category_products_grid.loading_text' | t: default: 'Loading...' }}",
+      });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "t:sections.category_products_grid.name",
+  "tag": "section",
+  "class": "section",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "settings": [
+    {
+      "type": "select",
+      "id": "pagination_mode",
+      "options": [
+        {
+          "value": "click",
+          "label": "t:sections.category_products_grid.pagination_mode.click"
+        },
+        {
+          "value": "scroll",
+          "label": "t:sections.category_products_grid.pagination_mode.scroll"
+        }
+      ],
+      "default": "click",
+      "label": "t:sections.category_products_grid.pagination_mode.label"
+    }
+  ]
+}
+{% endschema %}

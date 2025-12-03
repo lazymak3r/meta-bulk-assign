@@ -1,0 +1,6 @@
+{% assign offset = request.params.offset | default: 0 | plus: 0 %}
+{% assign limit = request.params.limit | default: 10 | plus: 0 %}
+
+{% for product in collection.products offset: offset limit: limit %}
+    {% render 'product-card', product: product %}
+{% endfor %}

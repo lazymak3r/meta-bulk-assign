@@ -1,0 +1,158 @@
+{% assign attributes = product.metafields.attributes %}
+{% assign pictograms = product.metafields.pictograms %}
+{% assign documents = product.metafields.documents %}
+
+<style>
+.info-links { margin-top: 30px; margin-top: 40px; border-top: 1px solid #eee; }
+       .info-link { display: flex; justify-content: space-between; align-items: center; padding: 20px 5px; border-bottom: 1px solid #eee; cursor: pointer; font-family: var(--font-primary); font-weight: 600; color: var(--roomio-dunkelgrau); transition: transform 0.3s ease; }
+       .info-link:hover { transform: translateX(5px); }
+       .info-link::after { content: '→'; font-size: 22px; color: var(--roomio-rosa); }
+
+       #overlay-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 999; opacity: 0; visibility: hidden; transition: opacity 0.4s ease; }
+       #overlay-panel { padding-top: 40px;  position: fixed; top: 0; right: 0; height: 100%; max-width: 550px; background-color: #fff; z-index: 1000; box-shadow: -5px 0 25px rgba(0,0,0,0.15); transform: translateX(100%); transition: transform 0.4s ease-in-out; display: flex; flex-direction: column; }
+       #overlay-backdrop.is-visible { opacity: 1; visibility: visible; }
+       #overlay-panel.is-visible { transform: translateX(0); }
+       .overlay-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid #eee; }
+       .overlay-header h3 { font-family: var(--font-primary); font-size: 20px; margin: 0; color: var(--roomio-dunkelgrau); }
+       #close-overlay { background: none; border: none; font-size: 30px; cursor: pointer; color: #888; }
+       .overlay-content { padding: 30px; overflow-y: auto; flex-grow: 1; }
+
+       @media (max-width: 768px) {
+           body { padding: 0; background-color: var(--color-surface); }
+           .product-page-container { padding: 0; box-shadow: none; border-radius: 0; }
+           .product-main-section { flex-direction: column; gap: 0; }
+           .image-gallery, .main-image-container img { border-radius: 0; }
+           .thumbnail-slider { padding: 15px; }
+           .product-info { padding: 0 20px 30px 20px; }
+           .product-info h1 { font-size: 26px; }
+           .product-info .price { font-size: 24px; }
+           #overlay-panel { width: 100%; max-width: 100%; border-radius: 0; }
+       }
+</style>
+
+<div class="info-links">
+                <div class="info-link" data-content="attributes" data-title="Attribute">Attribute</div>
+                {% if documents and documents.size > 0 %}
+                    <div class="info-link" data-content="documents" data-title="Dokumente">Dokumente</div>
+                {% endif %}
+            </div>
+
+
+
+
+<div id="product-documents" style="display:none;">
+{% if documents and documents.size > 0 %}
+  <div class="product-documents" style="padding: 30px;">
+    <ul style="padding-left: 0; list-style: none;">
+      {% for doc in documents %}
+        {% assign doc_key = doc[0] %}
+        {% assign doc_url = doc[1].value %}
+        {% assign doc_name = doc_key %}
+        <li style="display: flex; align-items: center; margin-bottom: 6px;">
+          <span style="margin-right: 6px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#d32f2f" style="vertical-align: middle;">
+              <path
+                d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.828A2 2 0 0 0 19.414 7.414l-4.828-4.828A2 2 0 0 0 12.172 2H6zm6 1.414L18.586 10H14a2 2 0 0 1-2-2V3.414zM8 14h1v-4H8v4zm3 0h1.5a1.5 1.5 0 0 0 0-3H11v4zm1-2.5a.5.5 0 0 1 0 1H12v-1h.5zm2.5 2.5h1v-1h1a1 1 0 0 0 0-2h-2v4zm1-2h-1v-1h1a.5.5 0 0 1 0 1z" />
+            </svg>
+          </span>
+          <a href="{{ doc_url }}" target="_blank" rel="noopener" style="margin-left: 4px;">
+            {{ doc_name }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+</div>
+
+<div id="product-attributes" style="display:none;">
+
+{% if pictograms and pictograms != blank %}
+  <div class="pictogram-list" style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin: 10px 10px 24px 10px;">
+    {% for item in pictograms %}
+      {% assign key = item[0] %}
+      {% assign url = item[1].value %}
+
+      {% if url and url.size > 0 %}
+        <div class="pictogram-item" style="text-align: center;">
+          <img
+            src="{{ url }}"
+            alt="{{ key }}"
+            height="50"
+            style="max-height:50px; display:block; margin:0 auto 8px;"
+          >
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+<ul style="margin: 30px;">
+{% for item in attributes %}
+  {% assign key = item[0] %}
+  {% assign val = item[1].value %}
+  <li><strong>{{ key | replace: '_', ' ' | capitalize }}</strong>
+    {% if val != blank %}
+      {% if val.first != null %}
+        {{ val | join: ', ' }}
+      {% else %}
+        {{ val | replace: ';', ',' | replace: ', ', ',' | replace: ',', ', ' | strip }}
+      {% endif %}
+    {% else %}
+      —
+    {% endif %}
+  </li>
+
+
+{% endfor %}
+</ul>
+</div>
+
+<div id="overlay-backdrop"></div>
+<div id="overlay-panel">
+    <header class="overlay-header">
+        <h3 id="overlay-title"></h3>
+        <button id="close-overlay" title="Schließen">&times;</button>
+    </header>
+    <div id="overlay-content">
+        <!-- Inhalt wird hier dynamisch eingefügt -->
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const infoLinks = document.querySelectorAll('.info-link');
+    const overlayPanel = document.getElementById('overlay-panel');
+    const overlayBackdrop = document.getElementById('overlay-backdrop');
+    const closeButton = document.getElementById('close-overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayContent = document.getElementById('overlay-content');
+    const body = document.body;
+
+    const openOverlay = (contentKey, contentTitle) => {
+        console.log(contentKey, contentTitle)
+
+        overlayTitle.textContent = contentTitle;
+        overlayContent.innerHTML = document.getElementById('product-' + contentKey).innerHTML;
+        body.classList.add('overlay-open');
+        overlayPanel.classList.add('is-visible');
+        overlayBackdrop.classList.add('is-visible');
+    };
+    const closeOverlay = () => {
+        body.classList.remove('overlay-open');
+        overlayPanel.classList.remove('is-visible');
+        overlayBackdrop.classList.remove('is-visible');
+    };
+    infoLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            openOverlay(link.getAttribute('data-content'), link.getAttribute('data-title'));
+        });
+    });
+    closeButton.addEventListener('click', closeOverlay);
+    overlayBackdrop.addEventListener('click', closeOverlay);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlayPanel.classList.contains('is-visible')) {
+            closeOverlay();
+        }
+    });
+});
+</script>

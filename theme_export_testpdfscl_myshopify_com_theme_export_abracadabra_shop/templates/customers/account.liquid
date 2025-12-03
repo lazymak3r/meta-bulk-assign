@@ -1,0 +1,189 @@
+{{ 'account.css' | asset_url | stylesheet_tag }}
+
+{% render 'breadcrumbs', current_title: 'customer.account.title' | t %}
+
+<div class="customer-account page-width">
+  <main class="account-main">
+    <div class="account-container">
+      <h1 class="account-title">{{ 'customer.account.title' | t }}</h1>
+
+      <section class="profile-card">
+        <header class="profile-card-header">
+          <h2 class="profile-name">{{ customer.first_name }}</h2>
+          <a class="profile-logout" href="{{ routes.account_logout_url }}">
+            <img src="{{ 'profile.svg' | asset_url }}" alt="Logout" width="24" height="24">
+            {{ 'customer.log_out' | t | default: 'Log out' }}
+          </a>
+        </header>
+
+        <!-- ====== ORDER HISTORY ====== -->
+        <div class="profile-section">
+          <h3 class="profile-section-title">{{ 'customer.orders.title' | t | default: 'Bestellverlauf' }}</h3>
+
+          {% if customer.orders_count > 0 %}
+            {% paginate customer.orders by 10 %}
+              <ul class="wk-orders">
+                {% for order in customer.orders %}
+                  {% for line_item in order.line_items %}
+                    <li class="wk-row">
+                      <!-- LEFT: image + title + dynamic specs -->
+                      <div class="wk-left">
+                        {% if line_item.image %}
+                          <div class="wk-thumb">
+                            <img
+                              class="wk-media"
+                              src="{{ line_item.image | image_url: width: 240 }}"
+                              width="120"
+                              height="120"
+                              alt="{{ line_item.product.title | escape }}"
+                            >
+                          </div>
+                        {% endif %}
+
+                        <div class="wk-body">
+                          <h3 class="wk-title">
+                            {{ line_item.product.title }}
+                            {% if line_item.variant.title and line_item.variant.title != 'Default Title' %}
+                              - {{ line_item.variant.title }}
+                            {% endif %}
+                          </h3>
+
+                          {% assign attributes = line_item.product.metafields.attributes %}
+                          {% if attributes %}
+                            {% assign spec_id = 'spec-'
+                              | append: line_item.product.handle
+                              | append: '-'
+                              | append: line_item.id
+                            %}
+                            <dl id="{{ spec_id }}" class="wk-specs is-collapsed">
+                              {% for item in attributes %}
+                                {% assign key = item[0] %}
+                                {% assign val = item[1].value %}
+                                {% if val != blank %}
+                                  {% if val.first != null %}
+                                    {% assign val_str = val | join: ', ' %}
+                                  {% else %}
+                                    {% assign val_str = val
+                                      | replace: ';', ','
+                                      | replace: ',', ', '
+                                      | replace: '  ', ' '
+                                      | strip
+                                    %}
+                                  {% endif %}
+                                  {% unless key == 'Title' and val_str == 'Default Title' %}
+                                    <div class="wk-spec">
+                                      <dt class="wk-spec-k">
+                                        {{ key | replace: '_', ' ' | replace: '-', ' ' | strip | capitalize }}
+                                      </dt>
+                                      <dd class="wk-spec-v">{{ val_str }}</dd>
+                                    </div>
+                                  {% endunless %}
+                                {% endif %}
+                              {% endfor %}
+                            </dl>
+
+                            <div class="wk-actions">
+                              <button
+                                class="spec-toggle"
+                                type="button"
+                                aria-controls="{{ spec_id }}"
+                                aria-expanded="false"
+                              >
+                                <span class="spec-title">Weitere Spezifikationen</span>
+                                <span class="chev">
+                                  <img
+                                    src="{{ 'chevron-down.svg' | asset_url }}"
+                                    width="16"
+                                    height="9"
+                                    alt=""
+                                    aria-hidden="true"
+                                  >
+                                </span>
+                              </button>
+                            </div>
+                          {% endif %}
+                        </div>
+                      </div>
+
+                      <div class="wk-price">
+                        {% render 'formatted-price', price: line_item.final_line_price %}
+                      </div>
+
+                      <!-- RIGHT: price + status -->
+                      <div class="wk-right">
+                        {% if order.fulfillment_status == 'fulfilled' %}
+                          <span class="wk-badge wk-badge--success">
+                            {{- 'customer.orders.fulfilled' | t | default: 'Geliefert' -}}
+                          </span>
+                        {% elsif order.fulfillment_status == 'partial' %}
+                          <span class="wk-badge">
+                            {{- 'customer.orders.partial_fulfilled' | t | default: 'Teilweise geliefert' -}}
+                          </span>
+                        {% elsif order.fulfillment_status == 'unfulfilled' %}
+                          <span class="wk-badge">
+                            {{- 'customer.orders.unfulfilled' | t | default: 'Nicht geliefert' -}}
+                          </span>
+                        {% else %}
+                          <span class="wk-badge">
+                            {{- 'customer.orders.in_progress' | t | default: 'In Bearbeitung' -}}
+                          </span>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% endfor %}
+              </ul>
+
+              {% if paginate.pages > 1 %}
+                <div class="order-history-pagination">
+                  {% render 'pagination', paginate: paginate %}
+                </div>
+              {% endif %}
+            {% endpaginate %}
+          {% else %}
+            <p>{{ 'customer.orders.none' | t | default: 'Sie haben noch keine Bestellungen aufgegeben.' }}</p>
+          {% endif %}
+        </div>
+
+        <hr class="profile-divider">
+
+        <!-- ====== PROFILE / ADDRESS ====== -->
+        <div class="profile-section">
+          <h3 class="profile-section-title">{{ 'customer.profile.title' | t | default: 'Profilangaben' }}</h3>
+
+          {% if customer.default_address %}
+            <div class="profile-address">{{ customer.default_address | format_address }}</div>
+          {% elsif customer.addresses_count > 0 %}
+            {% assign first_address = customer.addresses.first %}
+            <div class="profile-address">{{ first_address | format_address }}</div>
+          {% else %}
+            <p class="profile-address-empty">
+              {{ 'customer.profile.none' | t | default: 'Keine Adresse gespeichert.' }}
+            </p>
+          {% endif %}
+
+          <p class="profile-address-link-container">
+            <a class="profile-address-link" href="{{ routes.account_addresses_url }}">
+              Adressen ansehen ({{ customer.addresses_count }})
+            </a>
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Lightweight toggle for specs on account order items (same behavior as wishlist)
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.spec-toggle');
+    if (!btn) return;
+    const id = btn.getAttribute('aria-controls');
+    const panel = id && document.getElementById(id);
+    if (!panel) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const nowCollapsed = panel.classList.toggle('is-collapsed');
+    btn.setAttribute('aria-expanded', String(!nowCollapsed));
+  });
+</script>

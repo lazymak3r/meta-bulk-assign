@@ -1,0 +1,389 @@
+{% assign documents = product.metafields.documents %}
+{% assign attributes = product.metafields.attributes %}
+
+<!-- INFO TABS -->
+<section>
+  <div class="container max-w-[var(--container)] mt-[54px] mx-auto">
+    <h1 class="!text-[32px] md:!text-[48px] font-[400]">
+      {{ 'products.tabs.title' | t | default: 'Produktinformationen' }}
+    </h1>
+
+    <div class="border-b mt-[16px] md:mt-[40px] w-full min-w-0">
+      <div class="-mx-4 px-4">
+        <div class="tabs-scroll overflow-x-auto max-w-full no-scrollbar px-0">
+          <div class="flex flex-nowrap gap-[20px]">
+            <button class="tab-btn flex-none whitespace-nowrap" data-tab="desc">
+              {{ 'products.tabs.description' | t | default: 'Beschreibung' }}
+            </button>
+            <button class="tab-btn flex-none whitespace-nowrap" data-tab="details">
+              {{ 'products.tabs.details' | t | default: 'Details' }}
+            </button>
+            <button class="tab-btn flex-none whitespace-nowrap" data-tab="delivery">
+              {{ 'products.tabs.delivery' | t | default: 'Lieferbedingungen' }}
+            </button>
+            <button class="tab-btn flex-none whitespace-nowrap" data-tab="product-safety">
+              {{ 'products.tabs.product-safety' | t | default: 'Produktsicherheit' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="tab-desc"
+      class="tab-panel grid gap-[16px] md:gap-12 md:grid-cols-[minmax(0,1fr)_420px]"
+    >
+      <!-- LEFT COLUMN -->
+      <div class="rte-desc max-w-[720px] mt-0 text-[14px] md:text-[20px] leading-[20px] md:leading-[27px] text-customGray">
+        {{ product.description }}
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <aside class="flex flex-col mt-[8px] md:mt-[0] gap-[22px] md:gap-[40px]">
+        {% if documents and documents.size > 0 %}
+          <section>
+            <h4
+              class="mt-0 pt-0 text-[18px] md:text-[24px] font-bold first:mt-0 first:pt-0 first:border-t-0"
+            >
+              {{ 'products.tabs.downloads' | t | default: 'Herunterladen' }}
+            </h4>
+
+            {% for doc in documents %}
+              {% assign doc_key = doc[0] %}
+              {% assign doc_url = doc[1].value %}
+              {% assign doc_name = doc_key %}
+
+              <a
+                href="{{ doc_url }}"
+                class="mt-3 inline-flex items-center gap-4 text-[18px] hover:underline text-brand"
+                target="_blank"
+              >
+                <!-- tiny doc icon -->
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 22 22"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                      d="M5.48887 8.98047H4.125C3.95373 8.98047 3.78946 9.04866 3.6685 9.16996C3.54755 9.29126 3.47991 9.45575 3.48047 9.62706L3.48997 14.5231C3.48997 14.8791 3.77855 15.1677 4.1345 15.1677C4.49045 15.1677 4.77903 14.8791 4.77903 14.5231V13.0365C5.04256 13.0352 5.32409 13.0341 5.48887 13.0341C6.62136 13.0341 7.54274 12.1248 7.54274 11.0073C7.54274 9.88969 6.62136 8.98047 5.48887 8.98047ZM5.48887 11.745C5.32263 11.745 5.04007 11.7462 4.77551 11.7475C4.77413 11.4731 4.77293 11.1776 4.77293 11.0073C4.77293 10.8615 4.7722 10.5563 4.77143 10.2695H5.48883C5.90339 10.2695 6.25363 10.6074 6.25363 11.0073C6.25363 11.4072 5.90344 11.745 5.48887 11.745Z"
+                      fill="#2E2E2D"
+                  />
+                  <path
+                      d="M10.9712 8.98047H9.625C9.45386 8.98047 9.28972 9.04853 9.1688 9.16966C9.04789 9.29079 8.98013 9.45506 8.98047 9.6262C8.98047 9.62625 8.99005 14.3633 8.9901 14.3805C8.99074 14.5515 9.05923 14.7152 9.18058 14.8356C9.30136 14.9555 9.46456 15.0227 9.63463 15.0227H9.63708C9.67777 15.0226 10.638 15.0189 11.0219 15.0122C12.4783 14.9868 13.5353 13.7206 13.5353 12.0016C13.5352 10.1946 12.5049 8.98047 10.9712 8.98047ZM10.9994 13.7234C10.8324 13.7263 10.5452 13.7286 10.277 13.7304C10.2752 13.1705 10.2717 10.8513 10.2707 10.2695H10.9712C12.1543 10.2695 12.2462 11.5953 12.2462 12.0016C12.2462 12.8478 11.8607 13.7083 10.9994 13.7234Z"
+                      fill="#2E2E2D"
+                  />
+                  <path
+                      d="M17.7832 10.2197C18.1391 10.2197 18.4277 9.93115 18.4277 9.5752C18.4277 9.21924 18.1391 8.93066 17.7832 8.93066H15.8125C15.4565 8.93066 15.168 9.21924 15.168 9.5752V14.4375C15.168 14.7934 15.4565 15.082 15.8125 15.082C16.1685 15.082 16.457 14.7934 16.457 14.4375V12.6048H17.6266C17.9826 12.6048 18.2712 12.3163 18.2712 11.9603C18.2712 11.6044 17.9826 11.3158 17.6266 11.3158H16.457V10.2197H17.7832Z"
+                      fill="#2E2E2D"
+                  />
+                  <path
+                      d="M19.6797 6.23047H19.207V6.04661C19.207 5.21808 18.8931 4.43068 18.3231 3.82938L15.6459 1.00543C15.0401 0.36648 14.1877 0 13.3072 0H4.72656C3.66038 0 2.79297 0.86741 2.79297 1.93359V6.23047H2.32031C1.25413 6.23047 0.386719 7.09788 0.386719 8.16406V15.8984C0.386719 16.9646 1.25413 17.832 2.32031 17.832H2.79297V20.0664C2.79297 21.1326 3.66038 22 4.72656 22H17.2734C18.3396 22 19.207 21.1326 19.207 20.0664V17.832H19.6797C20.7459 17.832 21.6133 16.9646 21.6133 15.8984V8.16406C21.6133 7.09788 20.7459 6.23047 19.6797 6.23047ZM4.08203 1.93359C4.08203 1.5782 4.37117 1.28906 4.72656 1.28906H13.3072C13.8355 1.28906 14.347 1.50893 14.7104 1.89234L17.3876 4.71629C17.7296 5.07706 17.918 5.5495 17.918 6.04661V6.23047H4.08203V1.93359ZM17.918 20.0664C17.918 20.4218 17.6288 20.7109 17.2734 20.7109H4.72656C4.37117 20.7109 4.08203 20.4218 4.08203 20.0664V17.832H17.918V20.0664ZM20.3242 15.8984C20.3242 16.2538 20.0351 16.543 19.6797 16.543H2.32031C1.96492 16.543 1.67578 16.2538 1.67578 15.8984V8.16406C1.67578 7.80867 1.96492 7.51953 2.32031 7.51953H19.6797C20.0351 7.51953 20.3242 7.80867 20.3242 8.16406V15.8984Z"
+                      fill="#2E2E2D"
+                  />
+                </svg>
+
+                {{ doc_name }}
+              </a>
+            {% endfor %}
+          </section>
+        {% endif %}
+
+        {% assign store_key = shop.myshopify_domain | remove: '.myshopify.com' %}
+        <warranty-app-documents store="{{store}}" handle="{{product.handle}}"></warranty-app-documents>
+      </aside>
+    </div>
+    <div id="tab-details" class="tab-panel hidden">
+      <ul
+        class="grid grid-cols-1 md:grid-cols-2 gap-y-[12px] md:gap-y-[16px] md:gap-x-[16px] text-[#2E2E2D] w-full"
+        style="grid-column: 1 / -1;"
+        data-details-list
+      >
+        {% for item in attributes %}
+          {% assign key = item[0] %}
+          {% assign val = item[1].value %}
+          <li
+            class="grid gap-3 items-start text-[16px] md:text-[24px] leading-[1.6]"
+          >
+            <span class="font-[700]" data-attr-label>{{ key | replace: '_', ' ' | capitalize }}</span>
+            <span>
+              {% if val != blank %}
+                {% if val.first != null %}
+                  {{ val | join: ', ' }}
+                {% else %}
+                  {{ val | replace: ';', ',' | replace: ', ', ',' | replace: ',', ', ' | strip }}
+                {% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div id="tab-delivery" class="tab-panel hidden">
+      <div class="max-w-[619px]">
+        <h3 class="text-[16px] md:text-[24px] font-[700] md:mb-[12px] mb-[16px]">
+          {{ section.settings.delivery_title | default: 'Lieferbedingungen & Kosten' }}
+        </h3>
+        {% if section.settings.delivery_text1 != blank %}
+          <div class="text-[14px] md:text-[20px] leading-[27px] text-[#2E2E2D] mb-[16px] md:mb-[12px]">
+            {{ section.settings.delivery_text1 }}
+          </div>
+        {% else %}
+          <div class="text-[14px] md:text-[20px] leading-[27px] text-[#2E2E2D] mb-[16px] md:mb-[12px]">
+            <p>
+              Bitte geben Sie zur Berechnung der Lieferkosten für den hier angezeigten Artikel zunächst die Postleitzahl
+              Ihres Lieferortes in das dafür vorgesehene Feld ein und klicken dann auf den Button Berechnen.
+            </p>
+          </div>
+        {% endif %}
+
+        {% if section.settings.delivery_text2 != blank %}
+          <div class="text-[14px] md:text-[20px] leading-[27px] text-[#2E2E2D] mb-[16px] md:mb-[40px]">
+            {{ section.settings.delivery_text2 }}
+          </div>
+        {% else %}
+          <div class="text-[14px] md:text-[20px] leading-[20px] md:leading-[27px] text-[#2E2E2D] mb-[16px] md:mb-[40px]">
+            <p>
+              Im Falle des Kaufs mehrerer Artikel können die Lieferkosten geringer oder höher ausfallen. Die genauen
+              Lieferkosten werden im Falle der gleichzeitigen Bestellung mehrerer Artikel im Warenkorb berechnet. Alle
+              entstehenden Lieferkosten werden vor Abgabe Ihrer Bestellung nochmals auf einer Übersichtsseite angezeigt.
+            </p>
+          </div>
+        {% endif %}
+
+        {% render 'delivery-form', form_id: 'product-delivery-form' %}
+      </div>
+    </div>
+    <div id="tab-product-safety" class="tab-panel hidden">
+      {% assign docs = product.metafields.documents %}
+      {% if docs and docs.size > 0 %}
+        <div class="justify-between flex flex-row flex-wrap gap-[30px]" style="grid-column: 1 / -1;">
+          {% for pair in docs %}
+            {% assign doc_key = pair[0] %}
+            {% assign doc_url = pair[1].value %}
+            {% if doc_url != blank %}
+              <div class="pdf-card w-full 2xl:w-[400px]">
+                <a
+                  href="#"
+                  class="doc-download items-center justify-center w-full inline-flex items-center gap-[10px] px-[40px] py-[16px] border border-[#647167] h-[50px] md:h-[60px] text-[20px] text-[#2E2E2D] hover:bg-[#F5F5F5] transition"
+                  download
+                  data-href="{{ doc_url }}"
+                  data-filename="{{ doc_key }}.pdf"
+                >
+                  <span>{{ 'products.tabs.downloads' | t | default: 'Herunterladen' }}</span>
+                  <img src="{{ 'download.svg' | asset_url }}" alt="" width="18" height="18">
+                </a>
+                <div class="mt-[16px] w-full 2xl:w-[400px] h-[500px]">
+                  <!-- Try to show a PDF preview where supported; fall back to icon -->
+                  <object data="{{ doc_url }}#view=FitH" type="application/pdf" class="pdf-embed w-full h-[500px]">
+                    <iframe src="{{ doc_url }}#view=FitH" class="pdf-embed w-full" loading="lazy"></iframe>
+                  </object>
+                </div>
+                <div class="mt-[16px] text-[16px] text-[#2E2E2D] break-words">
+                  {{ doc_key }}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-[14px] text-[#2E2E2D] mt-[16px]">
+          {{ 'products.tabs.no_documents' | t | default: 'Keine Produktsicherheitsdokumente verfügbar.' }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<style>
+  .tab-panel.hidden {
+    display: none !important;
+  }
+
+  @media (max-width: 768px) {
+    #tab-details [data-details-list] > li {
+      grid-template-columns: 140px minmax(0, 1fr);
+    }
+  }
+  @media (min-width: 768px) {
+    #tab-details [data-details-list] > li {
+      grid-template-columns: 160px minmax(0, 1fr);
+    }
+  }
+  @media (min-width: 1024px) {
+    #tab-details [data-details-list] > li {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+  }
+  /* Prevent overflow and allow shrinking of value cell */
+  #tab-details [data-details-list] [data-attr-label],
+  #tab-details [data-details-list] li > span:last-child {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    white-space: normal;
+  }
+  #tab-details [data-details-list] li > span:last-child {
+    min-width: 0;
+  }
+</style>
+<script>
+  (() => {
+    const btns = Array.from(document.querySelectorAll('.tab-btn[data-tab]'));
+    const panels = {
+      desc: document.getElementById('tab-desc'),
+      details: document.getElementById('tab-details'),
+      delivery: document.getElementById('tab-delivery'),
+      'product-safety': document.getElementById('tab-product-safety'),
+    };
+
+    function showTab(id) {
+      btns.forEach((b) => {
+        const on = b.dataset.tab === id;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.tabIndex = on ? 0 : -1;
+      });
+      Object.entries(panels).forEach(([key, el]) => {
+        if (!el) return;
+        const hide = key !== id;
+        el.classList.toggle('hidden', hide);
+        if (hide) el.setAttribute('hidden', '');
+        else el.removeAttribute('hidden');
+      });
+    }
+
+    btns.forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    const initial = (btns.find((b) => b.classList.contains('is-active')) || btns[0])?.dataset.tab || 'desc';
+    showTab(initial);
+
+    document.addEventListener('shopify:section:load', () => {
+      const again = (btns.find((b) => b.classList.contains('is-active')) || btns[0])?.dataset.tab || 'desc';
+      showTab(again);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const isEmpty = (el) => el.textContent.replace(/[\s\u00A0]/g, '') === '';
+      document.querySelectorAll('#tab-desc p').forEach((p) => {
+        if (isEmpty(p)) p.remove();
+      });
+    });
+  })();
+</script>
+<!-- details label width handled via CSS (fixed responsive tracks) -->
+<script>
+  // Force download for product safety documents (avoid navigating to PDF viewer)
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest && e.target.closest('#tab-product-safety .doc-download');
+    if (!a) return;
+    e.preventDefault();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    e.stopPropagation();
+
+    var url = a.getAttribute('data-href') || a.getAttribute('href');
+    if (!url) return;
+    var filename =
+      a.getAttribute('data-filename') || url.split('#')[0].split('?')[0].split('/').pop() || 'document.pdf';
+
+    try {
+      fetch(url, { mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' })
+        .then(function (res) {
+          // If CORS is not allowed, res.type may be 'opaque'; try to proceed anyway
+          return res.blob ? res.blob() : Promise.reject(new Error('No blob'));
+        })
+        .then(function (blob) {
+          var blobUrl = URL.createObjectURL(blob);
+          var tmp = document.createElement('a');
+          tmp.href = blobUrl;
+          tmp.download = filename;
+          document.body.appendChild(tmp);
+          tmp.click();
+          tmp.remove();
+          URL.revokeObjectURL(blobUrl);
+        })
+        .catch(function () {
+          // Fallback: try native download attribute
+          var tmp = document.createElement('a');
+          tmp.href = url;
+          tmp.download = filename;
+          document.body.appendChild(tmp);
+          tmp.click();
+          tmp.remove();
+        });
+    } catch (err) {
+      // Last-resort fallback
+      var tmp = document.createElement('a');
+      tmp.href = url;
+      tmp.download = filename;
+      document.body.appendChild(tmp);
+      tmp.click();
+      tmp.remove();
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Product Tabs",
+  "settings": [
+    {
+      "type": "text",
+      "id": "delivery_title",
+      "label": "Delivery title",
+      "default": "Lieferbedingungen & Kosten"
+    },
+    {
+      "type": "richtext",
+      "id": "delivery_text1",
+      "label": "Delivery intro text",
+      "default": "<p>Bitte geben Sie zur Berechnung der Lieferkosten für den hier angezeigten Artikel zunächst die Postleitzahl Ihres Lieferortes in das dafür vorgesehene Feld ein und klicken dann auf den Button Berechnen.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "delivery_text2",
+      "label": "Delivery additional text",
+      "default": "<p>Im Falle des Kaufs mehrerer Artikel können die Lieferkosten geringer oder höher ausfallen. Die genauen Lieferkosten werden im Falle der gleichzeitigen Bestellung mehrerer Artikel im Warenkorb berechnet. Alle entstehenden Lieferkosten werden vor Abgabe Ihrer Bestellung nochmals auf einer Übersichtsseite angezeigt.</p>"
+    }
+  ]
+}
+{% endschema %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.rte-desc p').forEach((p) => {
+      if (p.childElementCount === 1 && p.firstElementChild?.tagName === 'STRONG' && p.textContent.trim()) {
+        p.classList.add('rte-heading');
+      }
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const root = document.querySelector('.rte-desc');
+    if (!root) return;
+
+    const isHeading = (el) => el.matches('.rte-heading, h1, h2, h3, h4, h5, h6');
+
+    let paras = Array.from(root.querySelectorAll('p'));
+    for (let i = 0; i < paras.length - 1; i++) {
+      const a = paras[i];
+      const b = paras[i + 1];
+
+      if (isHeading(a) || isHeading(b)) continue;
+      if (!a.textContent.trim() || !b.textContent.trim()) continue;
+
+      const tail = a.textContent.replace(/\s+/g, ' ').trimEnd();
+      if (/[—–-]\s*$/.test(tail)) {
+        a.innerHTML = a.innerHTML.replace(/\s*$/, '') + ' ' + b.innerHTML.trimStart();
+        b.remove();
+
+        paras = Array.from(root.querySelectorAll('p'));
+        i = Math.max(-1, i - 1);
+      }
+    }
+  });
+</script>

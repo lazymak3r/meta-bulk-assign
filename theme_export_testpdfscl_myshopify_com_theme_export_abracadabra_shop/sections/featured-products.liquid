@@ -1,0 +1,264 @@
+{% assign collection = section.settings.collection %}
+
+<section class="mt-[60px] 2xl:mt-[100px]">
+  <div class="container max-w-[var(--container)] mx-auto">
+    <div class="mb-[30px] 2xl:mb-[50px] flex flex-col md:flex-row items-center md:items-center justify-center md:justify-between">
+      <h2 class="!text-[32px] md:!text-[48px] leading-tight text-brand text-center md:text-left">
+        {{ section.settings.title }}
+      </h2>
+    </div>
+
+    <!-- MOBILE: slider first, then media tiles -->
+    <div class="md:hidden">
+      <!-- slider -->
+      <div
+        id="fp-slider"
+        class="grid grid-cols-1 gap-4 md:pl-4 md:pr-4"
+      >
+        {%- for product in collection.products -%}
+          <div class="w-full" data-product-card>
+            {% render 'product-card-wide', product: product %}
+          </div>
+        {%- endfor -%}
+      </div>
+
+      <!-- Mobile: Mehr laden -->
+      {% render 'load-more', target_id: 'fp-slider', initial: 1, step: 1 %}
+
+      <!-- Limited Edition (below slider on mobile) -->
+      {% if section.settings.limited_image %}
+        <a href="#" class="mt-[30px] group relative block overflow-hidden aspect-[16/9]">
+          <img
+            src="{{ section.settings.limited_image | image_url: width: 1600 }}"
+            alt="{{ section.settings.title | escape }}"
+            class="absolute inset-0 h-full w-full object-cover"
+            width="1600"
+            height="900"
+            loading="lazy"
+          >
+          <!-- linear gradient overlay -->
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none"
+          ></div>
+
+          <!-- bottom-right label -->
+
+          <span class="absolute hero-label block bottom-[20px] left-[20px] text-white !text-[24px] font-[400]"
+            >Limitierte Auflage</span
+          >
+        </a>
+      {% endif %}
+
+      <!-- Promo 20% OFF -->
+      {% if section.settings.show_promo and section.settings.promo_image %}
+        <div class="mt-[30px]">
+          <div class="group relative block overflow-hidden h-[420px]">
+            <img
+              src="{{ section.settings.promo_image | image_url: width: 1200 }}"
+              alt=""
+              class="absolute inset-0 w-full h-full object-cover"
+              width="1200"
+              height="800"
+              loading="lazy"
+            >
+            <!-- overlay -->
+            <div
+              class="
+                absolute inset-0 bg-black pointer-events-none
+                opacity-20
+                transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]
+                [will-change:opacity] [transform:translateZ(0)]
+              "
+            ></div>
+            <!-- text -->
+            <div class="absolute inset-0 p-[20px] md:p-6 flex flex-col justify-end">
+              <span class="block text-white font-[400] leading-[1.25] text-[50px]">
+                {{- section.settings.promo_heading | default: '20% RABATT' -}}
+              </span>
+              <span class="block text-white/95 text-[24px] leading-none">
+                {{- section.settings.promo_subheading | default: 'auf Ihre erste Bestellung' -}}
+              </span>
+            </div>
+          </div>
+          <a
+            href="{{ section.settings.promo_link | default: '#' }}"
+            class="mt-[30px] btn-primary"
+          >
+            Alle Produkte ansehen
+          </a>
+        </div>
+      {% endif %}
+    </div>
+    <!-- /MOBILE -->
+
+    <!-- DESKTOP/TABLET GRID (no rounded corners) -->
+    <div class="hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+      <!-- FEATURED ROW: product card (left) + limited image tile (right) -->
+      <div class="md:col-span-3 grid grid-cols-12 gap-4 md:gap-6 items-stretch">
+        <!-- Left: one product card -->
+        <div class="col-span-12 lg:col-span-4">
+          <div class="min-h-[420px] h-full p-0">
+            {% if collection and collection.products.size > 0 %}
+              {% render 'product-card-wide', product: collection.products[0] %}
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Right: limited edition image tile -->
+        <a href="#" class="group relative col-span-12 lg:col-span-8 block min-h-[420px] overflow-hidden">
+          {% if section.settings.limited_image %}
+            <img
+              src="{{ section.settings.limited_image | image_url: width: 2200 }}"
+              alt="{{ section.settings.title | escape }}"
+              class="absolute inset-0 h-full w-full object-cover"
+              width="2200"
+              height="1240"
+              loading="lazy"
+            >
+          {% endif %}
+
+          <!-- gradient sweep overlay -->
+          <span class="overlay absolute inset-0 pointer-events-none"></span>
+
+          <!-- bottom-right label -->
+          <div class="absolute bottom-[55px] right-[48px]">
+            <span class="hero-label block text-white !text-[18px] md:!text-[22px] lg:!text-[48px] font-[400]"
+              >Limitierte Auflage</span
+            >
+          </div>
+        </a>
+      </div>
+
+      <!-- Products grid (load-more enabled) -->
+      <div id="fp-grid" class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+        {% if section.settings.show_promo and section.settings.promo_image %}
+          <!-- PROMO: 20% OFF -->
+          <a
+            href="{{ section.settings.promo_link | default: '#' }}"
+            class="group relative overflow-hidden block h-full"
+          >
+            <img
+              src="{{ section.settings.promo_image | image_url: width: 1600 }}"
+              srcset="
+                {{ section.settings.promo_image | image_url: width: 600  }} 600w,
+                {{ section.settings.promo_image | image_url: width: 900  }} 900w,
+                {{ section.settings.promo_image | image_url: width: 1200 }} 1200w,
+                {{ section.settings.promo_image | image_url: width: 1600 }} 1600w
+              "
+              sizes="(min-width: 1024px) 520px, (min-width: 768px) 33vw, 100vw"
+              alt=""
+              class="
+                absolute inset-0 h-full w-full object-cover transform-gpu
+                transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]
+                group-hover:scale-[1.02] will-change-transform
+              "
+              width="1600"
+              height="1000"
+              loading="lazy"
+            >
+            <div
+              class="
+                absolute inset-0 bg-black pointer-events-none
+                opacity-20 group-hover:opacity-40
+                transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]
+                [will-change:opacity] [transform:translateZ(0)]
+              "
+            ></div>
+            <div class="absolute inset-0 p-6 lg:p-8 flex flex-col justify-end leading-tight">
+              <span class="block text-white font-[400] leading-tight !text-[32px] lg:!text-[40px] xl:!text-[64px] 2xl:!text-[80px] lg:whitespace-nowrap">
+                {{- section.settings.promo_heading | default: '20% RABATT' -}}
+              </span>
+              <span class="block text-white/95 text-[32px] lg:text-[40px] mt-1">
+                {{- section.settings.promo_subheading | default: 'auf Ihre erste Bestellung' -}}
+              </span>
+            </div>
+            <span class="sr-only">
+              {{- section.settings.promo_heading | default: '20% RABATT' }} –
+              {{ section.settings.promo_subheading | default: 'auf Ihre erste Bestellung' -}}
+            </span>
+          </a>
+        {% endif %}
+
+        {% for product in collection.products offset: 1 limit: section.settings.limit %}
+          <div class="md:col-span-1">
+            {% render 'product-card-wide', product: product %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Desktop: Load more for grid -->
+    <div class="hidden md:flex justify-center w-full">
+      {% if section.settings.show_promo %}
+        {% render 'load-more', target_id: 'fp-grid', initial: 4, step: 3 %}
+      {% else %}
+        {% render 'load-more', target_id: 'fp-grid', initial: 3, step: 3 %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Featured Products",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Titel", "default": "Unsere beste Kollektion" },
+    { "type": "text", "id": "title_all_products", "label": "Titel Alle Produkte", "default": "Alle Produkte ansehen" },
+    { "type": "collection", "id": "collection", "label": "Please select collection with featured products" },
+    { "type": "image_picker", "id": "limited_image", "label": "Bild für Limitierte Auflage (Hintergrund/Tile)" },
+    { "type": "checkbox", "id": "show_promo", "label": "Promo-Block aktivieren", "default": false },
+    { "type": "image_picker", "id": "promo_image", "label": "Promo-Bild (z. B. Rabatt)" },
+    { "type": "text", "id": "promo_heading", "label": "Promo-Überschrift", "default": "20% RABATT" },
+    {
+      "type": "text",
+      "id": "promo_subheading",
+      "label": "Promo-Unterüberschrift",
+      "default": "auf Ihre erste Bestellung"
+    },
+    { "type": "url", "id": "promo_link", "label": "Promo-Link" },
+    { "type": "number", "id": "limit", "label": "Maximale Produkte", "default": 20 }
+  ],
+  "presets": [{ "name": "Featured Products", "category": "Custom" }]
+}
+{% endschema %}
+
+{% javascript %}
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.carousel-wrapper').forEach(function (wrapper) {
+      const data = JSON.parse(wrapper.dataset.products);
+      const step = parseInt(wrapper.dataset.step);
+      const itemsContainer = wrapper.querySelector('.carousel-items');
+      const prevBtn = wrapper.querySelector('.carousel-prev');
+      const nextBtn = wrapper.querySelector('.carousel-next');
+
+      let index = 0;
+
+      function render() {
+        itemsContainer.innerHTML = '';
+        data.slice(index, index + step).forEach((p) => {
+          itemsContainer.innerHTML += `
+          <div class="carousel-item">
+            <img src="${p.featured_image ? p.featured_image : ''}" alt="${p.title}">
+            <p>${p.title}</p>
+          </div>`;
+        });
+        prevBtn.disabled = index === 0;
+        nextBtn.disabled = index + step >= data.length;
+      }
+
+      prevBtn.addEventListener('click', () => {
+        index = Math.max(index - step, 0);
+        render();
+      });
+
+      nextBtn.addEventListener('click', () => {
+        index = Math.min(index + step, data.length - step);
+        render();
+      });
+
+      render();
+    });
+  });
+{% endjavascript %}
+
+<!-- mobile scroll action removed in favor of generic load-more -->

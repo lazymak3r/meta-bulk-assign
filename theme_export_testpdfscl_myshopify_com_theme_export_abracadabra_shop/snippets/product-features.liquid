@@ -1,0 +1,22 @@
+{%- comment -%}
+  Renders product features list from metafields
+  Accepts:
+    - text_size: CSS classes for text size (default: 'text-[14px] md:text-[20px]')
+    - text_top_margin: CSS classes for text top margin (default: 'mt-[12px]')
+{%- endcomment -%}
+
+{% assign features_mf = product.metafields.attributes.Features %}
+{% if features_mf and features_mf.value.size > 0 %}
+  {% assign text_size_class = text_size | default: 'text-[14px] md:text-[20px]' %}
+  {% assign text_top_margin_class = text_top_margin | default: 'mt-[20px]' %}
+  <div class="with-checks leading-[1.6] text-[#2E2E2D] {{ text_top_margin_class }}">
+    <ul class="list-none pl-0">
+      {% for feature in features_mf.value %}
+        {% assign clean_feature = feature | strip %}
+        {% if clean_feature != blank %}
+          <li class="relative pl-8 {{ text_size_class }}">{{ clean_feature }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}

@@ -1,0 +1,406 @@
+(function initMegaMenu() {
+    "use strict";
+
+    const ready = (fn) =>
+        document.readyState === "loading"
+            ? document.addEventListener("DOMContentLoaded", fn, { once: true })
+            : fn();
+
+    ready(() => {
+        const panel = document.getElementById("megaMenu");
+        const mmPanel = document.getElementById("mmPanel");
+        const mmFloat = document.getElementById("mmFloat");
+
+        if (panel && panel.dataset.mmInitialized === "1") return;
+        if (panel) panel.dataset.mmInitialized = "1";
+
+        // Ensure the panel is focusable for a11y fallback
+        if (!panel.hasAttribute("tabindex"))
+            panel.setAttribute("tabindex", "-1");
+
+        // Move menu to <body> so it overlays everything (z-index/position sanity)
+        if (panel.parentElement !== document.body)
+            document.body.appendChild(panel);
+        panel.style.zIndex = "9999";
+
+        // Single body-level backdrop (mobile)
+        let backdrop = document.getElementById("megaBackdrop");
+        if (!backdrop) {
+            backdrop = document.createElement("button");
+            backdrop.id = "megaBackdrop";
+            backdrop.type = "button";
+            backdrop.className = "md:hidden hidden";
+            Object.assign(backdrop.style, {
+                position: "fixed",
+                inset: "0",
+                zIndex: "9998",
+                background: "transparent",
+            });
+            document.body.appendChild(backdrop);
+        }
+
+        // Media query for “desktop”
+        const mql = window.matchMedia("(min-width: 768px)");
+
+        // --- Compute top offset from header height (no magic 64px)
+        function syncTopToHeader() {
+            const header = document.querySelector("header");
+            const h = header ? header.getBoundingClientRect().height : 0;
+            panel.style.top = h + "px"; // overrides Tailwind top-16 if different
+        }
+
+        syncTopToHeader();
+        // Debounce resize a bit
+        let rAF;
+        const onResize = () => {
+            cancelAnimationFrame(rAF);
+            rAF = requestAnimationFrame(syncTopToHeader);
+        };
+        window.addEventListener("resize", onResize);
+
+        // Observe the header element itself -> covers sticky/shrinking headers, bars, etc.
+        let headerRO = null;
+        const attachHeaderObserver = () => {
+            const header = document.querySelector("header");
+            if (!("ResizeObserver" in window) || !header) return;
+
+            // swap to new header if the section re-renders
+            if (headerRO) headerRO.disconnect();
+
+            headerRO = new ResizeObserver(() => {
+                // use rAF to avoid layout thrash if multiple changes happen at once
+                cancelAnimationFrame(rAF);
+                rAF = requestAnimationFrame(syncTopToHeader);
+            });
+            headerRO.observe(header);
+        };
+        attachHeaderObserver();
+
+        // Re-attach the observer if Theme Editor re-renders sections
+        document.addEventListener("shopify:section:load", attachHeaderObserver);
+
+        // Triggers: header (.megaTrigger) + footer/mobile ([data-open-mega])
+        const getTriggers = () =>
+            Array.from(
+                document.querySelectorAll(".megaTrigger, [data-open-mega]")
+            );
+
+        const cats = panel.querySelectorAll(".mm-cat");
+        const preview = document.getElementById("mmPreview");
+
+        let hideTimer = null;
+        let lastFocus = null;
+
+        const isOpen = () => !panel.classList.contains("hidden");
+        const showBackdrop = (show) =>
+            backdrop.classList.toggle("hidden", !show);
+
+        // Scroll lock with scrollbar compensation (no layout shift)
+        function setScrollLock(lock) {
+            const docEl = document.documentElement;
+            // Desktop never locks body (panel is inline under header)
+            if (mql.matches) lock = false;
+
+            const hadScrollbar = window.innerWidth > docEl.clientWidth;
+            const sbw = hadScrollbar
+                ? window.innerWidth - docEl.clientWidth
+                : 0;
+
+            if (lock) {
+                if (sbw) {
+                    docEl.style.paddingRight = sbw + "px";
+                    document.body.style.paddingRight = sbw + "px";
+                }
+                docEl.classList.add("overflow-hidden");
+                document.body.classList.add("overflow-hidden");
+            } else {
+                docEl.classList.remove("overflow-hidden");
+                document.body.classList.remove("overflow-hidden");
+                docEl.style.paddingRight = "";
+                document.body.style.paddingRight = "";
+            }
+        }
+        const lockBody = (lock) => setScrollLock(!!lock);
+
+        // Helpers for the accordion panes
+        const getPane = (btn) => {
+            const id = btn.getAttribute("aria-controls");
+            if (id) {
+                const byId = document.getElementById(id);
+                if (byId && byId.classList.contains("mm-subpanel")) return byId;
+            }
+            const sib = btn.nextElementSibling;
+            return sib && sib.classList.contains("mm-subpanel") ? sib : null;
+        };
+
+        const closeSiblings = (scope, exceptPane = null) => {
+            scope.querySelectorAll(".mm-sub").forEach((b) => {
+                const p = getPane(b);
+                if (!p || p === exceptPane) return;
+                b.setAttribute("aria-expanded", "false");
+                b.querySelector(".chev")?.classList.remove("rotate-90");
+            });
+        };
+
+        const resetAll = () => {
+            closeSiblings(mmPanel, null);
+            if (mmFloat) closeSiblings(mmFloat, null);
+        };
+
+        const openSub = (btn, scope) => {
+            const pane = getPane(btn);
+            if (!pane) return;
+            closeSiblings(scope, pane);
+            btn.setAttribute("aria-expanded", "true");
+            btn.querySelector(".chev")?.classList.add("rotate-90");
+        };
+
+        const primeDesktop = () => {
+            const btn =
+                mmPanel.querySelector(
+                    '.mm-sub[aria-controls="mm-sub-sofas"]'
+                ) || mmPanel.querySelector(".mm-sub");
+            if (btn) openSub(btn, mmPanel);
+        };
+
+        const setExpandedOnAll = (val) => {
+            getTriggers().forEach((t) =>
+                t.setAttribute("aria-expanded", String(val))
+            );
+        };
+
+        // Focus helpers (trap + restore)
+        function getFocusable(container) {
+            return Array.from(
+                container.querySelectorAll(
+                    'a[href], button, input, select, textarea, details, [tabindex]:not([tabindex="-1"])'
+                )
+            ).filter(
+                (el) =>
+                    !el.hasAttribute("disabled") &&
+                    el.tabIndex !== -1 &&
+                    getComputedStyle(el).display !== "none"
+            );
+        }
+        function focusFirst() {
+            const list = getFocusable(panel);
+            (list[0] || panel).focus();
+        }
+
+        const open = ({ focus = true } = {}) => {
+            lastFocus = document.activeElement;
+
+            panel.classList.remove("hidden");
+            setExpandedOnAll(true);
+            lockBody(true);
+            showBackdrop(true);
+            mmPanel.classList.remove("hidden");
+            if (mql.matches) primeDesktop();
+
+            if (focus) focusFirst();
+        };
+
+        const close = () => {
+            panel.classList.add("hidden");
+            setExpandedOnAll(false);
+            lockBody(false);
+            showBackdrop(false);
+            resetAll();
+
+            // Restore focus back to the trigger (if any)
+            if (lastFocus && typeof lastFocus.focus === "function") {
+                lastFocus.focus();
+            }
+        };
+
+        const setActiveCat = (btn) => {
+            panel
+                .querySelectorAll(".mm-cat[data-active]")
+                .forEach((b) => b.removeAttribute("data-active"));
+            btn.setAttribute("data-active", "true");
+            const img = btn.getAttribute("data-img");
+            if (img && preview) preview.src = img;
+            mmPanel.classList.remove("hidden");
+            if (mql.matches) primeDesktop();
+        };
+
+        // Bind triggers (click + hover on desktop)
+        const bindTriggers = () => {
+            getTriggers().forEach((t) => {
+                if (t._mmBound) return;
+                t._mmBound = true;
+
+                t.addEventListener("click", (e) => {
+                    // Preserve normal link behavior for new tabs/windows
+                    if (
+                        t.matches("a,[role='link']") &&
+                        (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1)
+                    ) {
+                        return; // allow default
+                    }
+                    if (t.matches("a,[role='link']")) e.preventDefault(); // only block plain click
+
+                    isOpen() ? close() : open({ focus: true });
+                });
+
+                // Hover open/close for desktop
+                t.addEventListener("mouseenter", () => {
+                    if (!mql.matches) return;
+                    clearTimeout(hideTimer);
+                    open({ focus: false });
+                });
+                t.addEventListener("mouseleave", () => {
+                    if (!mql.matches) return;
+                    hideTimer = setTimeout(close, 120);
+                });
+            });
+        };
+
+        bindTriggers();
+
+        // Keep open while hovering menu (desktop)
+        panel.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+        panel.addEventListener("mouseleave", () => {
+            if (!mql.matches) return;
+            hideTimer = setTimeout(close, 120);
+        });
+
+        // Click outside to close (desktop only)
+        const onDocClick = (e) => {
+            if (!mql.matches || !isOpen()) return;
+            const insidePanel = panel.contains(e.target);
+            const insideTrigger = getTriggers().some((t) =>
+                t.contains(e.target)
+            );
+            if (!insidePanel && !insideTrigger) close();
+        };
+        document.addEventListener("click", onDocClick);
+
+        // Backdrop (mobile) to close
+        backdrop.addEventListener("click", close);
+
+        // Single keydown handler for ESC + focus trapping
+        const onKeydown = (e) => {
+            if (!isOpen()) return;
+
+            if (e.key === "Escape") {
+                e.preventDefault();
+                close();
+                return;
+            }
+
+            if (e.key === "Tab") {
+                const list = getFocusable(panel);
+                if (!list.length) {
+                    e.preventDefault();
+                    panel.focus();
+                    return;
+                }
+                const first = list[0],
+                    last = list[list.length - 1],
+                    active = document.activeElement;
+                if (e.shiftKey && active === first) {
+                    e.preventDefault();
+                    last.focus();
+                    return;
+                }
+                if (!e.shiftKey && active === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        };
+        document.addEventListener("keydown", onKeydown);
+
+        // Resize/media change: keep scroll-lock consistent (modern + legacy)
+        const mqlListener = () => setScrollLock(isOpen() && !mql.matches);
+
+        if (typeof mql.addEventListener === "function") {
+            // Modern browsers (incl. Safari 14+)
+            mql.addEventListener("change", mqlListener);
+        } else if ("onchange" in mql) {
+            // Older engines that support the property but not addEventListener
+            mql.onchange = mqlListener;
+        } else if (typeof mql.addListener === "function") {
+            // Last-resort legacy WebKit
+            mql.addListener(mqlListener);
+        }
+
+        // Category preview swap
+        cats.forEach((btn) => {
+            const swap = () => setActiveCat(btn);
+            btn.addEventListener("mouseenter", () => mql.matches && swap());
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                swap();
+            });
+        });
+
+        // Desktop accordion (scoped)
+        mmPanel.querySelectorAll(".mm-sub").forEach((btn) => {
+            if (btn._mmBound) return; // avoid double binding
+            btn._mmBound = true;
+
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const expanded = btn.getAttribute("aria-expanded") === "true";
+                if (expanded) {
+                    btn.setAttribute("aria-expanded", "false");
+                    btn.querySelector(".chev")?.classList.remove("rotate-90");
+                    // no classList add/remove on the pane - CSS handles it
+                } else {
+                    openSub(btn, mmPanel);
+                }
+            });
+        });
+
+        // Mobile accordion (scoped)
+        if (mmFloat) {
+            mmFloat.querySelectorAll(".mm-sub").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const expanded =
+                        btn.getAttribute("aria-expanded") === "true";
+                    if (expanded) {
+                        btn.setAttribute("aria-expanded", "false");
+                        btn.querySelector(".chev")?.classList.remove(
+                            "rotate-90"
+                        );
+                        getPane(btn)?.classList.add("hidden");
+                    } else {
+                        openSub(btn, mmFloat);
+                    }
+                });
+            });
+        }
+
+        // Initial active category (respects Liquid’s data-active)
+        const initActive = panel.querySelector(".mm-cat[data-active]");
+        if (initActive) setActiveCat(initActive);
+
+        // Rebind triggers when sections re-render in the theme editor
+        document.addEventListener("shopify:section:load", bindTriggers);
+
+        const detach = () => {
+            window.removeEventListener("resize", onResize);
+            document.removeEventListener("click", onDocClick);
+            document.removeEventListener("keydown", onKeydown);
+            backdrop.removeEventListener("click", close);
+
+            if (typeof mql.removeEventListener === "function") {
+                mql.removeEventListener("change", mqlListener);
+            } else if ("onchange" in mql) {
+                mql.onchange = null;
+            } else if (typeof mql.removeListener === "function") {
+                mql.removeListener(mqlListener);
+            }
+
+            if (headerRO) {
+                headerRO.disconnect();
+            }
+        };
+
+        document.addEventListener("shopify:section:unload", detach);
+    });
+})();

@@ -1,0 +1,65 @@
+{% form 'recover_customer_password' %}
+  {% if form.posted_successfully? %}
+    <script>
+      window.__recoverSuccess = true;
+    </script>
+    <div
+      class="recover-success"
+      role="dialog"
+      aria-labelledby="recover-success-title"
+      aria-modal="true">
+      <h2 id="recover-success-title" class="recover-title">Überprüfen Sie Ihre E‑Mails</h2>
+      <p class="recover-subtitle">Wir haben Ihnen einen Link zum Zurücksetzen des Passworts gesendet. Bitte überprüfen Sie Ihr Postfach (und ggf. auch den Spam‑Ordner).</p>
+      <div class="recover-actions">
+        <button
+          type="button"
+          class="btn-primary"
+          id="recover-success-ok">OK</button>
+      </div>
+    </div>
+  {% else %}
+    <div class="recover-form">
+      <p class="recover-title">Passwort zurücksetzen</p>
+      <p class="recover-subtitle">Bitte geben Sie Ihre E‑Mail‑Adresse ein, um Ihr Passwort zurückzusetzen</p>
+
+      {% if form.errors %}
+        <div class="errors">{{ form.errors | default_errors }}</div>
+      {% endif %}
+
+      <input
+        type="email"
+        name="email"
+        id="email"
+        required
+        placeholder="E‑Mail‑Adresse"
+        class="recover-input"
+        value="{{ form.email }}"
+        aria-describedby="recover-email-error">
+      <div
+        id="recover-email-error"
+        class="recover-error"
+        role="alert"
+        aria-live="polite">
+        <svg
+          width="16"
+          height="15"
+          viewBox="0 0 16 15"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M7.99992 4.83398V7.50065M7.99992 10.1673H8.00659M14.6666 7.50065C14.6666 11.1826 11.6818 14.1673 7.99992 14.1673C4.31802 14.1673 1.33325 11.1826 1.33325 7.50065C1.33325 3.81875 4.31802 0.833984 7.99992 0.833984C11.6818 0.833984 14.6666 3.81875 14.6666 7.50065Z"
+            stroke="#D23126"
+            stroke-width="1.33333"
+            stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        <span>Valid Email address is required</span>
+      </div>
+
+      <div class="recover-actions">
+        <a href="{{ routes.account_login_url }}" class="recover-cancel">Abbrechen</a>
+        <button type="submit" class="btn-primary">Passwort zurücksetzen</button>
+      </div>
+    </div>
+  {% endif %}
+{% endform %}

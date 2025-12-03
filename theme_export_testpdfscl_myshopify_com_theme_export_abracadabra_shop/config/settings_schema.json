@@ -1,0 +1,21 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "HUCKLEBERRY FRIENDS",
+    "theme_version": "1.0.0",
+    "theme_documentation_url": "https://shopify.com",
+    "theme_support_email": "support@shopify.com",
+    "theme_author": "HUCKLEBERRY FRIENDS"
+  },
+  {
+    "name": "API",
+    "settings": [
+      {
+        "type": "text",
+        "id": "api_host",
+        "label": "API Host",
+        "default": "https://api.app615423e.interbranche.com"
+      }
+    ]
+  }
+]

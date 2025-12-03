@@ -1,0 +1,108 @@
+.catalogs-page-wrapper {
+    max-width: 1640px;
+    margin: 0 auto;
+}
+.catalogs-title {
+    text-align: center;
+    margin: 20px 0 16px;
+    font-size: 48px;
+}
+
+.catalogs-grid {
+    display: grid;
+    /* fixed-width cards, max 4 per row within 1640px wrapper */
+    grid-template-columns: repeat(auto-fit, minmax(0, 380px));
+    justify-content: center;
+    background: #f3f3f3;
+    border: 1px solid #d5cfc4;
+    border-radius: 16px;
+    padding: 30px;
+    gap: 20px;
+}
+
+.catalog-card {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.catalog-card > img:first-child {
+    width: 100%;
+    height: 550px;
+    object-fit: cover;
+    display: block;
+}
+.catalog-card__body {
+    display: flex;
+    flex-direction: column;
+}
+.catalog-card__title {
+    font-weight: 600;
+    padding: 10px;
+    font-size: 32px;
+    word-wrap: break-word;
+}
+.catalog-card__actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+.catalog-card__actions .icon-btn {
+    width: 60px;
+    height: 60px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d5cfc4;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none;
+}
+.catalog-card__actions .icon-btn--disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+.catalog-card__actions .button {
+    flex: 1;
+}
+.catalogs-load-more {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0 8px;
+}
+
+@media (max-width: 768px) {
+    .catalogs-title {
+        font-size: 32px;
+    }
+    .catalogs-grid {
+        grid-template-columns: 1fr;
+        margin: 20px;
+        padding: 15px 15px;
+        gap: 30px;
+    }
+
+    /* divider between cards on mobile */
+    .catalog-card {
+        border-bottom: 1px solid #d5cfc4;
+        padding-bottom: 30px;
+    }
+    .catalog-card:last-child {
+        border-bottom: 0;
+    }
+
+    .catalog-card__title {
+        font-size: 16px;
+    }
+
+    .catalog-card > img:first-child {
+        height: auto;
+    }
+    .catalog-card__actions .icon-btn {
+        max-height: 50px;
+        min-width: 50px;
+    }
+    .catalog-card__title {
+        padding-left: 0px;
+    }
+}

@@ -1,0 +1,344 @@
+{%- comment -%}
+  Sticky discount popup snippet
+  
+  Usage:
+  {% render 'sticky-discount-popup', 
+    button_text: 'Get 10% OFF',
+    title: 'Subscribe now and get 10% discount on your first order!',
+    disclaimer: 'no spam. unsubscribe anytime. 10% discount code via email'
+  %}
+{%- endcomment -%}
+
+{%- liquid
+  assign button_text = button_text | default: 'get 10% OFF!'
+  assign popup_title = title | default: 'Subscribe now and get 10% discount on your 1st order!'
+  assign email_placeholder = email_placeholder | default: 'Enter your email address'
+  assign submit_text = submit_text | default: 'get my 10% OFF'
+  assign disclaimer_text = disclaimer | default: 'No spam. Unsubscribe anytime.'
+-%}
+
+<div class="sticky-discount-button" id="stickyDiscount">
+  <div class="discount-button" id="discountButton">
+    <div class="discount-text-lines">
+      <span class="line-1">get</span>
+      <span class="line-2">10%</span>
+      <span class="line-3">OFF!</span>
+    </div>
+  </div>
+  
+  <div class="discount-form" id="discountForm">
+    <div class="discount-form-content">
+      <button class="discount-close" id="discountClose" aria-label="{{ 'general.accessibility.close' | t }}">✕</button>
+      
+      <div class="discount-header">
+        <h3>{{ popup_title }}</h3>
+      </div>
+      
+      <form class="discount-email-form" id="discountEmailForm" action="{{ routes.cart_add_url }}" method="post">
+        <input 
+          type="email" 
+          class="discount-email-input" 
+          name="contact[email]"
+          placeholder="{{ email_placeholder }}"
+          required
+          aria-label="{{ 'customer.register.email' | t }}"
+        >
+        <input type="hidden" name="contact[tags]" value="newsletter,discount-10">
+        
+        <button type="submit" class="discount-submit-button">
+          {{ submit_text }}
+        </button>
+      </form>
+      
+      <p class="discount-disclaimer">
+        {{ disclaimer_text }}
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Sticky Discount Button Styles */
+.sticky-discount-button {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 10000;
+  font-family: inherit;
+}
+
+.discount-button {
+  background: #2c3e50;
+  color: white;
+  padding: 0.6rem 0.25rem;
+  border-radius: 4px 0 0 4px;
+  cursor: pointer;
+  box-shadow: -1px 0 6px rgba(44, 62, 80, 0.2);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 35px;
+  height: 90px;
+}
+
+.discount-button:hover {
+  transform: translateX(-3px);
+  box-shadow: -3px 0 12px rgba(44, 62, 80, 0.3);
+  background: #34495e;
+}
+
+.discount-text-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+}
+
+.line-1,
+.line-2,
+.line-3 {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  text-align: center;
+  line-height: 1;
+}
+
+.line-1 {
+  font-size: 0.55rem;
+}
+
+.line-2 {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.line-3 {
+  font-size: 0.55rem;
+}
+
+.discount-form {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  width: 260px;
+  background: rgb(var(--color-background, 255, 255, 255));
+  border-radius: 6px;
+  box-shadow: -2px 0 15px rgba(0, 0, 0, 0.1);
+  transform: translateX(15px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.discount-form.active {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+.discount-form-content {
+  padding: 1rem;
+  position: relative;
+}
+
+.discount-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: #999;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.discount-close:hover {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.discount-header h3 {
+  color: rgb(var(--color-foreground, 51, 51, 51));
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.discount-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.discount-email-input {
+  padding: 0.7rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+.discount-email-input:focus {
+  outline: none;
+  border-color: #2c3e50;
+  box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.1);
+}
+
+.discount-submit-button {
+  background: #2c3e50;
+  color: white;
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.discount-submit-button:hover {
+  background: #34495e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.2);
+}
+
+.discount-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.discount-disclaimer {
+  font-size: 0.65rem;
+  color: #888;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 768px) {
+  .sticky-discount-button {
+    right: 5px;
+  }
+  
+  .discount-form {
+    width: 220px;
+    right: 100%;
+  }
+  
+  .discount-form-content {
+    padding: 0.8rem;
+  }
+  
+  .discount-header h3 {
+    font-size: 0.9rem;
+  }
+  
+  .discount-button {
+    min-width: 30px;
+    height: 75px;
+    padding: 0.5rem 0.2rem;
+  }
+  
+  .line-1,
+  .line-3 {
+    font-size: 0.45rem;
+  }
+  
+  .line-2 {
+    font-size: 0.75rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const discountButton = document.getElementById('discountButton');
+  const discountForm = document.getElementById('discountForm');
+  const discountClose = document.getElementById('discountClose');
+  const discountEmailForm = document.getElementById('discountEmailForm');
+
+  if (!discountButton || !discountForm || !discountClose || !discountEmailForm) return;
+
+  discountButton.addEventListener('click', function() {
+    discountForm.classList.add('active');
+  });
+
+  discountClose.addEventListener('click', function() {
+    discountForm.classList.remove('active');
+  });
+
+  // Close form when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.sticky-discount-button')) {
+      discountForm.classList.remove('active');
+    }
+  });
+
+  // Handle form submission
+  discountEmailForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = this.querySelector('.discount-email-input').value;
+    
+    // Simple email validation
+    if (email && email.includes('@')) {
+      // Simulate form submission
+      const submitButton = this.querySelector('.discount-submit-button');
+      const originalText = submitButton.textContent;
+      
+      submitButton.textContent = '{{ "general.search.loading" | t | default: "Loading..." }}';
+      submitButton.disabled = true;
+      
+      // Here you would typically send the email to your newsletter service
+      fetch('/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(new FormData(this))
+      }).then(response => {
+        if (response.ok) {
+          submitButton.textContent = '{{ "customer.register.success" | t | default: "Success! Check your email" }}';
+          setTimeout(() => {
+            discountForm.classList.remove('active');
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+            this.reset();
+          }, 2000);
+        } else {
+          throw new Error('Network response was not ok');
+        }
+      }).catch(() => {
+        // Fallback for demo
+        submitButton.textContent = '{{ "customer.register.success" | t | default: "Success! Check your email" }}';
+        setTimeout(() => {
+          discountForm.classList.remove('active');
+          submitButton.textContent = originalText;
+          submitButton.disabled = false;
+          this.reset();
+        }, 2000);
+      });
+    } else {
+      alert('{{ "customer.register.email_error" | t | default: "Please enter a valid email address" }}');
+    }
+  });
+});
+</script> 

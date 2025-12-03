@@ -94,18 +94,22 @@ app.get("/storefront-config", async (req, res) => {
       return res.status(400).json({ error: "Missing shop or product parameter" });
     }
 
-    // Get all configurations for this shop that should show on storefront
+    // Get all configurations for this shop
+    // We'll filter by displayType instead of show_on_storefront
     const configs = await database.query(
-      `SELECT id, metafield_configs, show_on_storefront, storefront_position
+      `SELECT id, metafield_configs
        FROM configurations
-       WHERE shop = ? AND show_on_storefront = true
+       WHERE shop = ?
        ORDER BY priority DESC`,
       [shop]
     );
 
     if (!configs.rows || configs.rows.length === 0) {
+      console.log('[Storefront API] No configurations found for shop');
       return res.json({ metafields: [] });
     }
+
+    console.log(`[Storefront API] Found ${configs.rows.length} configurations for shop`);
 
     // For each configuration, check if it applies to this product
     const metafieldsToDisplay = [];
@@ -116,37 +120,43 @@ app.get("/storefront-config", async (req, res) => {
         ? JSON.parse(config.metafield_configs)
         : config.metafield_configs;
 
+      console.log(`[Storefront API] Config ${config.id} has ${metafieldConfigs.length} metafield configs`);
+
       // Get rules for this configuration
       const rules = await database.getConfigurationRules(config.id);
+
+      console.log(`[Storefront API] Config ${config.id} has ${rules.length} rules`);
 
       // Check if this configuration applies to the product
       const appliesToProduct = await checkIfConfigApplies(shop, product, rules);
 
+      console.log(`[Storefront API] Config ${config.id} applies to product ${product}:`, appliesToProduct);
+
       if (appliesToProduct) {
+        console.log(`[Storefront API] Config ${config.id} applies to product. Metafields in config:`, metafieldConfigs);
+
         // Add each metafield from this configuration
         for (const mf of metafieldConfigs) {
+          console.log(`[Storefront API] Processing metafield ${mf.namespace}.${mf.key} with displayType: ${mf.displayType}`);
+
+          // Only include metafields that have a display type set
+          if (!mf.displayType || mf.displayType === '') {
+            console.log(`[Storefront API] Skipping ${mf.namespace}.${mf.key} - no display type`);
+            continue;
+          }
+
           // Fetch the actual metafield value from Shopify
           const value = await fetchMetafieldValue(shop, product, mf.namespace, mf.key);
 
-          if (value) {
-            // Map Shopify metafield types to display types
-            let displayType = 'text'; // default
-            if (mf.type.includes('text')) {
-              displayType = 'text';
-            } else if (mf.type === 'file_reference') {
-              // Determine if it's an image or file based on the value (URL)
-              displayType = value.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i) ? 'image' : 'file';
-            } else if (mf.type === 'metaobject_reference') {
-              displayType = 'metaobject';
-            }
+          console.log(`[Storefront API] Fetched value for ${mf.namespace}.${mf.key}:`, value ? 'HAS VALUE' : 'NULL');
 
+          if (value) {
             metafieldsToDisplay.push({
               namespace: mf.namespace,
               key: mf.key,
-              displayType: displayType,
+              displayType: mf.displayType, // Use the displayType from config
               value: value,
               showOnStorefront: true,
-              position: config.storefront_position || 'after_price'
             });
           }
         }
@@ -342,6 +352,36 @@ async function fetchMetafieldValue(shop, productHandle, namespace, key) {
                 }
               }
             }
+            references(first: 50) {
+              nodes {
+                ... on MediaImage {
+                  image {
+                    url
+                  }
+                }
+                ... on GenericFile {
+                  url
+                }
+                ... on Metaobject {
+                  id
+                  fields {
+                    key
+                    value
+                    type
+                    reference {
+                      ... on MediaImage {
+                        image {
+                          url
+                        }
+                      }
+                      ... on GenericFile {
+                        url
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -372,6 +412,47 @@ async function fetchMetafieldValue(shop, productHandle, namespace, key) {
         }
         return metafield.value;
 
+      case 'list.file_reference':
+        // Return array of image/file URLs
+        if (metafield.references?.nodes && metafield.references.nodes.length > 0) {
+          const urls = metafield.references.nodes.map(node => {
+            if (node.image) {
+              return node.image.url;
+            } else if (node.url) {
+              return node.url;
+            }
+            return null;
+          }).filter(url => url !== null);
+          console.log(`[Storefront API] List file URLs for ${namespace}.${key}:`, urls);
+          return JSON.stringify(urls);
+        }
+        return metafield.value;
+
+      case 'list.metaobject_reference':
+        // Return array of structured metaobject data
+        if (metafield.references?.nodes && metafield.references.nodes.length > 0) {
+          const metaobjectArray = [];
+          for (const node of metafield.references.nodes) {
+            if (node.fields) {
+              const metaobjectData = {};
+              for (const field of node.fields) {
+                // Process nested references (images, files)
+                if (field.reference?.image) {
+                  metaobjectData[field.key] = field.reference.image.url;
+                } else if (field.reference?.url) {
+                  metaobjectData[field.key] = field.reference.url;
+                } else {
+                  metaobjectData[field.key] = field.value;
+                }
+              }
+              metaobjectArray.push(metaobjectData);
+            }
+          }
+          console.log(`[Storefront API] List metaobject data for ${namespace}.${key}:`, metaobjectArray);
+          return JSON.stringify(metaobjectArray);
+        }
+        return metafield.value;
+
       case 'metaobject_reference':
         // Return structured metaobject data
         if (metafield.reference?.fields) {
@@ -386,6 +467,7 @@ async function fetchMetafieldValue(shop, productHandle, namespace, key) {
               metaobjectData[field.key] = field.value;
             }
           }
+          console.log(`[Storefront API] Metaobject data for ${namespace}.${key}:`, metaobjectData);
           return JSON.stringify(metaobjectData);
         }
         return metafield.value;
@@ -402,44 +484,6 @@ async function fetchMetafieldValue(shop, productHandle, namespace, key) {
 
 app.use("/api/*", shopify.validateAuthenticatedSession());
 
-app.use(express.json());
-
-app.get("/api/products/count", async (_req, res) => {
-  const client = new shopify.api.clients.Graphql({
-    session: res.locals.shopify.session,
-  });
-
-  const countData = await client.request(`
-    query shopifyProductCount {
-      productsCount {
-        count
-      }
-    }
-  `);
-
-  res.status(200).send({ count: countData.data.productsCount.count });
-});
-
-app.post("/api/products", async (_req, res) => {
-  let status = 200;
-  let error = null;
-
-  try {
-    await productCreator(res.locals.shopify.session);
-  } catch (e) {
-    console.log(`Failed to process products/create: ${e.message}`);
-    status = 500;
-    error = e.message;
-  }
-  res.status(status).send({ success: status === 200, error });
-});
-
-// Configuration routes
-app.use("/api/configurations", configurationRoutes);
-
-// Resource routes (vendors, collections, categories, products)
-app.use("/api", resourceRoutes);
-
 // Configure multer for file uploads (store in memory)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -448,7 +492,7 @@ const upload = multer({
   },
 });
 
-// File upload endpoint
+// File upload endpoint - MUST come before express.json() to avoid parsing multipart as JSON
 app.post("/api/files/upload", upload.single("file"), async (req, res) => {
   try {
     console.log("File upload request received");
@@ -489,6 +533,44 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
     });
   }
 });
+
+app.use(express.json());
+
+app.get("/api/products/count", async (_req, res) => {
+  const client = new shopify.api.clients.Graphql({
+    session: res.locals.shopify.session,
+  });
+
+  const countData = await client.request(`
+    query shopifyProductCount {
+      productsCount {
+        count
+      }
+    }
+  `);
+
+  res.status(200).send({ count: countData.data.productsCount.count });
+});
+
+app.post("/api/products", async (_req, res) => {
+  let status = 200;
+  let error = null;
+
+  try {
+    await productCreator(res.locals.shopify.session);
+  } catch (e) {
+    console.log(`Failed to process products/create: ${e.message}`);
+    status = 500;
+    error = e.message;
+  }
+  res.status(status).send({ success: status === 200, error });
+});
+
+// Configuration routes
+app.use("/api/configurations", configurationRoutes);
+
+// Resource routes (vendors, collections, categories, products)
+app.use("/api", resourceRoutes);
 
 // Metafield definitions endpoint
 app.get("/api/metafield-definitions", async (_req, res) => {
@@ -552,6 +634,61 @@ app.get("/api/metaobject-definitions/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching metaobject definition:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Fetch a metaobject by ID
+app.get("/api/metaobjects/:id", async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const { id } = req.params;
+
+    const client = new shopify.api.clients.Graphql({ session });
+
+    const query = `
+      query GetMetaobject($id: ID!) {
+        metaobject(id: $id) {
+          id
+          type
+          handle
+          fields {
+            key
+            value
+            type
+            reference {
+              ... on MediaImage {
+                image {
+                  url
+                }
+              }
+              ... on GenericFile {
+                url
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await client.request(query, {
+      variables: { id: `gid://shopify/Metaobject/${id}` }
+    });
+
+    const metaobject = response.data.metaobject;
+
+    // Keep GIDs as-is for file references (needed for re-saving)
+    // The frontend already displays "File uploaded: gid://..." which is fine
+
+    res.json({
+      success: true,
+      metaobject,
+    });
+  } catch (error) {
+    console.error("Error fetching metaobject:", error);
     res.status(500).json({
       success: false,
       error: error.message,

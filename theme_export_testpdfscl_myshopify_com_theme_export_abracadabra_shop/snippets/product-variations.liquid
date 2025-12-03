@@ -1,0 +1,208 @@
+{% assign variations = product.metafields.variations.variations.value %}
+
+<section class="flex flex-col gap-[30px]" aria-labelledby="measurementsTitle">
+  {% for variation in variations %}
+  <details class="group" open="">
+    <summary
+      class="flex items-center justify-between select-none  {% if variation.attribute == 'Farbe' or variation.attribute == 'Color' %}cursor-default pointer-events-none{% else %}cursor-pointer{% endif %}">
+      <span class="text-[16px] 2xl:text-[18px] font-[700] text-brand">{{ variation.attribute }}</span>
+      {% if variation.attribute == 'Farbe' or variation.attribute == 'Color' %}
+      <!-- Desktop: show 'alle Varianten' link in the header -->
+      <span class="hidden md:flex items-center gap-3 pointer-events-auto">
+        <button
+          type="button"
+          class="text-[14px] underline underline-offset-2 decoration-gray-400 hover:decoration-gray-800"
+          data-open="farbe-variants"
+        >
+          Zeigen Sie alle {{ variation.options | size }} Varianten an
+        </button>
+      </span>
+      {% else %}
+      <svg class="h-[6px] w-[13px] md:h-[7px] md:w-[16px] text-gray-500 transition-transform group-open:rotate-180" viewBox="0 0 18 9" fill="none"
+        xmlns="http://www.w3.org/2000/svg">
+        <path d="M16.9201 0.999972L10.4001 7.51997C9.63008 8.28997 8.37008 8.28997 7.60008 7.51997L1.08008 0.999973"
+          stroke="#545A64" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      {% endif %}
+    </summary>
+
+    <div class="mt-[20px] flex flex-wrap gap-[13px] md:gap-[20px]">
+      {% assign options_sorted = variation.options | sort: 'value' %}
+      {% for option in options_sorted %}
+      {% assign is_selected = option.selected %}
+      {% assign is_disabled = false %}
+
+      {% unless is_selected %}
+      {% if option.product %}
+      {% assign linked = all_products[option.product] %}
+      {% if linked == null or linked.published_at == blank or linked.available == false %}
+      {% assign is_disabled = true %}
+      {% endif %}
+      {% else %}
+      {% if product.published_at == blank or product.available == false %}
+      {% assign is_disabled = true %}
+      {% endif %}
+      {% endif %}
+      {% endunless %}
+
+      {% if variation.settings.type == 'colorpicker' %}
+      <div role="radiogroup" class="flex flex-wrap gap-3">
+        {% if is_selected %}
+        <span
+          class="swatch relative w-[25px] h-[25px] rounded-full ring-2 ring-[#2E2E2D] ring-offset-2 ring-offset-white"
+          aria-checked="true" style="background-color: {% render 'color-code', color: option.value %};">
+        </span>
+
+        {% elsif is_disabled %}
+        <span class="swatch cursor-not-allowed relative w-[25px] h-[25px] rounded-full"
+          aria-disabled="true" aria-label="{{ option.value }}"
+          style="background-color: {% render 'color-code', color: option.value %};">
+        </span>
+
+        {% else %}
+        {% assign href_handle = option.product | default: product.handle %}
+        <a href="/products/{{ href_handle }}" data-pdp-variant-link
+          class="swatch relative w-[25px] h-[25px] rounded-full ring-1 ring-[#898989] ring-offset-2 ring-offset-white"
+          aria-label="{{ option.value }}" style="background-color: {% render 'color-code', color: option.value %};">
+        </a>
+        {% endif %}
+      </div>
+      {% else %}
+      {% if is_selected %}
+      <label>
+        <input type="radio" name="{{ variation.attribute }}" class="peer sr-only" checked>
+        <span class="
+                    inline-flex items-center h-9 rounded-full px-4 text-[16px] 2xl:text-[18px]
+                    bg-white border border-gray-300 peer-checked:bg-surface peer-checked:text-brand peer-checked:border-transparent
+                  ">
+          {{ option.value -}}
+          {{- variation.settings.suffix }}
+        </span>
+      </label>
+
+      {% elsif is_disabled %}
+      <span class="
+                  inline-flex cursor-not-allowed items-center h-9 rounded-full px-4
+                  text-[16px] 2xl:text-[18px] bg-white border border-gray-300
+                " aria-disabled="true">
+        {{ option.value -}}
+        {{- variation.settings.suffix }}
+      </span>
+
+      {% else %}
+      {% assign href_handle = option.product | default: product.handle %}
+      <a href="/products/{{ href_handle }}" data-pdp-variant-link>
+        <span class="
+                    inline-flex items-center h-9 rounded-full px-4
+                    text-[16px] 2xl:text-[18px] bg-white border border-gray-300
+                  ">
+          {{ option.value -}}
+          {{- variation.settings.suffix }}
+        </span>
+      </a>
+      {% endif %}
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if variation.attribute == 'Farbe' or variation.attribute == 'Color' %}
+    <!-- Mobile: show 'alle Varianten' link below the swatches -->
+    <div class="mt-[30px] md:hidden">
+      <button
+        type="button"
+        class="text-[14px] underline underline-offset-2 decoration-gray-400 hover:decoration-gray-800"
+        data-open="farbe-variants"
+      >
+        Zeigen Sie alle {{ variation.options | size }} Varianten an
+      </button>
+    </div>
+    {% endif %}
+    {% if variation.attribute == 'Farbe' or variation.attribute == 'Color' %}
+    <dialog id="farbeVariantsModal"
+      class="rounded-xl p-0 w-[calc(100vw-32px)] max-w-[980px] overflow-hidden backdrop:backdrop-blur-sm flex flex-col">
+      <div class="sticky top-0 z-10 bg-white px-5 py-4 relative flex items-center md:justify-center" data-modal-header>
+        <h3 class="text-[24px] md:text-[32px] font-[700] text-brand">Material auswählen</h3>
+        <button type="button" data-close-modal aria-label="Schließen"
+          class="absolute right-3 -translate-y-1/2 h-8 w-8 grid place-items-center hover:bg-gray-50 focus:outline-none focus-visible:outline-none">
+          ✕
+        </button>
+      </div>
+
+      <div class="min-h-0 overflow-y-auto px-5 md:px-7 mt-[18px] md:mt-[24px] pb-5" data-modal-body>
+        <section>
+          <p class="text-[18px] font-[700] mb-[20px]">Farbe</p>
+          <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+            {% for option in variation.options %}
+            {% assign href_handle = option.product | default: product.handle %}
+            <a href="/products/{{ href_handle }}" class="group">
+              <span class="block h-12 rounded border border-gray-300"
+                style="background-color: {% render 'color-code', color: option.value %};"></span>
+              <span class="mt-1 block text-center text-[14px] text-gray-600">{{ option.value }}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+    </dialog>
+    {% endif %}
+  </details>
+  {% endfor %}
+</section>
+
+<script>
+  (function () {
+    var modal = document.getElementById('farbeVariantsModal');
+    if (!modal || !modal.showModal) return;
+
+    document.addEventListener('click', function (e) {
+      var openBtn = e.target.closest('[data-open="farbe-variants"]');
+      if (openBtn) {
+        e.preventDefault();
+        // Remove any lingering focus ring on the trigger or summary
+        try { openBtn.blur(); } catch (e) { }
+        var summary = openBtn.closest('summary');
+        try { summary && summary.blur && summary.blur(); } catch (e) { }
+        modal.showModal();
+      }
+      if (e.target.closest('[data-close-modal]')) {
+        e.preventDefault();
+        modal.close();
+      }
+    });
+
+    modal.addEventListener('click', function (e) {
+      var rect = modal.getBoundingClientRect();
+      var inside =
+        e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+      if (!inside) modal.close();
+    });
+
+    var origShow = modal.showModal.bind(modal);
+    modal.showModal = function () {
+      document.documentElement.classList.add('overflow-hidden');
+      // Compute max-height for the body so dialog fits viewport on desktop and mobile
+      var header = modal.querySelector('[data-modal-header]');
+      var body = modal.querySelector('[data-modal-body]');
+      requestAnimationFrame(function () {
+        try {
+          var viewport = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+          var headerH = header ? header.getBoundingClientRect().height : 0;
+          var verticalPadding = 32; // 16px margins top/bottom from width calc
+          var maxBody = viewport - headerH - verticalPadding - 16; // extra breathing room
+          if (body) {
+            body.style.maxHeight = maxBody + 'px';
+          }
+        } catch (e) { }
+      });
+      origShow();
+    };
+    modal.addEventListener('close', function () {
+      document.documentElement.classList.remove('overflow-hidden');
+      try { modal.activeElement && modal.activeElement.blur && modal.activeElement.blur(); } catch (e) { }
+    });
+    modal.addEventListener('cancel', function () {
+      document.documentElement.classList.remove('overflow-hidden');
+      try { modal.activeElement && modal.activeElement.blur && modal.activeElement.blur(); } catch (e) { }
+    });
+  })();
+</script>

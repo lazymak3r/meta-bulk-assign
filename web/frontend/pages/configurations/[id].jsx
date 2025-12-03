@@ -33,8 +33,6 @@ export default function EditConfiguration() {
     const [isApplying, setIsApplying] = useState(false);
     const [error, setError] = useState(null);
     const [applyResult, setApplyResult] = useState(null);
-    const [showOnStorefront, setShowOnStorefront] = useState(false);
-    const [storefrontPosition, setStorefrontPosition] = useState("after_price");
 
     // Fetch configuration
     const {data: configData, isLoading: loadingConfig} = useQuery({
@@ -49,9 +47,28 @@ export default function EditConfiguration() {
         refetchOnWindowFocus: false,
     });
 
+    // Helper function to fetch metaobject data by GID
+    const fetchMetaobjectData = useCallback(async (gid) => {
+        try {
+            const metaobjectId = gid.split('/').pop();
+            const response = await fetch(`/api/metaobjects/${metaobjectId}`);
+            if (!response.ok) {
+                console.error('Failed to fetch metaobject:', gid);
+                return null;
+            }
+            const data = await response.json();
+            return data.metaobject;
+        } catch (error) {
+            console.error('Error fetching metaobject:', error);
+            return null;
+        }
+    }, [fetch]);
+
     // Initialize form when data loads
     useEffect(() => {
-        if (configData) {
+        async function loadConfiguration() {
+            if (!configData) return;
+
             setName(configData.name || "");
 
             // Convert snake_case to camelCase for frontend compatibility
@@ -67,11 +84,69 @@ export default function EditConfiguration() {
             }));
             setRules(convertedRules);
 
-            setMetafieldConfigs(configData.metafield_configs || []);
-            setShowOnStorefront(configData.show_on_storefront || false);
-            setStorefrontPosition(configData.storefront_position || "after_price");
+            // Convert metafield configs - if values are GIDs, fetch the actual metaobject data
+            const processedConfigs = await Promise.all(
+                (configData.metafield_configs || []).map(async (config) => {
+                    // For list.metaobject_reference, convert array of GIDs to array of field values
+                    if (config.type === 'list.metaobject_reference' && Array.isArray(config.value)) {
+                        const isGidArray = config.value.every(v =>
+                            typeof v === 'string' && v.startsWith('gid://shopify/Metaobject/')
+                        );
+
+                        if (isGidArray) {
+                            // Fetch each metaobject and convert to field values
+                            const fieldValuesArray = await Promise.all(
+                                config.value.map(async (gid) => {
+                                    const metaobject = await fetchMetaobjectData(gid);
+                                    if (!metaobject || !metaobject.fields) {
+                                        return {};
+                                    }
+
+                                    // Convert metaobject fields array to object
+                                    const fieldValues = {};
+                                    metaobject.fields.forEach(field => {
+                                        fieldValues[field.key] = field.value;
+                                    });
+                                    return fieldValues;
+                                })
+                            );
+
+                            return {
+                                ...config,
+                                value: fieldValuesArray.filter(fv => Object.keys(fv).length > 0)
+                            };
+                        }
+                    }
+
+                    // For single metaobject_reference, convert GID to field values
+                    if (config.type === 'metaobject_reference' &&
+                        typeof config.value === 'string' &&
+                        config.value.startsWith('gid://shopify/Metaobject/')) {
+
+                        const metaobject = await fetchMetaobjectData(config.value);
+                        if (metaobject && metaobject.fields) {
+                            const fieldValues = {};
+                            metaobject.fields.forEach(field => {
+                                fieldValues[field.key] = field.value;
+                            });
+
+                            return {
+                                ...config,
+                                value: fieldValues
+                            };
+                        }
+                    }
+
+                    // Return as-is if not a metaobject or already has field values
+                    return config;
+                })
+            );
+
+            setMetafieldConfigs(processedConfigs);
         }
-    }, [configData]);
+
+        loadConfiguration();
+    }, [configData, fetchMetaobjectData]);
 
     // Fetch vendors, collections, categories, metafield definitions
     const {data: vendorsData} = useQuery({
@@ -153,8 +228,6 @@ export default function EditConfiguration() {
                     name: name || null,
                     metafieldConfigs,
                     rules,
-                    showOnStorefront,
-                    storefrontPosition,
                 }),
             });
 
@@ -173,7 +246,7 @@ export default function EditConfiguration() {
         } finally {
             setIsSaving(false);
         }
-    }, [id, name, metafieldConfigs, rules, showOnStorefront, storefrontPosition, fetch, navigate, queryClient]);
+    }, [id, name, metafieldConfigs, rules, fetch, navigate, queryClient]);
 
     const handleApply = useCallback(async () => {
         setIsApplying(true);
@@ -279,33 +352,6 @@ export default function EditConfiguration() {
                                         helpText="If left empty, a name will be auto-generated based on your rules"
                                         autoComplete="off"
                                     />
-                                </VerticalStack>
-                            </LegacyCard>
-                        </Layout.Section>
-
-                        <Layout.Section>
-                            <LegacyCard sectioned title="Storefront Display">
-                                <VerticalStack gap="4">
-                                    <Checkbox
-                                        label="Show on storefront"
-                                        checked={showOnStorefront}
-                                        onChange={setShowOnStorefront}
-                                        helpText="Automatically display these metafields on product pages"
-                                    />
-                                    {showOnStorefront && (
-                                        <Select
-                                            label="Display position"
-                                            options={[
-                                                {label: "After price", value: "after_price"},
-                                                {label: "Before add to cart button", value: "before_cart"},
-                                                {label: "After product description", value: "after_description"},
-                                                {label: "After product title", value: "after_title"},
-                                            ]}
-                                            value={storefrontPosition}
-                                            onChange={setStorefrontPosition}
-                                            helpText="Where to display the metafields on the product page"
-                                        />
-                                    )}
                                 </VerticalStack>
                             </LegacyCard>
                         </Layout.Section>

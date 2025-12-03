@@ -1,0 +1,241 @@
+.search-dropdown {
+    position: absolute;
+    inset-inline: 0;
+    top: calc(99%);
+    background: #fff;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    max-height: 70vh;
+    overflow: auto;
+    z-index: 60;
+}
+
+.search-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    color: #111827;
+    font-size: 18px;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+.search-close:active {
+    transform: scale(0.98);
+}
+.search-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+}
+
+/* Section titles */
+.search-section-title {
+    margin: 0 0 10px;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: #111827;
+}
+
+/* Category chips */
+.category-suggestion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    margin: 4px 6px 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px; /* pill shape */
+    background-color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.08s;
+}
+
+.category-suggestion:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.category-suggestion:active {
+    transform: scale(0.97);
+}
+
+.category-suggestion:focus {
+    outline: none;
+    border-color: #4f46e5; /* accent focus */
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+}
+
+/* Category chips */
+#search-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 10px;
+}
+.search-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #fff;
+    color: #111827;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.15s, border-color 0.15s, transform 0.06s;
+}
+.search-chip:hover {
+    background: #f8fafc;
+    border-color: #e5e7eb;
+}
+.search-chip:active {
+    transform: scale(0.98);
+}
+
+/* Product list */
+#search-products {
+    display: grid;
+    gap: 12px;
+}
+
+.search-row {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    background: #f5f5f5;
+    transition: background-color 0.15s, transform 0.06s;
+}
+.search-row:hover {
+    background: #e5e5e5;
+}
+.search-row:active {
+    transform: scale(0.996);
+}
+
+.search-row__thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #f3f4f6;
+}
+
+.search-row__text {
+    min-width: 0;
+}
+.search-row__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.search-row__meta {
+    margin-top: 2px;
+    font-size: 13px;
+    color: #6b7280;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.search-row__price {
+    font-size: 14px;
+    font-weight: 800;
+    color: #111827;
+    white-space: nowrap;
+    margin-left: 8px;
+}
+
+/* Section spacing */
+.search-section + .search-section {
+    margin-top: 18px;
+}
+
+/* No results */
+.search-no-results {
+    text-align: center;
+    color: #6b7280;
+    padding: 24px 8px;
+}
+.no-results-icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+/* Scrollbar mild styling (optional) */
+.search-dropdown::-webkit-scrollbar {
+    width: 10px;
+}
+.search-dropdown::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+
+/* Each product row */
+.product-suggestion {
+    display: grid;
+    grid-template-columns: 64px 1fr auto; /* thumb | text | price */
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: #f5f5f5;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s, transform 0.06s;
+    /* optional subtle border: */
+    /* border: 1px solid #f1f1f1; */
+}
+.product-suggestion:hover {
+    background: #e5e5e5;
+}
+.product-suggestion:active {
+    transform: scale(0.996);
+}
+
+/* Thumbnail */
+.product-suggestion-image {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+/* Text */
+.product-suggestion-info {
+    min-width: 0;
+}
+.product-suggestion-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* If you add a subtitle/meta later, style similarly:
+.product-suggestion-meta{ margin-top:2px;font-size:13px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+*/
+
+/* Price on the right */
+.product-suggestion-price {
+    font-size: 14px;
+    font-weight: 400;
+    color: #111827;
+    white-space: nowrap;
+}

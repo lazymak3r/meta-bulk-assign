@@ -1,0 +1,112 @@
+/* Delivery Estimator component */
+
+.delivery-estimator {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.delivery-link {
+    display: inline-flex;
+}
+.delivery-link .sr-caret {
+    margin-left: 0 !important;
+}
+.delivery-estimator .sr-promo-link {
+    position: relative;
+    top: 0;
+    margin: 0;
+    line-height: 1;
+}
+
+/* Caret rotation (self-contained) */
+.delivery-estimator .sr-promo-link .sr-caret img {
+    transition: transform 0.2s ease;
+}
+.delivery-estimator .sr-promo-link[aria-expanded="true"] .sr-caret img {
+    transform: rotate(180deg);
+}
+
+/* Inputs and button (scoped to component) */
+#product-detail-delivery-time .delivery-estimator .btn-primary-cta {
+    width: 50%;
+    padding-left: 8px;
+    padding-right: 8px;
+    height: 60px;
+}
+#product-detail-delivery-time .delivery-estimator .discount-form {
+    justify-content: space-between;
+}
+
+.delivery-estimator .btn-primary-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    line-height: 1;
+    font-size: 20px;
+    height: 60px;
+    border: none;
+    background: #5f6f67;
+    color: #fff;
+    font-weight: 400;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.5s ease, border-color 0.5s ease;
+}
+.delivery-estimator .btn-primary-cta:hover {
+    background: #4e5c55;
+}
+
+#delivery-form.discount-form {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    overflow: hidden;
+    align-items: center;
+    margin: 0;
+    max-width: 600px;
+    gap: 8px;
+}
+#delivery-form.collapsed {
+    display: none; /* ensure hidden when collapsed on pages without cart.css */
+}
+
+@media (max-width: 1372px) {
+    #delivery-form.discount-form .btn-primary-cta {
+        width: 256px;
+        flex: 0 0 auto;
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Icon size on mobile */
+    .delivery-link > span > img {
+        height: 32px !important;
+        width: auto;
+    }
+
+    /* Stack controls full-width on mobile */
+    #delivery-form.discount-form {
+        flex-direction: column;
+        gap: 8px;
+        width: 100% !important;
+        max-width: 100%;
+    }
+    #delivery-form .discount-input,
+    #delivery-form .btn-primary-cta {
+        width: 100% !important;
+    }
+
+    .delivery-estimator .discount-input {
+        height: 52px !important;
+        font-size: 14px !important;
+    }
+}
+
+/* Specific styling for delivery-estimator in product-detail-delivery-time section */
+#product-detail-delivery-time .delivery-estimator {
+    width: 100%;
+    flex: 1 1 auto;
+}

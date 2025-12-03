@@ -1,0 +1,63 @@
+{% assign products_with_videos = "" %}
+
+{% for product in collection.products limit: 30 %}
+    {% for video in product.metafields.videos %}
+        {% if products_with_videos != blank %}
+          {% assign products_with_videos = products_with_videos | append: "," | append: video[1] %}
+        {% else %}
+          {% assign products_with_videos = video[1] %}
+        {% endif %}
+  {% endfor %}
+{% endfor %}
+
+{% assign products_with_videos = products_with_videos | split: "," %}
+
+{% if products_with_videos.size > 0 %}
+    {% assign random_index = "now" | date: "%N" | modulo: products_with_videos.size %}
+
+    {% assign random_video = products_with_videos[random_index] %}
+    {% assign random_video_id = random_video | split: '/' | last %}
+
+
+<section class="mt-[50px] mb-[50px] md:mt-[100px] md:mb-[100px]">
+                <div class="">
+                    <div class="relative w-full aspect-video overflow-hidden shadow-soft">
+                        <!-- Poster image (replace with your new PM asset) -->
+                        <img style="width: 100%;" id="category-video-cover" />
+                        <!-- Play button -->
+                        <button id="videoPlay" class="absolute inset-0 m-auto w-16 h-16 md:w-20 md:h-20 grid place-items-center rounded-full bg-white/90 hover:bg-white transition shadow" aria-label="Play video">
+                            <svg viewBox="0 0 24 24" class="w-7 h-7">
+                                <path fill="currentColor" d="M8 5v14l11-7z"></path>
+                            </svg>
+                        </button>
+
+                        <iframe
+                          id="videoEl"
+                          class="absolute inset-0 w-full h-full hidden"
+                          src="{{  random_video }}"
+                          title={{ collection.title }}
+                          frameborder="0"
+                          allowfullscreen
+                        ></iframe>
+                    </div>
+                </div>
+            </section>
+
+            {% endif %}
+
+
+            <script type="text/javascript">
+                window.addEventListener('load', () => {
+                    loadYoutubeThumbnail('category-video-cover', '{{ random_video_id }}');
+
+                    const btn = document.getElementById('videoPlay');
+                    const video = document.getElementById('videoEl');
+                    btn?.addEventListener('click', () => {
+                      if (!video) return;
+                      btn.classList.add('hidden');
+                      video.classList.remove('hidden');
+                      video.play?.();
+                    });
+                })
+
+            </script>

@@ -177,12 +177,12 @@ class Database {
     return config;
   }
 
-  async updateConfiguration(id, name, type, metafieldConfigs, showOnStorefront, storefrontPosition) {
+  async updateConfiguration(id, name, type, metafieldConfigs) {
     await this.query(
       `UPDATE configurations
-       SET name = ?, type = ?, metafield_configs = ?, show_on_storefront = ?, storefront_position = ?, updated_at = CURRENT_TIMESTAMP
+       SET name = ?, type = ?, metafield_configs = ?, updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
-      [name, type, JSON.stringify(metafieldConfigs), showOnStorefront, storefrontPosition, id]
+      [name, type, JSON.stringify(metafieldConfigs), id]
     );
   }
 

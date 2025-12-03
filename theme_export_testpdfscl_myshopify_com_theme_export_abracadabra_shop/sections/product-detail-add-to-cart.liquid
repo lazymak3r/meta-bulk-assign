@@ -1,0 +1,226 @@
+<!-- Kitchen collection UVP flag -->
+{%- assign is_kuche = false -%}
+{%- if collection and collection.handle -%}
+  {%- assign coll_handle_down = collection.handle | downcase -%}
+  {%- if coll_handle_down contains 'kuche' -%}
+    {%- assign is_kuche = true -%}
+  {%- endif -%}
+{%- endif -%}
+
+<!-- PRICE + CTAs (Figma-matched) -->
+<div
+  class="xl:mt-[60px] flex flex-col flex-wrap border-b pb-[25px] justify-between gap-[18px] md:flex-row md:items-center md:gap-[13px]"
+>
+  <!-- Price -->
+  <p
+    class="text-[32px] 2xl:text-[48px] whitespace-nowrap leading-[1.5] font-[400] text-brand md:min-w-[140px]"
+  >
+    {%- if is_kuche -%}
+      <span class="text-[32px] 2xl:text-[48px] font-[400] mr-1">UVP</span>
+    {%- endif -%}
+    <span
+      class="text-[18px] 2xl:text-[20px] font-[400]"
+      >ab</span
+    >
+    {% render 'formatted-price', price: product.price %}
+  </p>
+
+  <!-- Qty + Buttons -->
+  <div
+    class="flex items-center gap-[20px]"
+  >
+    <!-- Add to Favorite -->
+    <button
+      type="button"
+      class="favorite-btn pdp-favorite-btn h-[60px] w-[50px] md:w-fit px-5 md:px-7 border border-gray-300 text-[20px] hover:bg-gray-50 transition-colors inline-flex items-center gap-2"
+      aria-label="Zu Favoriten"
+      data-product-id="{{ product.handle }}"
+    >
+      Zu Favoriten
+      <!-- Heart icon -->
+      <svg width="24" height="21" viewBox="0 0 24 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.432 19.6539C12.058 19.782 11.442 19.782 11.068 19.6539C7.878 18.5972 0.75 14.1888 0.75 6.71685C0.75 3.41854 3.489 0.75 6.866 0.75C8.868 0.75 10.639 1.68933 11.75 3.14101C12.861 1.68933 14.643 0.75 16.634 0.75C20.011 0.75 22.75 3.41854 22.75 6.71685C22.75 14.1888 15.622 18.5972 12.432 19.6539Z" stroke="#647167" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      
+    </button>
+
+    <!-- Add to Cart -->
+    <form
+      method="post"
+      action="{{ routes.cart_add_url }}"
+      accept-charset="UTF-8"
+      class="js-product-form flex-1 w-full"
+      id="pdpAddToCart"
+      data-custom-atc="1"
+    >
+      <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+      <input type="hidden" name="quantity" value="1">
+
+      <button
+        type="submit"
+        class="btn-primary w-full js-atc px-4 sm:px-5 md:px-5 flex gap-[10px] h-[60px] items-center justify-center"
+        {% unless product.available %}
+          disabled
+        {% endunless %}
+      >
+        <span class="js-atc-label text-[16px] md:text-[20px]">
+          {% if product.available %}In den Warenkorb{% else %}Nicht verfügbar{% endif %}
+        </span>
+        <svg width="24" height="23" viewBox="0 0 24 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.1776 17.2706C16.6362 17.2691 15.3854 18.5174 15.3839 20.0588C15.3824 21.6002 16.6308 22.851 18.1722 22.8525C19.7136 22.854 20.9643 21.6056 20.9658 20.0642C20.9658 20.0633 20.9658 20.0624 20.9658 20.0616C20.9644 18.5218 19.7173 17.2736 18.1776 17.2706Z" fill="white"/>
+          <path d="M23.1278 3.90597C23.061 3.89304 22.9932 3.88647 22.9251 3.88636H5.93181L5.66267 2.08582C5.49499 0.890048 4.47216 0.000367962 3.26466 0H1.07655C0.481978 0 0 0.481978 0 1.07655C0 1.67113 0.481978 2.1531 1.07655 2.1531H3.26735C3.40423 2.1521 3.52008 2.25403 3.53648 2.38997L5.19436 13.7529C5.42166 15.1968 6.66363 16.262 8.12529 16.2667H19.3241C20.7313 16.2685 21.9454 15.2795 22.2281 13.901L23.9802 5.16745C24.0932 4.5837 23.7115 4.01893 23.1278 3.90597Z" fill="white"/>
+          <path d="M11.3404 19.942C11.2749 18.4458 10.0401 17.268 8.54245 17.2732C7.00232 17.3355 5.80423 18.6345 5.86647 20.1746C5.92619 21.6524 7.12832 22.827 8.60705 22.8525H8.67434C10.2143 22.785 11.4079 21.4819 11.3404 19.942Z" fill="white"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const form = document.getElementById('pdpAddToCart');
+    if (!form) return;
+
+    const btn = form.querySelector('button[type="submit"]');
+    const label = btn ? btn.querySelector('.js-atc-label') : null;
+    let submitting = false;
+
+    // Resolve the nearest section id to scope to the right recommendations block
+    function getNearestSectionId(node) {
+      const wrapper = node.closest('[id^="shopify-section-"]');
+      if (!wrapper) return null;
+      return wrapper.id.replace('shopify-section-', '');
+    }
+
+    function collectItems() {
+      const baseId = form.querySelector('input[name="id"]').value;
+      const qty = parseInt(form.querySelector('input[name="quantity"]').value || '1', 10);
+
+      // Find the most relevant recommendations container
+      const allContainers = Array.from(document.querySelectorAll('[data-addons-container]'));
+      let addonsRoot = null;
+
+      if (allContainers.length === 1) {
+        addonsRoot = allContainers[0];
+      } else if (allContainers.length > 1) {
+        const sectionId = getNearestSectionId(form);
+        addonsRoot = allContainers.find((c) => c.getAttribute('data-section-id') === sectionId) || null;
+        if (!addonsRoot) {
+          // pick the visually closest container (vertical distance)
+          const formTop = form.getBoundingClientRect().top;
+          addonsRoot =
+            allContainers
+              .map((el) => ({ el, d: Math.abs(el.getBoundingClientRect().top - formTop) }))
+              .sort((a, b) => a.d - b.d)[0]?.el || null;
+        }
+      }
+
+      const selectedAddonIds = addonsRoot
+        ? Array.from(addonsRoot.querySelectorAll('.addon-checkbox:checked')).map((cb) => String(cb.value))
+        : [];
+
+      // Build items with deduplication (id -> quantity)
+      const idToQty = new Map();
+      const push = (id, q) => {
+        const key = String(id);
+        const prev = idToQty.get(key) || 0;
+        idToQty.set(key, prev + Math.max(1, q));
+      };
+      push(baseId, qty);
+      selectedAddonIds.forEach((id) => push(id, 1));
+
+      return Array.from(idToQty.entries()).map(([id, quantity]) => ({ id, quantity }));
+    }
+
+    async function addSequentially(items) {
+      // Use theme cart API if available to keep header/sections in sync
+      if (window.ShopCart && typeof window.ShopCart.add === 'function') {
+        for (const it of items) {
+          await window.ShopCart.add(it.id, it.quantity || 1).catch(() => {});
+        }
+        if (window.ShopCart.refresh) await window.ShopCart.refresh();
+        return true;
+      }
+
+      // Fallback: basic POSTs without sections swapping
+      for (const it of items) {
+        try {
+          await fetch('/cart/add.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ id: it.id, quantity: it.quantity || 1 }),
+          });
+        } catch (_) {}
+      }
+      return true;
+    }
+
+    async function addAll(items) {
+      // Try multi-add first
+      try {
+        const res = await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            items,
+            sections_url: location.pathname + location.search,
+          }),
+        });
+        if (!res.ok) throw new Error('multi-add failed');
+        // Even if sections are not returned, trigger a soft refresh if available
+        if (window.ShopCart && window.ShopCart.refresh) {
+          await window.ShopCart.refresh();
+        }
+        return true;
+      } catch (e) {
+        // Fallback to sequential adds
+        return addSequentially(items);
+      }
+    }
+
+    // Prevent double-binding if this snippet is re-rendered by Shopify sections
+    if (form.dataset.atcBound === '1') return;
+    form.dataset.atcBound = '1';
+    // Signal to global handlers that this form uses a custom flow
+    form.dataset.customAtc = '1';
+
+    form.addEventListener('submit', async (e) => {
+      // Stop native submit and any other bubbling handlers
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+      if (submitting) return; // guard double-click
+      submitting = true;
+
+      const items = collectItems();
+      // Disable UI while adding
+      if (btn) btn.disabled = true;
+      if (label) label.dataset.label = label.textContent;
+      if (label) label.textContent = 'Wird hinzugefügt…';
+
+      try {
+        await addAll(items);
+        // Notify global listeners to refresh cart data/UI (badge, mini-cart contents)
+        try {
+          document.dispatchEvent(new CustomEvent('cart:updated'));
+        } catch (_) {}
+        if (window.refreshCartCount) window.refreshCartCount();
+        if (window.showMiniCartPopover) window.showMiniCartPopover();
+      } finally {
+        if (btn) btn.disabled = false;
+        if (label && label.dataset.label) label.textContent = label.dataset.label;
+        submitting = false;
+      }
+    });
+  })();
+</script>

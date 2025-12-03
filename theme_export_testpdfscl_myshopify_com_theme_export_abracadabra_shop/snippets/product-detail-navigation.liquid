@@ -1,0 +1,159 @@
+{%- assign ctx_collection = collection -%}
+
+{%- comment -%} Optional fallback if PDP opened without collection context {%- endcomment -%}
+{%- if ctx_collection == null and product.metafields.custom.primary_collection -%}
+  {%- assign ctx_collection = product.metafields.custom.primary_collection
+    | default: collections[product.metafields.custom.primary_collection.value]
+  -%}
+{%- endif -%}
+
+{%- if ctx_collection -%}
+  {%- assign prev = ctx_collection.previous_product -%}
+  {%- assign nxt = ctx_collection.next_product -%}
+{%- endif -%}
+
+{%- assign prev_url = null -%}
+{%- if prev -%}
+  {%- assign prev_url = prev.url -%}
+  {%- unless prev_url contains '/collections/' -%}
+    {%- assign prev_url = prev.url | within: ctx_collection -%}
+  {%- endunless -%}
+{%- endif -%}
+
+{%- assign next_url = null -%}
+{%- if nxt -%}
+  {%- assign next_url = nxt.url -%}
+  {%- unless next_url contains '/collections/' -%}
+    {%- assign next_url = nxt.url | within: ctx_collection -%}
+  {%- endunless -%}
+{%- endif -%}
+
+{%- assign collection_url = null -%}
+{%- if ctx_collection -%}
+  {%- assign collection_url = ctx_collection.url -%}
+{%- endif -%}
+
+{% style %}
+  /* Make all three grid children shrink within their columns and truncate text */
+  #overviewPrev,
+  #overview,
+  #overviewNext {
+    display: inline-flex;
+    flex-flow: row;
+    color: #2e2e2d;
+    justify-content: center;
+    align-items: center;
+    white-space: nowrap;
+    min-width: 0; /* allow shrinking inside CSS grid columns */
+    overflow: hidden; /* prevent overflow outside the grid */
+    text-overflow: ellipsis;
+  }
+  #overview {
+    font-size: 20px;
+    font-weight: 400;
+    margin: 0 12px;
+  }
+  #overviewPrev svg,
+  #overviewNext svg {
+    width: 30px;
+    height: auto;
+    margin-top: -2px;
+  }
+
+  #overviewPrev:before {
+    content: attr(aria-label);
+    font-size: 16px;
+    font-weight: 300;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #overviewNext:after {
+    content: attr(aria-label);
+    font-size: 16px;
+    font-weight: 300;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+{% endstyle %}
+
+<!-- prev -->
+<button
+  id="overviewPrev"
+  aria-label="{{ 'products.navigation.previous' | t }}"
+  class="
+    justify-self-start text-gray-500 hover:text-gray-800 w-auto 
+    {% unless prev_url %}opacity-40 pointer-events-none{% endunless %}
+  "
+  {% if prev_url %}
+    data-url="{{ prev_url }}"
+  {% endif %}
+>
+  <svg
+    class="h-6 w-6"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+  >
+    <path
+        d="M15 6 9 12l6 6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+  </svg>
+</button>
+
+<!-- back to collection -->
+<button
+  id="overview"
+  aria-label="{{ 'products.navigation.back' | t }}"
+  class="
+    justify-self-center
+    {% unless collection_url %}opacity-40 pointer-events-none{% endunless %}
+  "
+  {% if collection_url %}
+    data-url="{{ collection_url }}"
+  {% endif %}
+>
+  {{ 'products.navigation.back' | t }}
+</button>
+
+<!-- next -->
+<button
+  id="overviewNext"
+  aria-label="{{ 'products.navigation.next' | t }}"
+  class="
+    justify-self-end text-gray-500 hover:text-gray-800 w-auto 
+    {% unless next_url %}opacity-40 pointer-events-none{% endunless %}
+  "
+  {% if next_url %}
+    data-url="{{ next_url }}"
+  {% endif %}
+>
+  <svg
+    class="h-6 w-6"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+  >
+    <path
+        d="m9 6 6 6-6 6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    />
+  </svg>
+</button>
+
+<script>
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('#overviewPrev,#overview,#overviewNext');
+    if (!btn) return;
+    const url = btn.dataset.url;
+    if (url) location.href = url;
+  });
+</script>

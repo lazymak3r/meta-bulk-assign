@@ -1,0 +1,147 @@
+{% assign recommendations = product.metafields.recommendations.products.value %}
+
+{% if recommendations.count > 0 %}
+<div aria-labelledby="completedWithTitle" data-addons-container data-section-id="{{ section.id }}" class="mt-[30px]">
+  <legend id="completedWithTitle" class="text-[16px] md:text-[24px] font-[700] text-[#2e2e2d]">
+    {{ 'sections.recommendations.title' | t | default: 'Unsere Empfehlungen' }}
+  </legend>
+
+  <!-- list -->
+  <ul class="flex flex-col gap-[16px] md:gap-[22px] mt-[16px] md:pr-6 lg:pr-8 md:mb-6">
+    {% for recommendation in recommendations %}
+    {% assign v = recommendation.selected_or_first_available_variant %}
+    {% assign row_id = 'addon-' | append: section.id | append: '-' | append: forloop.index %}
+    <li>
+      <label for="{{ row_id }}"
+        class="group flex items-center gap-4 cursor-pointer addon-row {% unless v.available %}opacity-50 cursor-not-allowed{% endunless %}"
+        data-price="{{ v.price }}">
+        <!-- checkbox (kept visually hidden) -->
+        <input id="{{ row_id }}" type="checkbox" name="addons[]" value="{{ v.id }}" class="peer sr-only addon-checkbox"
+          {% unless v.available %} disabled aria-disabled="true" {% endunless %}>
+
+        <!-- custom tick -->
+        <span class="
+                shrink-0 inline-grid w-[14px] h-[14px] md:w-[16px] md:h-[16px] place-items-center rounded-[2px] bg-white transition
+                ring-1 ring-[#7B7B7B]
+                peer-checked:bg-brand peer-checked:ring-brand
+                peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40
+                peer-checked:[&>svg]:opacity-100
+              ">
+          <svg class="w-3 h-3 text-white opacity-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="3">
+            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+
+        <!-- thumb -->
+        <a href="/products/{{ recommendation.handle }}" class="addon-link">
+          <img src="{{ recommendation.featured_image | img_url: '400x400' }}" alt="{{ recommendation.title }}"
+            class="!max-w-[40px] !max-h-[30px] md:!max-w-[68px] md:!max-h-[56px] md:!h-[56px] h-auto w-auto aspect-[16/9] transition-colors peer-checked:bg-surface peer-checked:text-brand peer-checked:border-transparent focus-visible:ring-2 focus-visible:ring-brand/40 order">
+        </a>
+
+        <div class="flex-1 min-w-0 gap-[4px] addon-desc">
+          <p class="addon-title font-[400] text-[14px] md:text-[18px] text-wrap">
+            <a href="/products/{{ recommendation.handle }}" class="addon-link">{{ recommendation.title }}</a>
+          </p>
+          <p class="text-[14px] font-light md:text-[18px]">Empfohlene Menge: 1</p>
+        </div>
+
+        <div class="text-left">
+          <span class="block text-[14px] md:text-[18px] font-[400] tabular-nums text-[#2E2E2D]">
+            +{% render 'formatted-price', price: v.price %}
+            {% unless v.available -%}
+            <span class="ml-2 text-[12px] text-gray-500">(Ausverkauft)</span>
+            {%- endunless %}
+          </span>
+          <span class="block text-[14px] md:text-[18px] text-[#2E2E2D]">{% render 'formatted-price', price: v.price
+            %}/Stück</span>
+        </div>
+      </label>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <!-- totals (you can style/move this where you like) -->
+  {% assign base_variant = product.selected_or_first_available_variant %}
+  <div id="addons-totals" class="mt-4 p-4 rounded border border-gray-200 bg-gray-50"
+    data-base-price="{{ base_variant.price }}">
+    <div class="flex justify-between text-[16px] md:text-[20px]">
+      <span>{{ 'sections.completed_with.addons_sum' | t | default: 'Summe der Zusatzprodukte' }}</span>
+      <strong id="addons-sum">{{ 0 | money }}</strong>
+    </div>
+    <div class="flex justify-between text-[16px] md:text-[20px] font-semibold mt-1">
+      <span>{{ 'sections.completed_with.total' | t | default: 'Gesamt' }}</span>
+      <strong id="addons-grand">{{ base_variant.price | money }}</strong>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  (function () {
+    // Money helpers (Shopify outputs cents)
+    const formatMoney = (cents) => {
+      // Pull currency formatting from a data attribute if you have one;
+      // fallback to a simple EUR formatter:
+      try {
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency: '{{ shop.currency }}' }).format(
+          cents / 100
+        );
+      } catch (e) {
+        return (cents / 100).toFixed(2);
+      }
+    };
+
+    const rows = document.querySelectorAll('.addon-row');
+    const checkboxes = document.querySelectorAll('.addon-checkbox');
+
+    const totals = document.getElementById('addons-totals');
+    if (!totals) return;
+    const basePrice = parseInt(totals.dataset.basePrice || '0', 10);
+    const sumEl = document.getElementById('addons-sum');
+    const grandEl = document.getElementById('addons-grand');
+
+    function updateTotals() {
+      let addOns = 0;
+      checkboxes.forEach((cb) => {
+        if (cb.checked) {
+          const row = cb.closest('.addon-row');
+          const price = row ? parseInt(row.dataset.price || '0', 10) : 0;
+          addOns += price;
+        }
+      });
+      const grand = basePrice + addOns;
+      sumEl.textContent = formatMoney(addOns);
+      grandEl.textContent = formatMoney(grand);
+    }
+
+    // initial totals
+    updateTotals();
+
+    // react to checkbox changes
+    checkboxes.forEach((cb) => {
+      cb.addEventListener('change', () => {
+        updateTotals();
+      });
+    });
+
+    // Make whole row toggle - including the <a> tags.
+    rows.forEach((row) => {
+      row.querySelectorAll('.addon-link').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          // allow opening in new tab/window with modifiers
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+
+          // Prevent navigation and stop the label from also toggling.
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Toggle the checkbox exactly once.
+          const cb = row.querySelector('.addon-checkbox');
+          cb.click(); // fires 'change' and updates paints/totals
+        });
+      });
+    });
+
+  })();
+</script>

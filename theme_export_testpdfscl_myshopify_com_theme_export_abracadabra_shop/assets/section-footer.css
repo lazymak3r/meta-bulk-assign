@@ -1,0 +1,12 @@
+footer .legal {
+	background: #C8C2B8;
+	font-size: 14px;
+	font-weight: 300;
+}
+footer .legal p {
+	position: relative;
+}
+footer .legal p.pl-\[30px\] svg {
+	position: absolute;
+	left: 0;
+}

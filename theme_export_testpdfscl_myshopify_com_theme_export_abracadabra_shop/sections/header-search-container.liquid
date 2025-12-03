@@ -1,0 +1,83 @@
+{{ 'section-header-search-container.css' | asset_url | stylesheet_tag }}
+
+{{ 'section-header-search-container.js' | asset_url | script_tag }}
+
+<div class="search-container">
+  <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+  </svg>
+  <input
+    type="text"
+    class="search-input"
+    placeholder="{{ section.settings.placeholder }}"
+    oninput="handleSearchInput(this.value)"
+    autocomplete="off"
+  >
+
+  <!-- Search Dropdown -->
+  <div class="search-dropdown" id="search-dropdown" style="display:none;">
+    <button type="button" class="search-close" aria-label="Schließen" data-search-close>×</button>
+    <div class="search-section" id="categories-section" style="display:none;">
+      <h4 class="search-section-title">{{ section.settings.categories }}</h4>
+      <div class="search-categories" id="search-categories">
+        <!-- Categories will be populated here -->
+      </div>
+    </div>
+
+    <div class="search-section" id="products-section" style="display:none;">
+      <h4 class="search-section-title">{{ section.settings.products }}</h4>
+      <div class="search-products" id="search-products">
+        <!-- Products will be populated here -->
+      </div>
+    </div>
+
+    <div class="search-no-results" id="search-no-results" style="display: none;">
+      <div class="no-results-icon">🔍</div>
+      <p>{{ section.settings['not-found'] }}</p>
+      <span>{{ section.settings['try-searching'] }}</span>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Header-Suchbereich",
+  "settings": [
+    {
+      "type": "text",
+      "id": "placeholder",
+      "label": "Platzhalter",
+      "default": "Suchen"
+    },
+    {
+      "type": "text",
+      "id": "categories",
+      "label": "Kategorien",
+      "default": "Kategorien"
+    },
+    {
+      "type": "text",
+      "id": "products",
+      "label": "Produkte",
+      "default": "Produkte"
+    },
+    {
+      "type": "text",
+      "id": "not-found",
+      "label": "Keine Ergebnisse gefunden",
+      "default": "Keine Ergebnisse gefunden"
+    },
+    {
+      "type": "text",
+      "id": "try-searching",
+      "label": "Suche starten",
+      "default": "Versuchen Sie, nach „Sofa“, „Stuhl“ oder „Tisch“ zu suchen."
+    }
+  ],
+  "presets": [
+    {
+      "name": "Header-Suchbereich"
+    }
+  ]
+}
+{% endschema %}
