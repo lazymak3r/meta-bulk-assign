@@ -86,134 +86,151 @@ app.post(
 
 // App Proxy route for storefront (no authentication required)
 // Note: App proxy strips /apps/meta-bulk-assign prefix, so this route receives /storefront-config
+// OPTIMIZED: Uses a single batched GraphQL query instead of multiple sequential calls
 app.get("/storefront-config", async (req, res) => {
   try {
+    const startTime = Date.now();
     const { shop, product } = req.query;
 
     if (!shop || !product) {
       return res.status(400).json({ error: "Missing shop or product parameter" });
     }
 
-    // Get all configurations for this shop
-    // We'll filter by displayType instead of show_on_storefront
-    const configs = await database.query(
-      `SELECT id, metafield_configs
-       FROM configurations
-       WHERE shop = ?
-       ORDER BY priority DESC`,
-      [shop]
-    );
+    // Step 1: Get all configurations and their rules in parallel
+    const [configsResult, session] = await Promise.all([
+      database.query(
+        `SELECT c.id, c.metafield_configs
+         FROM configurations c
+         WHERE c.shop = ?
+         ORDER BY c.priority DESC`,
+        [shop]
+      ),
+      getShopSession(shop)
+    ]);
 
-    if (!configs.rows || configs.rows.length === 0) {
+    if (!configsResult.rows || configsResult.rows.length === 0) {
       console.log('[Storefront API] No configurations found for shop');
       return res.json({ metafields: [] });
     }
 
-    console.log(`[Storefront API] Found ${configs.rows.length} configurations for shop`);
+    if (!session) {
+      console.error('[Storefront API] No session available for shop:', shop);
+      return res.status(500).json({ error: 'No session available' });
+    }
 
-    // For each configuration, check if it applies to this product
-    const metafieldsToDisplay = [];
+    console.log(`[Storefront API] Found ${configsResult.rows.length} configurations (${Date.now() - startTime}ms)`);
 
-    for (const config of configs.rows) {
-      // Parse metafield configs
-      const metafieldConfigs = typeof config.metafield_configs === 'string'
-        ? JSON.parse(config.metafield_configs)
-        : config.metafield_configs;
+    // Step 2: Collect all metafield namespaces/keys that have displayType set
+    // and get rules for all configurations in parallel
+    const configsWithRules = await Promise.all(
+      configsResult.rows.map(async (config) => {
+        const metafieldConfigs = typeof config.metafield_configs === 'string'
+          ? JSON.parse(config.metafield_configs)
+          : config.metafield_configs;
 
-      console.log(`[Storefront API] Config ${config.id} has ${metafieldConfigs.length} metafield configs`);
+        const rules = await database.getConfigurationRules(config.id);
 
-      // Get rules for this configuration
-      const rules = await database.getConfigurationRules(config.id);
+        return {
+          ...config,
+          metafieldConfigs,
+          rules
+        };
+      })
+    );
 
-      console.log(`[Storefront API] Config ${config.id} has ${rules.length} rules`);
+    // Collect unique metafields with displayType
+    const metafieldKeys = new Set();
+    const metafieldDisplayTypes = new Map(); // Map of "namespace.key" -> displayType
 
-      // Check if this configuration applies to the product
-      const appliesToProduct = await checkIfConfigApplies(shop, product, rules);
-
-      console.log(`[Storefront API] Config ${config.id} applies to product ${product}:`, appliesToProduct);
-
-      if (appliesToProduct) {
-        console.log(`[Storefront API] Config ${config.id} applies to product. Metafields in config:`, metafieldConfigs);
-
-        // Add each metafield from this configuration
-        for (const mf of metafieldConfigs) {
-          console.log(`[Storefront API] Processing metafield ${mf.namespace}.${mf.key} with displayType: ${mf.displayType}`);
-
-          // Only include metafields that have a display type set
-          if (!mf.displayType || mf.displayType === '') {
-            console.log(`[Storefront API] Skipping ${mf.namespace}.${mf.key} - no display type`);
-            continue;
-          }
-
-          // Fetch the actual metafield value from Shopify
-          const value = await fetchMetafieldValue(shop, product, mf.namespace, mf.key);
-
-          console.log(`[Storefront API] Fetched value for ${mf.namespace}.${mf.key}:`, value ? 'HAS VALUE' : 'NULL');
-
-          if (value) {
-            metafieldsToDisplay.push({
-              namespace: mf.namespace,
-              key: mf.key,
-              displayType: mf.displayType, // Use the displayType from config
-              value: value,
-              showOnStorefront: true,
-            });
-          }
+    for (const config of configsWithRules) {
+      for (const mf of config.metafieldConfigs) {
+        if (mf.displayType && mf.displayType !== '') {
+          const key = `${mf.namespace}.${mf.key}`;
+          metafieldKeys.add(key);
+          metafieldDisplayTypes.set(key, mf.displayType);
         }
       }
     }
 
-    res.json({ metafields: metafieldsToDisplay });
-
-  } catch (error) {
-    console.error('[Storefront API] Error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
-  }
-});
-
-// Helper function to get session for shop
-async function getShopSession(shop) {
-  try {
-    // Get all sessions for this shop from session storage
-    const sessions = await shopify.config.sessionStorage.findSessionsByShop(shop);
-
-    if (!sessions || sessions.length === 0) {
-      console.error(`[Storefront API] No session found for shop: ${shop}`);
-      return null;
+    if (metafieldKeys.size === 0) {
+      console.log('[Storefront API] No metafields with displayType found');
+      return res.json({ metafields: [] });
     }
 
-    // Return the most recent active session
-    // Filter for online sessions first, fall back to offline
-    const onlineSession = sessions.find(s => s.isOnline);
-    const offlineSession = sessions.find(s => !s.isOnline);
+    console.log(`[Storefront API] Found ${metafieldKeys.size} unique metafields with displayType (${Date.now() - startTime}ms)`);
 
-    return onlineSession || offlineSession || sessions[0];
-  } catch (error) {
-    console.error('[Storefront API] Error getting session:', error);
-    return null;
-  }
-}
+    // Step 3: Build a SINGLE GraphQL query that fetches product data AND all metafields
+    const metafieldAliases = Array.from(metafieldKeys).map((key, index) => {
+      const [namespace, keyName] = key.split('.');
+      return `mf${index}: metafield(namespace: "${namespace}", key: "${keyName}") {
+        id
+        namespace
+        key
+        value
+        type
+        reference {
+          ... on MediaImage {
+            image {
+              url
+            }
+          }
+          ... on GenericFile {
+            url
+          }
+          ... on Metaobject {
+            id
+            fields {
+              key
+              value
+              type
+              reference {
+                ... on MediaImage {
+                  image {
+                    url
+                  }
+                }
+                ... on GenericFile {
+                  url
+                }
+              }
+            }
+          }
+        }
+        references(first: 50) {
+          nodes {
+            ... on MediaImage {
+              image {
+                url
+              }
+            }
+            ... on GenericFile {
+              url
+            }
+            ... on Metaobject {
+              id
+              fields {
+                key
+                value
+                type
+                reference {
+                  ... on MediaImage {
+                    image {
+                      url
+                    }
+                  }
+                  ... on GenericFile {
+                    url
+                  }
+                }
+              }
+            }
+          }
+        }
+      }`;
+    });
 
-// Helper function to check if configuration applies to product
-async function checkIfConfigApplies(shop, productHandle, rules) {
-  // If no rules, apply to all products
-  if (!rules || rules.length === 0) {
-    return true;
-  }
-
-  try {
-    // Get session for this shop
-    const session = await getShopSession(shop);
-    if (!session) {
-      console.error('[Storefront API] Cannot check rules - no session available');
-      return false;
-    }
-
-    // Fetch product data to check against rules
-    const client = new shopify.api.clients.Graphql({ session });
-
-    const query = `
-      query GetProductByHandle($handle: String!) {
+    const batchedQuery = `
+      query GetProductWithMetafields($handle: String!) {
         productByHandle(handle: $handle) {
           id
           vendor
@@ -227,257 +244,223 @@ async function checkIfConfigApplies(shop, productHandle, rules) {
               }
             }
           }
+          ${metafieldAliases.join('\n          ')}
         }
       }
     `;
 
-    const response = await client.request(query, {
-      variables: { handle: productHandle }
+    const client = new shopify.api.clients.Graphql({ session });
+    const response = await client.request(batchedQuery, {
+      variables: { handle: product }
     });
 
-    const product = response.data?.productByHandle;
-    if (!product) {
-      return false;
+    const productData = response.data?.productByHandle;
+    if (!productData) {
+      return res.json({ metafields: [] });
     }
 
-    // Check if product matches any of the rules
-    for (const rule of rules) {
-      let matches = false;
+    // Step 4: Check rules and collect metafields to display
+    const metafieldsToDisplay = [];
+    const processedKeys = new Set(); // Avoid duplicates
 
-      switch (rule.rule_type) {
-        case 'vendor':
-          matches = product.vendor === rule.rule_value;
-          break;
+    for (const config of configsWithRules) {
+      // Check if config applies to this product (using local data, no API call)
+      const appliesToProduct = checkIfConfigAppliesLocal(productData, config.rules);
 
-        case 'product':
-          // Parse rule_id which contains JSON array of product IDs
-          try {
-            const productIds = JSON.parse(rule.rule_id);
-            matches = Array.isArray(productIds) && productIds.includes(product.id);
-          } catch (e) {
-            // Fallback for non-JSON rule_id
-            matches = product.id === rule.rule_id || productHandle === rule.rule_value;
-          }
-          break;
+      if (!appliesToProduct) {
+        continue;
+      }
 
-        case 'category':
-          matches = product.productType === rule.rule_value;
-          break;
+      // Process metafields from this configuration
+      for (const mf of config.metafieldConfigs) {
+        if (!mf.displayType || mf.displayType === '') {
+          continue;
+        }
 
-        case 'collection':
-          // Parse rule_id which may contain JSON array of collection IDs
-          try {
-            const collectionIds = JSON.parse(rule.rule_id);
-            if (Array.isArray(collectionIds)) {
-              matches = product.collections.edges.some(edge => collectionIds.includes(edge.node.id));
-            } else {
-              // Single collection ID
-              matches = product.collections.edges.some(edge =>
-                edge.node.id === rule.rule_id ||
-                edge.node.handle === rule.rule_value ||
-                edge.node.title === rule.rule_value
-              );
-            }
-          } catch (e) {
-            // Fallback for non-JSON rule_id
-            matches = product.collections.edges.some(edge =>
+        const key = `${mf.namespace}.${mf.key}`;
+        if (processedKeys.has(key)) {
+          continue; // Already added from a higher priority config
+        }
+
+        // Find the metafield in the response
+        const metafieldIndex = Array.from(metafieldKeys).indexOf(key);
+        const metafieldData = productData[`mf${metafieldIndex}`];
+
+        if (!metafieldData) {
+          continue;
+        }
+
+        // Process the metafield value
+        const value = processMetafieldValue(metafieldData);
+
+        if (value) {
+          processedKeys.add(key);
+          metafieldsToDisplay.push({
+            namespace: mf.namespace,
+            key: mf.key,
+            displayType: mf.displayType,
+            value: value,
+            showOnStorefront: true,
+          });
+        }
+      }
+    }
+
+    res.json({ metafields: metafieldsToDisplay });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error', message: error.message });
+  }
+});
+
+// Helper function to check if configuration applies to product using local data (no API call)
+function checkIfConfigAppliesLocal(productData, rules) {
+  // If no rules, apply to all products
+  if (!rules || rules.length === 0) {
+    return true;
+  }
+
+  // Check if product matches any of the rules
+  for (const rule of rules) {
+    let matches = false;
+
+    switch (rule.rule_type) {
+      case 'vendor':
+        matches = productData.vendor === rule.rule_value;
+        break;
+
+      case 'product':
+        try {
+          const productIds = JSON.parse(rule.rule_id);
+          matches = Array.isArray(productIds) && productIds.includes(productData.id);
+        } catch (e) {
+          matches = productData.id === rule.rule_id;
+        }
+        break;
+
+      case 'category':
+        matches = productData.productType === rule.rule_value;
+        break;
+
+      case 'collection':
+        try {
+          const collectionIds = JSON.parse(rule.rule_id);
+          if (Array.isArray(collectionIds)) {
+            matches = productData.collections.edges.some(edge => collectionIds.includes(edge.node.id));
+          } else {
+            matches = productData.collections.edges.some(edge =>
               edge.node.id === rule.rule_id ||
               edge.node.handle === rule.rule_value ||
               edge.node.title === rule.rule_value
             );
           }
-          break;
-      }
-
-      // If any rule matches, the configuration applies
-      if (matches) {
-        return true;
-      }
+        } catch (e) {
+          matches = productData.collections.edges.some(edge =>
+            edge.node.id === rule.rule_id ||
+            edge.node.handle === rule.rule_value ||
+            edge.node.title === rule.rule_value
+          );
+        }
+        break;
     }
 
-    return false;
-  } catch (error) {
-    console.error('[Storefront API] Error checking if config applies:', error);
-    return false;
+    if (matches) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// Helper function to process metafield value from the batched response
+function processMetafieldValue(metafield) {
+  if (!metafield) {
+    return null;
+  }
+
+  switch (metafield.type) {
+    case 'file_reference':
+      if (metafield.reference?.image) {
+        return metafield.reference.image.url;
+      } else if (metafield.reference?.url) {
+        return metafield.reference.url;
+      }
+      return metafield.value;
+
+    case 'list.file_reference':
+      if (metafield.references?.nodes && metafield.references.nodes.length > 0) {
+        const urls = metafield.references.nodes.map(node => {
+          if (node.image) {
+            return node.image.url;
+          } else if (node.url) {
+            return node.url;
+          }
+          return null;
+        }).filter(url => url !== null);
+        return JSON.stringify(urls);
+      }
+      return metafield.value;
+
+    case 'list.metaobject_reference':
+      if (metafield.references?.nodes && metafield.references.nodes.length > 0) {
+        const metaobjectArray = metafield.references.nodes.map(node => {
+          if (node.fields) {
+            const metaobjectData = {};
+            for (const field of node.fields) {
+              if (field.reference?.image) {
+                metaobjectData[field.key] = field.reference.image.url;
+              } else if (field.reference?.url) {
+                metaobjectData[field.key] = field.reference.url;
+              } else {
+                metaobjectData[field.key] = field.value;
+              }
+            }
+            return metaobjectData;
+          }
+          return null;
+        }).filter(obj => obj !== null);
+        return JSON.stringify(metaobjectArray);
+      }
+      return metafield.value;
+
+    case 'metaobject_reference':
+      if (metafield.reference?.fields) {
+        const metaobjectData = {};
+        for (const field of metafield.reference.fields) {
+          if (field.reference?.image) {
+            metaobjectData[field.key] = field.reference.image.url;
+          } else if (field.reference?.url) {
+            metaobjectData[field.key] = field.reference.url;
+          } else {
+            metaobjectData[field.key] = field.value;
+          }
+        }
+        return JSON.stringify(metaobjectData);
+      }
+      return metafield.value;
+
+    default:
+      return metafield.value;
   }
 }
 
-// Helper function to fetch metafield value from Shopify
-async function fetchMetafieldValue(shop, productHandle, namespace, key) {
+// Helper function to get session for shop
+async function getShopSession(shop) {
   try {
-    // Get session for this shop
-    const session = await getShopSession(shop);
-    if (!session) {
-      console.error('[Storefront API] Cannot fetch metafield - no session available');
+    // Get all sessions for this shop from session storage
+    const sessions = await shopify.config.sessionStorage.findSessionsByShop(shop);
+
+    if (!sessions || sessions.length === 0) {
       return null;
     }
 
-    const client = new shopify.api.clients.Graphql({ session });
+    // Return the most recent active session
+    // Filter for online sessions first, fall back to offline
+    const onlineSession = sessions.find(s => s.isOnline);
+    const offlineSession = sessions.find(s => !s.isOnline);
 
-    const query = `
-      query GetProductMetafield($handle: String!, $namespace: String!, $key: String!) {
-        productByHandle(handle: $handle) {
-          id
-          metafield(namespace: $namespace, key: $key) {
-            id
-            namespace
-            key
-            value
-            type
-            reference {
-              ... on MediaImage {
-                image {
-                  url
-                }
-              }
-              ... on GenericFile {
-                url
-              }
-              ... on Metaobject {
-                id
-                fields {
-                  key
-                  value
-                  type
-                  reference {
-                    ... on MediaImage {
-                      image {
-                        url
-                      }
-                    }
-                    ... on GenericFile {
-                      url
-                    }
-                  }
-                }
-              }
-            }
-            references(first: 50) {
-              nodes {
-                ... on MediaImage {
-                  image {
-                    url
-                  }
-                }
-                ... on GenericFile {
-                  url
-                }
-                ... on Metaobject {
-                  id
-                  fields {
-                    key
-                    value
-                    type
-                    reference {
-                      ... on MediaImage {
-                        image {
-                          url
-                        }
-                      }
-                      ... on GenericFile {
-                        url
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const response = await client.request(query, {
-      variables: {
-        handle: productHandle,
-        namespace: namespace,
-        key: key
-      }
-    });
-
-    const metafield = response.data?.productByHandle?.metafield;
-
-    if (!metafield) {
-      return null;
-    }
-
-    // Process value based on type
-    switch (metafield.type) {
-      case 'file_reference':
-        // Check if it's an image or a file
-        if (metafield.reference?.image) {
-          return metafield.reference.image.url;
-        } else if (metafield.reference?.url) {
-          return metafield.reference.url;
-        }
-        return metafield.value;
-
-      case 'list.file_reference':
-        // Return array of image/file URLs
-        if (metafield.references?.nodes && metafield.references.nodes.length > 0) {
-          const urls = metafield.references.nodes.map(node => {
-            if (node.image) {
-              return node.image.url;
-            } else if (node.url) {
-              return node.url;
-            }
-            return null;
-          }).filter(url => url !== null);
-          console.log(`[Storefront API] List file URLs for ${namespace}.${key}:`, urls);
-          return JSON.stringify(urls);
-        }
-        return metafield.value;
-
-      case 'list.metaobject_reference':
-        // Return array of structured metaobject data
-        if (metafield.references?.nodes && metafield.references.nodes.length > 0) {
-          const metaobjectArray = [];
-          for (const node of metafield.references.nodes) {
-            if (node.fields) {
-              const metaobjectData = {};
-              for (const field of node.fields) {
-                // Process nested references (images, files)
-                if (field.reference?.image) {
-                  metaobjectData[field.key] = field.reference.image.url;
-                } else if (field.reference?.url) {
-                  metaobjectData[field.key] = field.reference.url;
-                } else {
-                  metaobjectData[field.key] = field.value;
-                }
-              }
-              metaobjectArray.push(metaobjectData);
-            }
-          }
-          console.log(`[Storefront API] List metaobject data for ${namespace}.${key}:`, metaobjectArray);
-          return JSON.stringify(metaobjectArray);
-        }
-        return metafield.value;
-
-      case 'metaobject_reference':
-        // Return structured metaobject data
-        if (metafield.reference?.fields) {
-          const metaobjectData = {};
-          for (const field of metafield.reference.fields) {
-            // Process nested references (images, files)
-            if (field.reference?.image) {
-              metaobjectData[field.key] = field.reference.image.url;
-            } else if (field.reference?.url) {
-              metaobjectData[field.key] = field.reference.url;
-            } else {
-              metaobjectData[field.key] = field.value;
-            }
-          }
-          console.log(`[Storefront API] Metaobject data for ${namespace}.${key}:`, metaobjectData);
-          return JSON.stringify(metaobjectData);
-        }
-        return metafield.value;
-
-      default:
-        // For text and other types, return the value directly
-        return metafield.value;
-    }
+    return onlineSession || offlineSession || sessions[0];
   } catch (error) {
-    console.error('[Storefront API] Error fetching metafield:', error);
     return null;
   }
 }
@@ -495,11 +478,7 @@ const upload = multer({
 // File upload endpoint - MUST come before express.json() to avoid parsing multipart as JSON
 app.post("/api/files/upload", upload.single("file"), async (req, res) => {
   try {
-    console.log("File upload request received");
-    console.log("Has file:", !!req.file);
-
     if (!req.file) {
-      console.error("No file in request");
       return res.status(400).json({
         success: false,
         error: "No file uploaded",
@@ -507,8 +486,6 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
     }
 
     const session = res.locals.shopify.session;
-
-    console.log("Uploading file to Shopify:", req.file.originalname);
 
     // Upload file to Shopify
     const fileData = await uploadFileToShopify(
@@ -518,15 +495,11 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
       req.file.mimetype
     );
 
-    console.log("File uploaded successfully:", fileData.shopifyFileId);
-
     res.status(200).json({
       success: true,
       file: fileData,
     });
   } catch (error) {
-    console.error("Error uploading file:", error);
-    console.error("Error stack:", error.stack);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -559,7 +532,6 @@ app.post("/api/products", async (_req, res) => {
   try {
     await productCreator(res.locals.shopify.session);
   } catch (e) {
-    console.log(`Failed to process products/create: ${e.message}`);
     status = 500;
     error = e.message;
   }
@@ -612,7 +584,6 @@ app.get("/api/metafield-definitions", async (_req, res) => {
       success: true,
     });
   } catch (error) {
-    console.error("Error fetching metafield definitions:", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -633,7 +604,6 @@ app.get("/api/metaobject-definitions/:id", async (req, res) => {
       success: true,
     });
   } catch (error) {
-    console.error("Error fetching metaobject definition:", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -688,7 +658,6 @@ app.get("/api/metaobjects/:id", async (req, res) => {
       metaobject,
     });
   } catch (error) {
-    console.error("Error fetching metaobject:", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -720,7 +689,6 @@ app.post("/api/metaobjects", async (req, res) => {
       metaobjectId: resultId,
     });
   } catch (error) {
-    console.error("Error creating/updating metaobject:", error);
     res.status(500).json({
       success: false,
       error: error.message,
