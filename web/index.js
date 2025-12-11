@@ -15,6 +15,7 @@ import productCreator from "./product-creator.js";
 import PrivacyWebhookHandlers from "./privacy.js";
 import { uploadFileToShopify } from "./file-upload.js";
 import * as metaobjectHandler from "./metaobject-handler.js";
+import { syncStorefrontConfig } from "./storefront-config-sync.js";
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -689,6 +690,27 @@ app.post("/api/metaobjects", async (req, res) => {
       metaobjectId: resultId,
     });
   } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Manual sync of storefront config to shop metafield
+// Call this to sync existing configurations for instant display
+app.post("/api/sync-storefront-config", async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const displayTypeMap = await syncStorefrontConfig(session);
+
+    res.status(200).json({
+      success: true,
+      message: "Storefront config synced successfully",
+      config: displayTypeMap,
+    });
+  } catch (error) {
+    console.error("[API] Error syncing storefront config:", error);
     res.status(500).json({
       success: false,
       error: error.message,

@@ -9,6 +9,7 @@ import {
 } from "./product-matcher.js";
 import { applyMetafieldsToProduct } from "./metafield-apply.js";
 import { createOrUpdateMetaobject } from "./metaobject-handler.js";
+import { syncStorefrontConfig } from "./storefront-config-sync.js";
 
 const router = express.Router();
 
@@ -108,6 +109,14 @@ router.post("/", async (req, res) => {
     // Get the created configuration with rules
     const configRules = await database.getConfigurationRules(configuration.id);
 
+    // Sync storefront config to shop metafield (for instant display)
+    try {
+      await syncStorefrontConfig(session);
+    } catch (syncError) {
+      console.error("[Configurations] Error syncing storefront config:", syncError);
+      // Don't fail the request if sync fails
+    }
+
     res.status(201).json({
       ...configuration,
       rules: configRules,
@@ -185,6 +194,14 @@ router.put("/:id", async (req, res) => {
     const updated = await database.getConfigurationById(id);
     const configRules = await database.getConfigurationRules(id);
 
+    // Sync storefront config to shop metafield (for instant display)
+    try {
+      await syncStorefrontConfig(session);
+    } catch (syncError) {
+      console.error("[Configurations] Error syncing storefront config:", syncError);
+      // Don't fail the request if sync fails
+    }
+
     res.json({
       ...updated,
       rules: configRules,
@@ -201,6 +218,7 @@ router.put("/:id", async (req, res) => {
  */
 router.delete("/:id", async (req, res) => {
   try {
+    const session = res.locals.shopify.session;
     const { id } = req.params;
 
     const existing = await database.getConfigurationById(id);
@@ -209,6 +227,14 @@ router.delete("/:id", async (req, res) => {
     }
 
     await database.deleteConfiguration(id);
+
+    // Sync storefront config to shop metafield (for instant display)
+    try {
+      await syncStorefrontConfig(session);
+    } catch (syncError) {
+      console.error("[Configurations] Error syncing storefront config:", syncError);
+      // Don't fail the request if sync fails
+    }
 
     res.json({ success: true, message: "Configuration deleted" });
   } catch (error) {
