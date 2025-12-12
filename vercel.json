@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "installCommand": "npm install --workspaces",
   "buildCommand": "cd web/frontend && npm install && npm run build",
   "builds": [
     {
