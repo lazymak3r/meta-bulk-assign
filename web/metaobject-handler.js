@@ -153,7 +153,12 @@ export async function createMetaobject(session, metaobjectType, fieldValues, met
       variables: {
         metaobject: {
           type: metaobjectType,
-          fields: processedFields
+          fields: processedFields,
+          capabilities: {
+            publishable: {
+              status: "ACTIVE"
+            }
+          }
         }
       }
     });
