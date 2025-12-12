@@ -33,7 +33,6 @@
       }
       return await response.json();
     } catch (error) {
-      console.error('[MBA] Error fetching config:', error);
       return null;
     }
   }
@@ -115,20 +114,16 @@
       // Parse the metaobject value (could be single object or array)
       const parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
 
-      console.log('[MBA] Energy Label data:', parsedValue);
-
       // Handle both single object and array of objects
       const energyLabels = Array.isArray(parsedValue) ? parsedValue : [parsedValue];
 
       if (energyLabels.length === 0) {
-        console.warn('[MBA] No energy labels to display');
         return '';
       }
 
       // Render each energy label
       const htmlParts = energyLabels.map(energyLabel => {
         if (!energyLabel || typeof energyLabel !== 'object') {
-          console.warn('[MBA] Invalid energy label data');
           return '';
         }
 
@@ -138,25 +133,22 @@
         const labelText = fields.text || '';
         const pdfUrl = fields.pdf || '';
 
-        console.log('[MBA] Mapped fields:', fields);
-
         if (!iconUrl && !labelText && !pdfUrl) {
-          console.warn('[MBA] No displayable fields found');
           return '';
         }
 
         // Render: icon on top, label below, whole thing clickable
+        // Using mba-energy-label classes for proper styling
         return `
-          <a href="${escapeHtml(pdfUrl)}" class="flex flex-col items-center gap-2" target="_blank" rel="noopener" style="text-decoration: none;">
-            ${iconUrl ? `<img src="${escapeHtml(iconUrl)}" alt="${escapeHtml(labelText)}" style="max-width: 80px; max-height: 80px; object-fit: contain;">` : ''}
-            ${labelText ? `<span class="text-[12px] md:text-[14px] text-gray-700">${escapeHtml(labelText)}</span>` : ''}
+          <a href="${escapeHtml(pdfUrl)}" class="mba-energy-label" target="_blank" rel="noopener">
+            ${iconUrl ? `<img src="${escapeHtml(iconUrl)}" alt="${escapeHtml(labelText)}" class="mba-energy-label-icon">` : ''}
+            ${labelText ? `<span class="mba-energy-label-text">${escapeHtml(labelText)}</span>` : ''}
           </a>
         `;
       }).filter(html => html !== '');
 
       return htmlParts.join('');
     } catch (e) {
-      console.error('[MBA] Error rendering energy label:', e);
       return '';
     }
   }
@@ -165,10 +157,7 @@
   function renderProductDetailIcon(metafield) {
     const { value, namespace, key } = metafield;
 
-    console.log('[MBA] Product Detail Icon data:', { namespace, key, value });
-
     if (!value) {
-      console.warn('[MBA] No value for product detail icon');
       return '';
     }
 
@@ -176,13 +165,10 @@
       // Parse the metaobject value (could be single object or array)
       const parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
 
-      console.log('[MBA] Parsed icon data:', parsedValue);
-
       // Handle both single object and array of objects
       const icons = Array.isArray(parsedValue) ? parsedValue : [parsedValue];
 
       if (icons.length === 0) {
-        console.warn('[MBA] No icons to display');
         return '';
       }
 
@@ -199,14 +185,10 @@
           const fields = mapMetaobjectFields(iconData);
           imageUrl = fields.icon || fields.image || '';
         } else {
-          console.warn('[MBA] Invalid icon data:', iconData);
           return '';
         }
 
-        console.log('[MBA] Image URL:', imageUrl);
-
         if (!imageUrl) {
-          console.warn('[MBA] No image URL found in icon data');
           return '';
         }
 
@@ -229,30 +211,23 @@
     try {
       const { value, namespace, key } = metafield;
 
-      console.log('[MBA] Warranty Document data:', { namespace, key, value });
-
       if (!value) {
-        console.warn('[MBA] No value for warranty document');
         return '';
       }
 
       // Parse value if it's a string
       const parsedValue = typeof value === 'string' ? JSON.parse(value) : value;
 
-      console.log('[MBA] Parsed warranty data:', parsedValue);
-
       // Handle array of file URLs
       const files = Array.isArray(parsedValue) ? parsedValue : [parsedValue];
 
       if (files.length === 0) {
-        console.warn('[MBA] No warranty documents to display');
         return '';
       }
 
       // Render each document
       const htmlParts = files.map((fileUrl, index) => {
         if (!fileUrl || typeof fileUrl !== 'string') {
-          console.warn('[MBA] Invalid file URL:', fileUrl);
           return '';
         }
 
@@ -308,40 +283,63 @@
     return document.querySelector(`[data-meta-bulk-assign-container="${displayType}"]`);
   }
 
+  // Get cache key for this product
+  function getCacheKey() {
+    return `mba-skeleton-counts-${productHandle}`;
+  }
+
+  // Get cached skeleton counts for this product
+  function getCachedCounts() {
+    try {
+      const cached = localStorage.getItem(getCacheKey());
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Save skeleton counts to cache for next visit
+  function saveCounts(counts) {
+    try {
+      localStorage.setItem(getCacheKey(), JSON.stringify(counts));
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }
+
+  // Default skeleton counts (used on first visit)
+  const DEFAULT_SKELETON_COUNTS = {
+    'energy_label': 2,
+    'product_detail_icon': 3,
+    'warranty_document': 2
+  };
+
   // Show loading skeleton in container
-  function showLoadingSkeleton(container, displayType) {
+  function showLoadingSkeleton(container, displayType, cachedCounts) {
     if (!container) return;
 
-    let skeletonHTML = '';
+    // Use cached count if available, otherwise use default
+    const count = (cachedCounts && cachedCounts[displayType]) || DEFAULT_SKELETON_COUNTS[displayType] || 2;
+
+    let skeletonItems = '';
+    let skeletonClass = '';
 
     if (displayType === 'product_detail_icon') {
-      // Show 3 icon skeletons
-      skeletonHTML = `
-        <div class="mba-skeleton-container">
-          <div class="mba-skeleton-icon"></div>
-          <div class="mba-skeleton-icon"></div>
-          <div class="mba-skeleton-icon"></div>
-        </div>
-      `;
+      skeletonClass = 'mba-skeleton-icon';
     } else if (displayType === 'energy_label') {
-      // Show 2 label skeletons
-      skeletonHTML = `
-        <div class="mba-skeleton-container">
-          <div class="mba-skeleton-label"></div>
-          <div class="mba-skeleton-label"></div>
-        </div>
-      `;
+      skeletonClass = 'mba-skeleton-label';
     } else if (displayType === 'warranty_document') {
-      // Show 2 document skeletons
-      skeletonHTML = `
-        <div class="mba-skeleton-container mba-warranty-skeleton">
-          <div class="mba-skeleton-doc"></div>
-          <div class="mba-skeleton-doc"></div>
-        </div>
-      `;
+      skeletonClass = 'mba-skeleton-doc';
     }
 
-    container.innerHTML = skeletonHTML;
+    // Generate the correct number of skeleton items
+    for (let i = 0; i < count; i++) {
+      skeletonItems += `<div class="${skeletonClass}"></div>`;
+    }
+
+    const containerClass = displayType === 'warranty_document' ? 'mba-skeleton-container mba-warranty-skeleton' : 'mba-skeleton-container';
+
+    container.innerHTML = `<div class="${containerClass}">${skeletonItems}</div>`;
     container.classList.add('mba-loading');
   }
 
@@ -393,45 +391,89 @@
     });
   }
 
-  // Show loading skeletons only for containers that will have data
-  function showLoadingSkeletons(displayTypesWithData) {
+  // Show loading skeletons for all containers immediately
+  function showAllLoadingSkeletons() {
+    const cachedCounts = getCachedCounts();
     const containers = document.querySelectorAll('[data-meta-bulk-assign-container]');
     containers.forEach(container => {
       const displayType = container.getAttribute('data-meta-bulk-assign-container');
-
-      // Only show skeleton if this display type has data
-      if (displayTypesWithData.includes(displayType)) {
-        showLoadingSkeleton(container, displayType);
-      }
+      showLoadingSkeleton(container, displayType, cachedCounts);
     });
+  }
+
+  // Hide skeleton and clear container if no data
+  function hideLoadingSkeleton(container) {
+    if (!container) return;
+    container.classList.remove('mba-loading');
+    container.innerHTML = '';
+  }
+
+  // Count actual items for each display type from the rendered content
+  function countRenderedItems(metafieldGroups) {
+    const counts = {};
+
+    Object.entries(metafieldGroups).forEach(([displayType, metafields]) => {
+      let totalItems = 0;
+
+      metafields.forEach(mf => {
+        try {
+          const parsedValue = typeof mf.value === 'string' ? JSON.parse(mf.value) : mf.value;
+          const items = Array.isArray(parsedValue) ? parsedValue : [parsedValue];
+          totalItems += items.filter(item => item !== null).length;
+        } catch (e) {
+          totalItems += 1;
+        }
+      });
+
+      counts[displayType] = totalItems;
+    });
+
+    return counts;
   }
 
   // Initialize
   async function init() {
+    // Step 1: Show loading skeletons IMMEDIATELY (before fetch)
+    // Uses cached counts from previous visit if available
+    showAllLoadingSkeletons();
+
+    // Step 2: Fetch the config (this is where the delay happens)
     const config = await fetchConfig();
 
     console.log('[MBA] Full config received:', config);
 
+    // Step 3: If no data, hide all skeletons and clear cache
     if (!config || !config.metafields || config.metafields.length === 0) {
       console.log('[MBA] No metafields to display');
+      const containers = document.querySelectorAll('[data-meta-bulk-assign-container]');
+      containers.forEach(container => hideLoadingSkeleton(container));
+      saveCounts({}); // Clear cached counts
       return;
     }
 
     console.log('[MBA] Metafields to display:', config.metafields);
 
-    // Group metafields by display type
+    // Step 4: Group metafields by display type
     const metafieldGroups = groupByDisplayType(config.metafields);
 
     console.log('[MBA] Grouped by display type:', metafieldGroups);
 
-    // Get display types that have data
-    const displayTypesWithData = Object.keys(metafieldGroups);
+    // Step 5: Count actual items and save to cache for next visit
+    const actualCounts = countRenderedItems(metafieldGroups);
+    console.log('[MBA] Actual item counts:', actualCounts);
+    saveCounts(actualCounts);
 
-    // Show skeletons only for containers that will have data
-    showLoadingSkeletons(displayTypesWithData);
-
-    // Inject components
+    // Step 6: Inject components into containers that have data
     injectComponents(metafieldGroups);
+
+    // Step 7: Hide skeletons for containers that don't have data
+    const containers = document.querySelectorAll('[data-meta-bulk-assign-container]');
+    containers.forEach(container => {
+      const displayType = container.getAttribute('data-meta-bulk-assign-container');
+      if (!metafieldGroups[displayType]) {
+        hideLoadingSkeleton(container);
+      }
+    });
   }
 
   // Run when DOM is ready
@@ -453,12 +495,87 @@
   display: none;
 }
 
+/* Energy Labels Container */
+[data-meta-bulk-assign-container="energy_label"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 16px 0;
+  align-items: flex-start;
+}
+
+@media (min-width: 768px) {
+  [data-meta-bulk-assign-container="energy_label"] {
+    gap: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-meta-bulk-assign-container="energy_label"] {
+    gap: 54px;
+  }
+}
+
+/* Individual Energy Label */
+.mba-energy-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+}
+
+.mba-energy-label:hover {
+  opacity: 0.85;
+}
+
+/* Energy Label Icon - Normalized sizing (61x24 as per design) */
+.mba-energy-label-icon {
+  width: 61px;
+  height: 24px;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+/* Energy Label Text - With hover underline effect */
+.mba-energy-label-text {
+  font-size: 12px;
+  font-weight: 400;
+  color: #2E2E2D;
+  text-align: center;
+  line-height: 1.3;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+@media (min-width: 768px) {
+  .mba-energy-label-text {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mba-energy-label-text {
+    font-size: 14px;
+  }
+}
+
+/* Hover effect - underline the text */
+.mba-energy-label:hover .mba-energy-label-text {
+  border-bottom-color: #2E2E2D;
+}
+
 /* Product Detail Icons Container */
 [data-meta-bulk-assign-container="product_detail_icon"] {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin: 16px 0;
+  align-items: center;
 }
 
 /* Individual Icon Item */
@@ -469,28 +586,15 @@
   flex-shrink: 0;
 }
 
+/* Product Detail Icon - Max dimensions 120x97, preserves aspect ratio */
 .mba-icon-item img {
-  height: 48px;
-  width: auto;
+  max-height: 97px;
   max-width: 120px;
+  width: auto;
+  height: auto;
   object-fit: contain;
   object-position: center;
   display: block;
-}
-
-/* Responsive sizing */
-@media (min-width: 768px) {
-  .mba-icon-item img {
-    height: 56px;
-    max-width: 140px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mba-icon-item img {
-    height: 64px;
-    max-width: 160px;
-  }
 }
 
 /* Skeleton Loading States */
@@ -501,6 +605,23 @@
   margin: 16px 0;
 }
 
+/* Energy label skeleton container needs wider gap */
+[data-meta-bulk-assign-container="energy_label"] .mba-skeleton-container {
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  [data-meta-bulk-assign-container="energy_label"] .mba-skeleton-container {
+    gap: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-meta-bulk-assign-container="energy_label"] .mba-skeleton-container {
+    gap: 54px;
+  }
+}
+
 .mba-skeleton-icon,
 .mba-skeleton-label {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -509,34 +630,16 @@
   border-radius: 4px;
 }
 
+/* Product detail icon skeleton - matches max dimensions 120x97 */
 .mba-skeleton-icon {
-  width: 80px;
-  height: 48px;
+  width: 120px;
+  height: 97px;
 }
 
+/* Energy label skeleton - matches energy label icon sizing (61x24) */
 .mba-skeleton-label {
-  width: 100px;
-  height: 40px;
-}
-
-@media (min-width: 768px) {
-  .mba-skeleton-icon {
-    height: 56px;
-  }
-  .mba-skeleton-label {
-    width: 120px;
-    height: 48px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mba-skeleton-icon {
-    height: 64px;
-  }
-  .mba-skeleton-label {
-    width: 140px;
-    height: 56px;
-  }
+  width: 61px;
+  height: 24px;
 }
 
 /* Shimmer animation */
@@ -592,7 +695,7 @@
 }
 
 .mba-warranty-name {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 400;
   line-height: 1.4;
   color: #2E2E2D;
@@ -614,10 +717,6 @@
 }
 
 @media (min-width: 768px) {
-  .mba-warranty-name {
-    font-size: 15px;
-  }
-
   .mba-skeleton-doc {
     width: 250px;
     height: 44px;
