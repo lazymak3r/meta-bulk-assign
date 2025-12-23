@@ -272,6 +272,37 @@ class Database {
     await this.query("DELETE FROM configuration_rules WHERE id = ?", [ruleId]);
   }
 
+  /**
+   * Delete all data for a shop (GDPR compliance - SHOP_REDACT)
+   * Called when a shop uninstalls the app
+   */
+  async deleteShopData(shop) {
+    console.log(`[Database] Deleting all data for shop: ${shop}`);
+
+    // Get all configuration IDs for this shop first
+    const configs = await this.query(
+      "SELECT id FROM configurations WHERE shop = ?",
+      [shop]
+    );
+
+    // Delete rules for each configuration (cascade should handle this, but being explicit)
+    for (const config of configs.rows) {
+      await this.query(
+        "DELETE FROM configuration_rules WHERE configuration_id = ?",
+        [config.id]
+      );
+    }
+
+    // Delete all configurations for this shop
+    const result = await this.query(
+      "DELETE FROM configurations WHERE shop = ?",
+      [shop]
+    );
+
+    console.log(`[Database] Deleted ${result.rowCount || 0} configurations for shop: ${shop}`);
+    return result.rowCount || 0;
+  }
+
   async bulkCreateRules(configId, rules) {
     // Map old IDs to new database IDs
     const idMap = {};

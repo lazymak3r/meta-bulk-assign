@@ -16,6 +16,7 @@ import PrivacyWebhookHandlers from "./privacy.js";
 import { uploadFileToShopify } from "./file-upload.js";
 import * as metaobjectHandler from "./metaobject-handler.js";
 import { syncStorefrontConfig } from "./storefront-config-sync.js";
+import { appProxyAuthMiddleware } from "./app-proxy-auth.js";
 
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
@@ -85,10 +86,14 @@ app.post(
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
-// App Proxy route for storefront (no authentication required)
+// App Proxy route for storefront
 // Note: App proxy strips /apps/meta-bulk-assign prefix, so this route receives /storefront-config
 // OPTIMIZED: Uses a single batched GraphQL query instead of multiple sequential calls
-app.get("/storefront-config", async (req, res) => {
+// SECURITY: Validates HMAC signature from Shopify to ensure request authenticity
+app.get(
+  "/storefront-config",
+  appProxyAuthMiddleware(process.env.SHOPIFY_API_SECRET),
+  async (req, res) => {
   try {
     const startTime = Date.now();
     const { shop, product } = req.query;

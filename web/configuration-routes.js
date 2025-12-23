@@ -13,6 +13,23 @@ import { syncStorefrontConfig } from "./storefront-config-sync.js";
 
 const router = express.Router();
 
+async function verifyShopOwnership(configId, shopDomain) {
+  const configuration = await database.getConfigurationById(configId);
+
+  if (!configuration) {
+    return { valid: false, error: "Configuration not found", status: 404 };
+  }
+
+  if (configuration.shop !== shopDomain) {
+    console.warn(
+      `[Security] Shop ${shopDomain} attempted to access configuration ${configId} owned by ${configuration.shop}`
+    );
+    return { valid: false, error: "Access denied", status: 403 };
+  }
+
+  return { valid: true, configuration };
+}
+
 /**
  * GET /api/configurations
  * Get all configurations for the shop
@@ -46,17 +63,19 @@ router.get("/", async (req, res) => {
  */
 router.get("/:id", async (req, res) => {
   try {
+    const session = res.locals.shopify.session;
     const { id } = req.params;
-    const configuration = await database.getConfigurationById(id);
 
-    if (!configuration) {
-      return res.status(404).json({ error: "Configuration not found" });
+    // Verify shop ownership
+    const ownership = await verifyShopOwnership(id, session.shop);
+    if (!ownership.valid) {
+      return res.status(ownership.status).json({ error: ownership.error });
     }
 
     const rules = await database.getConfigurationRules(id);
 
     res.json({
-      ...configuration,
+      ...ownership.configuration,
       rules,
     });
   } catch (error) {
@@ -159,9 +178,10 @@ router.put("/:id", async (req, res) => {
     const { id } = req.params;
     const { name, metafieldConfigs, rules } = req.body;
 
-    const existing = await database.getConfigurationById(id);
-    if (!existing) {
-      return res.status(404).json({ error: "Configuration not found" });
+    // Verify shop ownership
+    const ownership = await verifyShopOwnership(id, session.shop);
+    if (!ownership.valid) {
+      return res.status(ownership.status).json({ error: ownership.error });
     }
 
     // Process metaobject fields if present
@@ -221,9 +241,10 @@ router.delete("/:id", async (req, res) => {
     const session = res.locals.shopify.session;
     const { id } = req.params;
 
-    const existing = await database.getConfigurationById(id);
-    if (!existing) {
-      return res.status(404).json({ error: "Configuration not found" });
+    // Verify shop ownership
+    const ownership = await verifyShopOwnership(id, session.shop);
+    if (!ownership.valid) {
+      return res.status(ownership.status).json({ error: ownership.error });
     }
 
     await database.deleteConfiguration(id);
@@ -252,9 +273,10 @@ router.post("/:id/duplicate", async (req, res) => {
     const session = res.locals.shopify.session;
     const { id } = req.params;
 
-    const existing = await database.getConfigurationById(id);
-    if (!existing) {
-      return res.status(404).json({ error: "Configuration not found" });
+    // Verify shop ownership
+    const ownership = await verifyShopOwnership(id, session.shop);
+    if (!ownership.valid) {
+      return res.status(ownership.status).json({ error: ownership.error });
     }
 
     const duplicated = await database.duplicateConfiguration(
@@ -305,9 +327,10 @@ router.get("/:id/preview", async (req, res) => {
     const session = res.locals.shopify.session;
     const { id } = req.params;
 
-    const configuration = await database.getConfigurationById(id);
-    if (!configuration) {
-      return res.status(404).json({ error: "Configuration not found" });
+    // Verify shop ownership
+    const ownership = await verifyShopOwnership(id, session.shop);
+    if (!ownership.valid) {
+      return res.status(ownership.status).json({ error: ownership.error });
     }
 
     const client = new shopify.api.clients.Graphql({ session });
@@ -332,11 +355,13 @@ router.post("/:id/apply", async (req, res) => {
     const session = res.locals.shopify.session;
     const { id } = req.params;
 
-    const configuration = await database.getConfigurationById(id);
-    if (!configuration) {
-      return res.status(404).json({ error: "Configuration not found" });
+    // Verify shop ownership
+    const ownership = await verifyShopOwnership(id, session.shop);
+    if (!ownership.valid) {
+      return res.status(ownership.status).json({ error: ownership.error });
     }
 
+    const configuration = ownership.configuration;
     const client = new shopify.api.clients.Graphql({ session });
 
     // Find matching products
