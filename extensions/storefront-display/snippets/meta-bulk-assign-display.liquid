@@ -188,11 +188,48 @@
     }).filter(h => h).join('');
   }
 
+  function renderSafetyDocument(data) {
+    const files = Array.isArray(data) ? data : [data];
+    return files.map((item, index) => {
+      let fileUrl = '';
+      if (typeof item === 'string') {
+        fileUrl = item;
+      } else if (item && typeof item === 'object') {
+        fileUrl = item.pdf || item.file || item.url || '';
+      }
+      if (!fileUrl) return '';
+
+      const urlParts = fileUrl.split('/');
+      const filename = urlParts[urlParts.length - 1] || `Document ${index + 1}`;
+      const cleanFilename = filename.split('?')[0].replace(/^\d+_/, '') || `Document ${index + 1}`;
+
+      // Add toolbar=0 to hide PDF viewer toolbar in supported browsers
+      const iframeSrc = fileUrl + (fileUrl.includes('?') ? '&' : '#') + 'toolbar=0&navpanes=0&scrollbar=0';
+
+      return `
+        <div class="mba-safety-doc-card">
+          <a href="${escapeHtml(fileUrl)}" download class="mba-safety-download-btn" target="_blank" rel="noopener">
+            Download
+            <svg class="mba-download-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 12L3 7l1.4-1.4L7 8.2V0h2v8.2l2.6-2.6L13 7l-5 5z" fill="currentColor"/>
+              <path d="M14 14H2v-3H0v5h16v-5h-2v3z" fill="currentColor"/>
+            </svg>
+          </a>
+          <div class="mba-safety-pdf-wrapper">
+            <iframe src="${escapeHtml(iframeSrc)}" class="mba-safety-pdf-iframe" title="${escapeHtml(cleanFilename)}"></iframe>
+          </div>
+          <p class="mba-safety-filename">${escapeHtml(cleanFilename)}</p>
+        </div>
+      `;
+    }).filter(h => h).join('');
+  }
+
   function renderComponent(data, displayType) {
     switch (displayType) {
       case 'energy_label': return renderEnergyLabel(data);
       case 'product_detail_icon': return renderProductDetailIcon(data);
       case 'warranty_document': return renderWarrantyDocument(data);
+      case 'safety_document': return renderSafetyDocument(data);
       default: return '';
     }
   }
@@ -380,5 +417,93 @@
 @keyframes mba-fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* Safety Document Styles */
+[data-meta-bulk-assign-container="safety_document"] {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin: 16px 0;
+}
+
+@media (min-width: 768px) {
+  [data-meta-bulk-assign-container="safety_document"] {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 48px;
+  }
+}
+
+@media (min-width: 1200px) {
+  [data-meta-bulk-assign-container="safety_document"] {
+    gap: 80px;
+  }
+}
+
+.mba-safety-doc-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .mba-safety-doc-card {
+    width: calc(50% - 24px);
+    max-width: 400px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .mba-safety-doc-card {
+    width: auto;
+    max-width: 400px;
+  }
+}
+
+.mba-safety-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  color: #2E2E2D;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 400;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.mba-safety-download-btn:hover {
+  background: #f9f9f9;
+  border-color: #ccc;
+}
+
+.mba-download-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.mba-safety-pdf-wrapper {
+  width: 100%;
+  height: 500px;
+  background: #f0f0f0;
+  border: 1px solid #e0e0e0;
+}
+
+.mba-safety-pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.mba-safety-filename {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: #2E2E2D;
+  word-break: break-word;
 }
 </style>
