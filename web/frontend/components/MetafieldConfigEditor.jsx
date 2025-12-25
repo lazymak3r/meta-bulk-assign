@@ -10,6 +10,7 @@ import {
 } from "@shopify/polaris";
 import { PlusIcon, DeleteIcon } from "@shopify/polaris-icons";
 import MetaobjectFieldsEditor from "./MetaobjectFieldsEditor";
+import { FilePicker } from "./FilePicker";
 
 /**
  * Component for editing metafield configurations
@@ -20,6 +21,9 @@ export function MetafieldConfigEditor({
   metafieldDefinitions = [],
 }) {
   const [uploadingFiles, setUploadingFiles] = useState({});
+  const [filePickerOpen, setFilePickerOpen] = useState(false);
+  const [filePickerContext, setFilePickerContext] = useState(null); // { metafieldIndex, fileIndex }
+
   const handleAddMetafield = useCallback(() => {
     const newConfig = {
       id: `metafield_${Date.now()}`,
@@ -203,6 +207,29 @@ export function MetafieldConfigEditor({
     [metafieldConfigs, handleUpdateMetafield]
   );
 
+  // Open file picker for a specific file slot
+  const openFilePicker = useCallback((metafieldIndex, fileIndex) => {
+    setFilePickerContext({ metafieldIndex, fileIndex });
+    setFilePickerOpen(true);
+  }, []);
+
+  // Handle file selection from picker
+  const handleFilePickerSelect = useCallback(
+    (file) => {
+      if (filePickerContext && file) {
+        const { metafieldIndex, fileIndex } = filePickerContext;
+        const config = metafieldConfigs[metafieldIndex];
+        const currentValue = Array.isArray(config.value) ? config.value : [];
+        const updated = [...currentValue];
+        updated[fileIndex] = file.id;
+        handleUpdateMetafield(metafieldIndex, { value: updated });
+      }
+      setFilePickerOpen(false);
+      setFilePickerContext(null);
+    },
+    [filePickerContext, metafieldConfigs, handleUpdateMetafield]
+  );
+
   const definitionOptions = metafieldDefinitions.map((def) => ({
     label: `${def.name} (${def.namespace}.${def.key})`,
     value: def.id,
@@ -286,6 +313,7 @@ export function MetafieldConfigEditor({
                       { label: "Energy Label", value: "energy_label" },
                       { label: "Product Detail Icon", value: "product_detail_icon" },
                       { label: "Warranty Document", value: "warranty_document" },
+                      { label: "Safety Document", value: "safety_document" },
                     ]}
                     value={config.displayType || ""}
                     onChange={(value) =>
@@ -383,19 +411,26 @@ export function MetafieldConfigEditor({
                                         onChange={(e) => handleFileUpload(index, fileIndex, e)}
                                         accept="image/*,application/pdf"
                                       />
-                                      <Button
-                                        loading={uploadingFiles[uploadKey]}
-                                        onClick={() => document.getElementById(uploadId).click()}
-                                      >
-                                        {uploadingFiles[uploadKey]
-                                          ? "Uploading..."
-                                          : fileGid
-                                          ? "Change File"
-                                          : "Upload File"}
-                                      </Button>
+                                      <div style={{ display: "flex", gap: "8px" }}>
+                                        <Button
+                                          loading={uploadingFiles[uploadKey]}
+                                          onClick={() => document.getElementById(uploadId).click()}
+                                        >
+                                          {uploadingFiles[uploadKey]
+                                            ? "Uploading..."
+                                            : fileGid
+                                            ? "Change File"
+                                            : "Upload File"}
+                                        </Button>
+                                        <Button
+                                          onClick={() => openFilePicker(index, fileIndex)}
+                                        >
+                                          Choose from Files
+                                        </Button>
+                                      </div>
                                       {fileGid && (
                                         <p style={{ fontSize: "0.875rem", color: "#008060", marginTop: "8px" }}>
-                                          File uploaded: {fileGid}
+                                          File: {fileGid}
                                         </p>
                                       )}
                                     </LegacyCard>
@@ -457,6 +492,16 @@ export function MetafieldConfigEditor({
       <Button icon={PlusIcon} onClick={handleAddMetafield}>
         Add Metafield
       </Button>
+
+      <FilePicker
+        open={filePickerOpen}
+        onClose={() => {
+          setFilePickerOpen(false);
+          setFilePickerContext(null);
+        }}
+        onSelect={handleFilePickerSelect}
+        fileType="all"
+      />
     </VerticalStack>
   );
 }

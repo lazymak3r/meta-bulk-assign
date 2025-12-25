@@ -515,6 +515,124 @@ app.post("/api/files/upload", upload.single("file"), async (req, res) => {
 
 app.use(express.json());
 
+// List existing files from Shopify admin
+app.get("/api/files/list", async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const client = new shopify.api.clients.Graphql({ session });
+
+    const { type = "all", search = "", cursor = null, limit = 20 } = req.query;
+
+    // Build query filter
+    let queryFilter = "status:READY";
+    if (type === "image") {
+      queryFilter += " AND media_type:IMAGE";
+    } else if (type === "file") {
+      queryFilter += " AND media_type:GENERIC_FILE";
+    }
+    if (search) {
+      queryFilter += ` AND filename:*${search}*`;
+    }
+
+    const response = await client.request(`
+      query GetFiles($first: Int!, $after: String, $query: String) {
+        files(first: $first, after: $after, query: $query, sortKey: CREATED_AT, reverse: true) {
+          edges {
+            node {
+              id
+              createdAt
+              fileStatus
+              alt
+              ... on MediaImage {
+                image {
+                  url
+                  width
+                  height
+                }
+                mimeType
+              }
+              ... on GenericFile {
+                url
+                mimeType
+                originalFileSize
+              }
+              ... on Video {
+                sources {
+                  url
+                  mimeType
+                }
+              }
+            }
+            cursor
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    `, {
+      variables: {
+        first: parseInt(limit),
+        after: cursor || null,
+        query: queryFilter,
+      },
+    });
+
+    const files = response.data.files.edges.map(({ node, cursor }) => {
+      let url = null;
+      let filename = "Unknown";
+      let mimeType = null;
+      let fileSize = null;
+
+      if (node.image) {
+        // MediaImage
+        url = node.image.url;
+        mimeType = node.mimeType;
+        // Extract filename from URL
+        const urlParts = node.image.url.split("/");
+        filename = urlParts[urlParts.length - 1].split("?")[0];
+      } else if (node.url) {
+        // GenericFile
+        url = node.url;
+        mimeType = node.mimeType;
+        fileSize = node.originalFileSize;
+        const urlParts = node.url.split("/");
+        filename = urlParts[urlParts.length - 1].split("?")[0];
+      } else if (node.sources && node.sources.length > 0) {
+        // Video
+        url = node.sources[0].url;
+        mimeType = node.sources[0].mimeType;
+        const urlParts = node.sources[0].url.split("/");
+        filename = urlParts[urlParts.length - 1].split("?")[0];
+      }
+
+      return {
+        id: node.id,
+        filename,
+        url,
+        mimeType,
+        fileSize,
+        alt: node.alt,
+        createdAt: node.createdAt,
+        cursor,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      files,
+      pageInfo: response.data.files.pageInfo,
+    });
+  } catch (error) {
+    console.error("Error fetching files:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 app.get("/api/products/count", async (_req, res) => {
   const client = new shopify.api.clients.Graphql({
     session: res.locals.shopify.session,

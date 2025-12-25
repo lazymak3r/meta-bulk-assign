@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   TextField,
   Button,
@@ -9,6 +9,7 @@ import {
   Banner,
 } from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { FilePicker } from "./FilePicker";
 
 /**
  * Recursive component for editing metaobject fields
@@ -28,6 +29,8 @@ export default function MetaobjectFieldsEditor({
   const [fieldValues, setFieldValues] = useState(initialValues);
   const [nestedDefinitions, setNestedDefinitions] = useState({});
   const [uploadingFiles, setUploadingFiles] = useState({});
+  const [filePickerOpen, setFilePickerOpen] = useState(false);
+  const [filePickerFieldKey, setFilePickerFieldKey] = useState(null);
 
   // Reset field values when initialValues or entryKey changes
   useEffect(() => {
@@ -89,6 +92,20 @@ export default function MetaobjectFieldsEditor({
       [fieldKey]: value,
     }));
   };
+
+  const openFilePicker = useCallback((fieldKey) => {
+    setFilePickerFieldKey(fieldKey);
+    setFilePickerOpen(true);
+  }, []);
+
+  const handleFilePickerSelect = useCallback((file) => {
+    if (filePickerFieldKey && file) {
+      handleFieldChange(filePickerFieldKey, file.id);
+      shopify.toast.show("File selected successfully");
+    }
+    setFilePickerOpen(false);
+    setFilePickerFieldKey(null);
+  }, [filePickerFieldKey, shopify]);
 
   const handleFileUpload = async (fieldKey, event) => {
     const file = event.target.files?.[0];
@@ -224,21 +241,26 @@ export default function MetaobjectFieldsEditor({
               onChange={(e) => handleFileUpload(fieldKey, e)}
               accept="*/*"
             />
-            <Button
-              loading={uploadingFiles[fieldKey]}
-              onClick={() =>
-                document.getElementById(uploadId).click()
-              }
-            >
-              {uploadingFiles[fieldKey]
-                ? "Uploading..."
-                : fieldValue
-                ? "Change File"
-                : "Upload File"}
-            </Button>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <Button
+                loading={uploadingFiles[fieldKey]}
+                onClick={() => document.getElementById(uploadId).click()}
+              >
+                {uploadingFiles[fieldKey]
+                  ? "Uploading..."
+                  : fieldValue
+                  ? "Change File"
+                  : "Upload File"}
+              </Button>
+              <Button
+                onClick={() => openFilePicker(fieldKey)}
+              >
+                Choose from Files
+              </Button>
+            </div>
             {fieldValue && (
               <p style={{ fontSize: "0.875rem", color: "#008060", marginTop: "8px" }}>
-                File uploaded: {fieldValue}
+                File: {fieldValue}
               </p>
             )}
           </div>
@@ -274,6 +296,16 @@ export default function MetaobjectFieldsEditor({
       <FormLayout>
         {definition.fieldDefinitions.map((fieldDef) => renderField(fieldDef))}
       </FormLayout>
+
+      <FilePicker
+        open={filePickerOpen}
+        onClose={() => {
+          setFilePickerOpen(false);
+          setFilePickerFieldKey(null);
+        }}
+        onSelect={handleFilePickerSelect}
+        fileType="all"
+      />
     </div>
   );
 }
