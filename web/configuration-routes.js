@@ -10,6 +10,7 @@ import {
 import { applyMetafieldsToProduct } from "./metafield-apply.js";
 import { createOrUpdateMetaobject } from "./metaobject-handler.js";
 import { syncStorefrontConfig } from "./storefront-config-sync.js";
+import { processWithThrottling, sleep } from "./rate-limiter.js";
 
 const router = express.Router();
 
@@ -377,31 +378,34 @@ router.post("/:id/apply", async (req, res) => {
       configuration.metafield_configs
     );
 
-    // Apply metafields to each product
-    const results = {
-      total: matchingProducts.length,
-      successful: 0,
-      failed: 0,
-      errors: [],
-    };
-
-    for (const product of matchingProducts) {
-      try {
-        await applyMetafieldsToProduct(
-          session,
-          product.id,
-          metafieldConfigs
-        );
-        results.successful++;
-      } catch (error) {
-        results.failed++;
-        results.errors.push({
-          productId: product.id,
-          productTitle: product.title,
-          error: error.message,
-        });
+    // Apply metafields to each product with throttling
+    const results = await processWithThrottling(
+      matchingProducts,
+      async (product) => {
+        await applyMetafieldsToProduct(session, product.id, metafieldConfigs);
+      },
+      {
+        delayBetweenRequests: 100, // 100ms delay between products
+        maxRetries: 5,
+        onSuccess: (product, index, total) => {
+          console.log(
+            `[Configurations] Applied to product ${index + 1}/${total}: ${product.title}`
+          );
+        },
+        onError: (product, error, index, total) => {
+          console.error(
+            `[Configurations] Failed product ${index + 1}/${total} (${product.title}): ${error.message}`
+          );
+        },
       }
-    }
+    );
+
+    // Transform errors to include product details
+    results.errors = results.errors.map((e) => ({
+      productId: e.item.id,
+      productTitle: e.item.title,
+      error: e.error,
+    }));
 
     res.json(results);
   } catch (error) {

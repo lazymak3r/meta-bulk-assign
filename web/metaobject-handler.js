@@ -1,4 +1,5 @@
 import shopify from "./shopify.js";
+import { throttledQuery, throttledMutation } from "./rate-limiter.js";
 
 /**
  * Extracts the metaobject type from a metafield definition
@@ -50,9 +51,7 @@ export async function getMetaobjectDefinition(session, definitionId) {
   `;
 
   try {
-    const response = await client.request(query, {
-      variables: { id: definitionId }
-    });
+    const response = await throttledQuery(client, query, { id: definitionId });
 
     return response.data.metaobjectDefinition;
   } catch (error) {
@@ -149,15 +148,13 @@ export async function createMetaobject(session, metaobjectType, fieldValues, met
   `;
 
   try {
-    const response = await client.request(mutation, {
-      variables: {
-        metaobject: {
-          type: metaobjectType,
-          fields: processedFields,
-          capabilities: {
-            publishable: {
-              status: "ACTIVE"
-            }
+    const response = await throttledMutation(client, mutation, {
+      metaobject: {
+        type: metaobjectType,
+        fields: processedFields,
+        capabilities: {
+          publishable: {
+            status: "ACTIVE"
           }
         }
       }
@@ -254,12 +251,10 @@ export async function updateMetaobject(session, metaobjectId, fieldValues, metao
   `;
 
   try {
-    const response = await client.request(mutation, {
-      variables: {
-        id: metaobjectId,
-        metaobject: {
-          fields: processedFields
-        }
+    const response = await throttledMutation(client, mutation, {
+      id: metaobjectId,
+      metaobject: {
+        fields: processedFields
       }
     });
 
@@ -309,9 +304,7 @@ export async function getMetaobject(session, metaobjectId) {
   `;
 
   try {
-    const response = await client.request(query, {
-      variables: { id: metaobjectId }
-    });
+    const response = await throttledQuery(client, query, { id: metaobjectId });
 
     return response.data.metaobject;
   } catch (error) {

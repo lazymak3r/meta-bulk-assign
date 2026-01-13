@@ -8,6 +8,7 @@
 
 import shopify from "./shopify.js";
 import database from "./database.js";
+import { throttledQuery, throttledMutation } from "./rate-limiter.js";
 
 // Metafield namespace and key for storing storefront config
 const STOREFRONT_CONFIG_NAMESPACE = "meta_bulk_assign";
@@ -42,7 +43,7 @@ async function ensureMetafieldDefinition(session) {
   `;
 
   try {
-    const checkResponse = await client.request(checkQuery);
+    const checkResponse = await throttledQuery(client, checkQuery);
     const existingDef = checkResponse.data?.metafieldDefinitions?.edges?.[0]?.node;
 
     if (existingDef) {
@@ -71,15 +72,13 @@ async function ensureMetafieldDefinition(session) {
         }
       `;
 
-      const updateResponse = await client.request(updateMutation, {
-        variables: {
-          definition: {
-            key: STOREFRONT_CONFIG_KEY,
-            namespace: STOREFRONT_CONFIG_NAMESPACE,
-            ownerType: "SHOP",
-            access: {
-              storefront: "PUBLIC_READ"
-            }
+      const updateResponse = await throttledMutation(client, updateMutation, {
+        definition: {
+          key: STOREFRONT_CONFIG_KEY,
+          namespace: STOREFRONT_CONFIG_NAMESPACE,
+          ownerType: "SHOP",
+          access: {
+            storefront: "PUBLIC_READ"
           }
         }
       });
@@ -112,18 +111,16 @@ async function ensureMetafieldDefinition(session) {
       }
     `;
 
-    const createResponse = await client.request(createMutation, {
-      variables: {
-        definition: {
-          name: "Storefront Display Config",
-          namespace: STOREFRONT_CONFIG_NAMESPACE,
-          key: STOREFRONT_CONFIG_KEY,
-          type: "json",
-          ownerType: "SHOP",
-          description: "Configuration for Meta Bulk Assign storefront display types",
-          access: {
-            storefront: "PUBLIC_READ"
-          }
+    const createResponse = await throttledMutation(client, createMutation, {
+      definition: {
+        name: "Storefront Display Config",
+        namespace: STOREFRONT_CONFIG_NAMESPACE,
+        key: STOREFRONT_CONFIG_KEY,
+        type: "json",
+        ownerType: "SHOP",
+        description: "Configuration for Meta Bulk Assign storefront display types",
+        access: {
+          storefront: "PUBLIC_READ"
         }
       }
     });
@@ -190,7 +187,7 @@ export async function syncStorefrontConfig(session) {
       }
     `;
 
-    const shopResponse = await client.request(shopQuery);
+    const shopResponse = await throttledQuery(client, shopQuery);
     const shopId = shopResponse.data?.shop?.id;
 
     if (!shopId) {
@@ -215,18 +212,16 @@ export async function syncStorefrontConfig(session) {
       }
     `;
 
-    const response = await client.request(mutation, {
-      variables: {
-        metafields: [
-          {
-            ownerId: shopId,
-            namespace: STOREFRONT_CONFIG_NAMESPACE,
-            key: STOREFRONT_CONFIG_KEY,
-            type: "json",
-            value: JSON.stringify(displayTypeMap)
-          }
-        ]
-      }
+    const response = await throttledMutation(client, mutation, {
+      metafields: [
+        {
+          ownerId: shopId,
+          namespace: STOREFRONT_CONFIG_NAMESPACE,
+          key: STOREFRONT_CONFIG_KEY,
+          type: "json",
+          value: JSON.stringify(displayTypeMap)
+        }
+      ]
     });
 
     // Check for errors
@@ -260,7 +255,7 @@ export async function getStorefrontConfig(session) {
       }
     `;
 
-    const response = await client.request(query);
+    const response = await throttledQuery(client, query);
     const value = response.data?.shop?.metafield?.value;
 
     return value ? JSON.parse(value) : {};

@@ -7,54 +7,55 @@
  */
 
 import database from "./database.js";
+import { throttledQuery, sleep } from "./rate-limiter.js";
 
 /**
  * Fetch all products from Shopify with specified fields
+ * Uses throttled queries with retry logic and delays between pages
  */
 async function fetchAllProducts(graphqlClient) {
   const allProducts = [];
   let hasNextPage = true;
   let cursor = null;
+  let pageCount = 0;
 
-  while (hasNextPage) {
-    const query = `
-      query GetProducts($cursor: String) {
-        products(first: 250, after: $cursor) {
-          edges {
-            node {
-              id
-              title
-              vendor
-              productType
-              tags
-              collections(first: 250) {
-                edges {
-                  node {
-                    id
-                    title
-                  }
+  const query = `
+    query GetProducts($cursor: String) {
+      products(first: 250, after: $cursor) {
+        edges {
+          node {
+            id
+            title
+            vendor
+            productType
+            tags
+            collections(first: 250) {
+              edges {
+                node {
+                  id
+                  title
                 }
               }
-              category {
-                id
-                name
-              }
             }
-            cursor
+            category {
+              id
+              name
+            }
           }
-          pageInfo {
-            hasNextPage
-          }
+          cursor
+        }
+        pageInfo {
+          hasNextPage
         }
       }
-    `;
+    }
+  `;
 
-    const response = await graphqlClient.query({
-      data: {
-        query,
-        variables: { cursor },
-      },
-    });
+  while (hasNextPage) {
+    pageCount++;
+
+    // Use throttled query with automatic retry on throttle errors
+    const response = await throttledQuery(graphqlClient, query, { cursor });
 
     const { edges, pageInfo } = response.body.data.products;
 
@@ -64,6 +65,13 @@ async function fetchAllProducts(graphqlClient) {
 
     hasNextPage = pageInfo.hasNextPage;
     cursor = edges.length > 0 ? edges[edges.length - 1].cursor : null;
+
+    // Add delay between pagination requests to avoid hitting rate limits
+    if (hasNextPage) {
+      await sleep(100); // 100ms delay between pages
+    }
+
+    console.log(`[ProductMatcher] Fetched page ${pageCount}, total products: ${allProducts.length}`);
   }
 
   return allProducts;

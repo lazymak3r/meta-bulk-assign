@@ -1,4 +1,5 @@
 import shopify from "./shopify.js";
+import { throttledMutation, sleep, processWithThrottling } from "./rate-limiter.js";
 
 /**
  * Applies metafield configurations to a product
@@ -128,12 +129,11 @@ export async function applyMetafieldsToProduct(
   `;
 
   try {
-    const response = await client.request(mutation, {
-      variables: {
-        input: {
-          id: productId,
-          metafields: metafields,
-        },
+    // Use throttled mutation with automatic retry on throttle errors
+    const response = await throttledMutation(client, mutation, {
+      input: {
+        id: productId,
+        metafields: metafields,
       },
     });
 
@@ -230,26 +230,29 @@ export async function bulkApplyVendorConfig(
     }) for vendor ${vendorName}`
   );
 
-  // Apply metafields to each product
-  const results = {
-    total: productIds.length,
-    successful: 0,
-    failed: 0,
-    errors: [],
-  };
-
-  for (const productId of productIds) {
-    try {
+  // Apply metafields to each product with throttling
+  const results = await processWithThrottling(
+    productIds,
+    async (productId) => {
       await applyMetafieldsToProduct(session, productId, metafieldConfigs);
-      results.successful++;
-    } catch (error) {
-      results.failed++;
-      results.errors.push({
-        productId,
-        error: error.message,
-      });
+    },
+    {
+      delayBetweenRequests: 100, // 100ms delay between products
+      maxRetries: 5,
+      onSuccess: (productId, index, total) => {
+        console.log(`[MetafieldApply] Applied to product ${index + 1}/${total}`);
+      },
+      onError: (productId, error, index, total) => {
+        console.error(`[MetafieldApply] Failed product ${index + 1}/${total}: ${error.message}`);
+      },
     }
-  }
+  );
+
+  // Transform errors to match expected format
+  results.errors = results.errors.map(e => ({
+    productId: e.item,
+    error: e.error,
+  }));
 
   return results;
 }
