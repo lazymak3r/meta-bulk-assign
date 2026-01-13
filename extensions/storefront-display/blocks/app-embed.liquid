@@ -3,8 +3,13 @@
   Merchants enable this once in Theme Settings > App Embeds
 {% endcomment %}
 
-{% comment %} Add marker class to HTML element so theme can detect app is active {% endcomment %}
-<script>document.documentElement.classList.add('mba-app-active');</script>
+{% comment %} Mark app as loaded and cancel fallback timer {% endcomment %}
+<script>
+  document.documentElement.classList.add('mba-app-loaded');
+  if (window.__mbaFallbackTimer) {
+    clearTimeout(window.__mbaFallbackTimer);
+  }
+</script>
 
 {% render 'meta-bulk-assign-display' %}
 
