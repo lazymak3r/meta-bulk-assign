@@ -249,14 +249,43 @@
     return document.querySelector(`[data-meta-bulk-assign-container="${displayType}"]`);
   }
 
+  // Get configured display types from displayConfig
+  function getConfiguredDisplayTypes() {
+    const types = new Set();
+    for (const displayType of Object.values(displayConfig)) {
+      types.add(displayType);
+    }
+    return types;
+  }
+
+  // Get the "no documents" message based on locale
+  function getNoDocumentsMessage() {
+    const locale = document.documentElement.lang || 'en';
+    if (locale.startsWith('de')) {
+      return 'Keine Produktsicherheitsdokumente verfügbar.';
+    }
+    return 'No product safety documents available.';
+  }
+
   function render() {
     const groups = groupByDisplayType();
+    const configuredTypes = getConfiguredDisplayTypes();
+
     for (const [displayType, items] of Object.entries(groups)) {
       const container = findContainer(displayType);
       if (!container) continue;
       const html = items.map(item => renderComponent(item.data, displayType)).join('');
       if (html) {
         container.innerHTML = html;
+        container.classList.add('mba-loaded');
+      }
+    }
+
+    // Handle safety_document when configured but no data available
+    if (configuredTypes.has('safety_document') && !groups['safety_document']) {
+      const container = findContainer('safety_document');
+      if (container) {
+        container.innerHTML = `<div class="mba-no-documents">${getNoDocumentsMessage()}</div>`;
         container.classList.add('mba-loaded');
       }
     }
@@ -533,5 +562,18 @@ html.mba-app-active [data-mba-theme-warranty-docs] {
   font-size: 14px;
   color: #2E2E2D;
   word-break: break-word;
+}
+
+/* No documents message */
+.mba-no-documents {
+  font-size: 16px;
+  color: #2E2E2D;
+  margin-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .mba-no-documents {
+    font-size: 24px;
+  }
 }
 </style>
