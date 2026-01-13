@@ -273,6 +273,34 @@
 {% endif %}
 
 <style>
+/* ========================================
+   Theme Default Hiding Rules
+   When app embed is active, hide theme defaults
+   ======================================== */
+
+/* Hide theme's default energy labels section when app is active */
+html.mba-app-active [data-mba-theme-energy-labels] {
+  display: none !important;
+}
+
+/* Hide theme's default product icons section when app is active */
+html.mba-app-active [data-mba-theme-icons] {
+  display: none !important;
+}
+
+/* Hide theme's default safety documents when app is active */
+html.mba-app-active [data-mba-theme-safety-docs] {
+  display: none !important;
+}
+
+/* Hide theme's default warranty/download documents when app is active */
+html.mba-app-active [data-mba-theme-warranty-docs] {
+  display: none !important;
+}
+
+/* ========================================
+   App Container Base Styles
+   ======================================== */
 [data-meta-bulk-assign-container] {
   min-height: 0;
 }

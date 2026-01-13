@@ -3,6 +3,9 @@
   Merchants enable this once in Theme Settings > App Embeds
 {% endcomment %}
 
+{% comment %} Add marker class to HTML element so theme can detect app is active {% endcomment %}
+<script>document.documentElement.classList.add('mba-app-active');</script>
+
 {% render 'meta-bulk-assign-display' %}
 
 {% schema %}

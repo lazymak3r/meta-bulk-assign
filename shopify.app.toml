@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "0e7b855dd2b88d43d4570555b22bc551"
+client_id = "336aa2cf6cb2b436211ff976562fdfaa"
 name = "Media App"
 application_url = "https://meta-bulk-assign.vercel.app"
 embedded = true
