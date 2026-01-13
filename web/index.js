@@ -668,7 +668,7 @@ app.use("/api/configurations", configurationRoutes);
 // Resource routes (vendors, collections, categories, products)
 app.use("/api", resourceRoutes);
 
-// Metafield definitions endpoint
+// Metafield definitions endpoint - fetches ALL definitions with pagination
 app.get("/api/metafield-definitions", async (_req, res) => {
   try {
     const client = new shopify.api.clients.Graphql({
@@ -676,8 +676,8 @@ app.get("/api/metafield-definitions", async (_req, res) => {
     });
 
     const query = `
-      query GetMetafieldDefinitions {
-        metafieldDefinitions(first: 100, ownerType: PRODUCT) {
+      query GetMetafieldDefinitions($cursor: String) {
+        metafieldDefinitions(first: 250, after: $cursor, ownerType: PRODUCT) {
           edges {
             node {
               id
@@ -694,17 +694,34 @@ app.get("/api/metafield-definitions", async (_req, res) => {
               }
             }
           }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
         }
       }
     `;
 
-    const response = await client.request(query);
-    const definitions = response.data.metafieldDefinitions.edges.map(
-      (edge) => edge.node
-    );
+    let allDefinitions = [];
+    let hasNextPage = true;
+    let cursor = null;
+
+    // Fetch all pages
+    while (hasNextPage) {
+      const response = await client.request(query, {
+        variables: { cursor },
+      });
+
+      const { edges, pageInfo } = response.data.metafieldDefinitions;
+      const definitions = edges.map((edge) => edge.node);
+      allDefinitions = allDefinitions.concat(definitions);
+
+      hasNextPage = pageInfo.hasNextPage;
+      cursor = pageInfo.endCursor;
+    }
 
     res.status(200).json({
-      definitions,
+      definitions: allDefinitions,
       success: true,
     });
   } catch (error) {
