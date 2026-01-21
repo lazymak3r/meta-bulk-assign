@@ -307,7 +307,7 @@ router.post("/preview", async (req, res) => {
     const { rules } = req.body;
 
     const client = new shopify.api.clients.Graphql({ session });
-    const matchingProducts = await previewMatchingProducts(client, rules || []);
+    const matchingProducts = await previewMatchingProducts(client, rules || [], session.shop);
 
     res.json({
       count: matchingProducts.length,
@@ -335,7 +335,7 @@ router.get("/:id/preview", async (req, res) => {
     }
 
     const client = new shopify.api.clients.Graphql({ session });
-    const matchingProducts = await findMatchingProducts(client, id);
+    const matchingProducts = await findMatchingProducts(client, id, session.shop);
 
     res.json({
       count: matchingProducts.length,
@@ -365,8 +365,7 @@ router.post("/:id/apply", async (req, res) => {
     const configuration = ownership.configuration;
     const client = new shopify.api.clients.Graphql({ session });
 
-    // Find matching products
-    const matchingProducts = await findMatchingProducts(client, id);
+    const matchingProducts = await findMatchingProducts(client, id, session.shop);
 
     console.log(
       `[Configurations] Applying configuration ${id} to ${matchingProducts.length} products`

@@ -10,71 +10,169 @@ import database from "./database.js";
 import { throttledQuery, sleep } from "./rate-limiter.js";
 
 /**
- * Fetch all products from Shopify with specified fields
- * Uses throttled queries with retry logic and delays between pages
+ * In-memory product cache with TTL
+ * Prevents re-fetching all products on every preview request
  */
-async function fetchAllProducts(graphqlClient) {
-  const allProducts = [];
-  let hasNextPage = true;
-  let cursor = null;
-  let pageCount = 0;
+const productCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-  const query = `
-    query GetProducts($cursor: String) {
-      products(first: 250, after: $cursor) {
-        edges {
-          node {
-            id
-            title
-            vendor
-            productType
-            tags
-            collections(first: 250) {
-              edges {
-                node {
-                  id
-                  title
-                }
-              }
-            }
-            category {
-              id
-              name
-            }
-          }
-          cursor
-        }
-        pageInfo {
-          hasNextPage
-        }
-      }
-    }
-  `;
+/**
+ * In-flight request tracking for deduplication
+ * Prevents multiple concurrent fetches for the same shop
+ */
+const inFlightRequests = new Map();
 
-  while (hasNextPage) {
-    pageCount++;
+/**
+ * Get cached products for a shop, or null if cache is expired/missing
+ */
+function getCachedProducts(shopDomain) {
+  const cached = productCache.get(shopDomain);
+  if (!cached) return null;
 
-    // Use throttled query with automatic retry on throttle errors
-    const response = await throttledQuery(graphqlClient, query, { cursor });
-
-    const { edges, pageInfo } = response.body.data.products;
-
-    for (const edge of edges) {
-      allProducts.push(edge.node);
-    }
-
-    hasNextPage = pageInfo.hasNextPage;
-    cursor = edges.length > 0 ? edges[edges.length - 1].cursor : null;
-
-    // Add delay between pagination requests to avoid hitting rate limits
-    if (hasNextPage) {
-      await sleep(100); // 100ms delay between pages
-    }
-
-    console.log(`[ProductMatcher] Fetched page ${pageCount}, total products: ${allProducts.length}`);
+  const now = Date.now();
+  if (now - cached.timestamp > CACHE_TTL_MS) {
+    productCache.delete(shopDomain);
+    return null;
   }
 
-  return allProducts;
+  console.log(`[ProductMatcher] Using cached products for ${shopDomain} (${cached.products.length} products, age: ${Math.round((now - cached.timestamp) / 1000)}s)`);
+  return cached.products;
+}
+
+/**
+ * Cache products for a shop
+ */
+function setCachedProducts(shopDomain, products) {
+  productCache.set(shopDomain, {
+    products,
+    timestamp: Date.now(),
+  });
+  console.log(`[ProductMatcher] Cached ${products.length} products for ${shopDomain}`);
+}
+
+/**
+ * Clear the product cache for a shop (call this after product updates)
+ */
+export function clearProductCache(shopDomain) {
+  if (shopDomain) {
+    productCache.delete(shopDomain);
+    console.log(`[ProductMatcher] Cleared cache for ${shopDomain}`);
+  } else {
+    productCache.clear();
+    console.log(`[ProductMatcher] Cleared all product caches`);
+  }
+}
+
+/**
+ * Fetch all products from Shopify with specified fields
+ * Uses throttled queries with retry logic and delays between pages
+ * Includes caching and request deduplication
+ */
+async function fetchAllProducts(graphqlClient, shopDomain = null) {
+  // Check cache first
+  if (shopDomain) {
+    const cached = getCachedProducts(shopDomain);
+    if (cached) {
+      return cached;
+    }
+
+    // Check if there's already an in-flight request for this shop
+    if (inFlightRequests.has(shopDomain)) {
+      console.log(`[ProductMatcher] Waiting for in-flight request for ${shopDomain}`);
+      try {
+        const products = await inFlightRequests.get(shopDomain);
+        return products;
+      } catch (error) {
+        // If the in-flight request failed, we'll try again
+        console.log(`[ProductMatcher] In-flight request failed, retrying for ${shopDomain}`);
+      }
+    }
+  }
+
+  // Create a promise for this fetch that other requests can wait on
+  const fetchPromise = (async () => {
+    const allProducts = [];
+    let hasNextPage = true;
+    let cursor = null;
+    let pageCount = 0;
+
+    const query = `
+      query GetProducts($cursor: String) {
+        products(first: 250, after: $cursor) {
+          edges {
+            node {
+              id
+              title
+              vendor
+              productType
+              tags
+              collections(first: 250) {
+                edges {
+                  node {
+                    id
+                    title
+                  }
+                }
+              }
+              category {
+                id
+                name
+              }
+            }
+            cursor
+          }
+          pageInfo {
+            hasNextPage
+          }
+        }
+      }
+    `;
+
+    while (hasNextPage) {
+      pageCount++;
+
+      // Use throttled query with automatic retry on throttle errors
+      const response = await throttledQuery(graphqlClient, query, { cursor });
+
+      const { edges, pageInfo } = response.body.data.products;
+
+      for (const edge of edges) {
+        allProducts.push(edge.node);
+      }
+
+      hasNextPage = pageInfo.hasNextPage;
+      cursor = edges.length > 0 ? edges[edges.length - 1].cursor : null;
+
+      // Add delay between pagination requests to avoid hitting rate limits
+      if (hasNextPage) {
+        await sleep(100); // 100ms delay between pages
+      }
+
+      console.log(`[ProductMatcher] Fetched page ${pageCount}, total products: ${allProducts.length}`);
+    }
+
+    // Cache the results
+    if (shopDomain) {
+      setCachedProducts(shopDomain, allProducts);
+    }
+
+    return allProducts;
+  })();
+
+  // Register this as an in-flight request
+  if (shopDomain) {
+    inFlightRequests.set(shopDomain, fetchPromise);
+  }
+
+  try {
+    const products = await fetchPromise;
+    return products;
+  } finally {
+    // Clean up in-flight request tracking
+    if (shopDomain) {
+      inFlightRequests.delete(shopDomain);
+    }
+  }
 }
 
 /**
@@ -214,15 +312,15 @@ function evaluateRuleTree(product, ruleTree) {
 /**
  * Find all products that match a configuration
  */
-export async function findMatchingProducts(graphqlClient, configurationId) {
+export async function findMatchingProducts(graphqlClient, configurationId, shopDomain = null) {
   // Get configuration rules
   const rules = await database.getConfigurationRules(configurationId);
 
   // Build tree from rules
   const ruleTree = buildRuleTree(rules);
 
-  // Fetch all products
-  const allProducts = await fetchAllProducts(graphqlClient);
+  // Fetch all products (with caching if shopDomain provided)
+  const allProducts = await fetchAllProducts(graphqlClient, shopDomain);
 
   // Filter products that match the rule tree
   const matchingProducts = allProducts.filter(product =>
@@ -236,12 +334,12 @@ export async function findMatchingProducts(graphqlClient, configurationId) {
  * Find matching products for a preview (before saving configuration)
  * Takes rules array directly instead of configuration ID
  */
-export async function previewMatchingProducts(graphqlClient, rules) {
+export async function previewMatchingProducts(graphqlClient, rules, shopDomain = null) {
   // Build tree from rules
   const ruleTree = buildRuleTree(rules);
 
-  // Fetch all products
-  const allProducts = await fetchAllProducts(graphqlClient);
+  // Fetch all products (with caching if shopDomain provided)
+  const allProducts = await fetchAllProducts(graphqlClient, shopDomain);
 
   // Filter products that match the rule tree
   const matchingProducts = allProducts.filter(product =>
@@ -303,4 +401,5 @@ export default {
   previewMatchingProducts,
   determineConfigurationType,
   generateConfigurationName,
+  clearProductCache,
 };

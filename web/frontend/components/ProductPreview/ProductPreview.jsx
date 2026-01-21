@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LegacyCard,
   VerticalStack,
@@ -23,12 +23,24 @@ export function ProductPreview({ rules, configurationId = null }) {
   const [products, setProducts] = useState([]);
   const [error, setError] = useState(null);
 
-  const fetchPreview = async () => {
+  // AbortController ref to cancel previous requests
+  const abortControllerRef = useRef(null);
+
+  const fetchPreview = useCallback(async () => {
+    // Cancel any previous in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     if (!rules || rules.length === 0) {
       setCount(0);
       setProducts([]);
       return;
     }
+
+    // Create a new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     setLoading(true);
     setError(null);
@@ -38,32 +50,48 @@ export function ProductPreview({ rules, configurationId = null }) {
 
       if (configurationId) {
         // Fetch preview for saved configuration
-        response = await fetch(`/api/configurations/${configurationId}/preview`);
+        response = await fetch(`/api/configurations/${configurationId}/preview`, {
+          signal: abortController.signal,
+        });
       } else {
         // Fetch preview for unsaved rules
         response = await fetch("/api/configurations/preview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ rules }),
+          signal: abortController.signal,
         });
       }
 
+      // Check if request was aborted
+      if (abortController.signal.aborted) {
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error("Failed to fetch product preview");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch product preview");
       }
 
       const data = await response.json();
       setCount(data.count);
       setProducts(data.products || []);
     } catch (err) {
+      // Ignore abort errors - they're expected when canceling requests
+      if (err.name === 'AbortError') {
+        return;
+      }
       console.error("Error fetching product preview:", err);
       setError(err.message);
       setCount(0);
       setProducts([]);
     } finally {
-      setLoading(false);
+      // Only update loading state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setLoading(false);
+      }
     }
-  };
+  }, [fetch, rules, configurationId]);
 
   useEffect(() => {
     // Debounce the preview fetch
@@ -71,8 +99,14 @@ export function ProductPreview({ rules, configurationId = null }) {
       fetchPreview();
     }, 500);
 
-    return () => clearTimeout(timeoutId);
-  }, [rules, configurationId]);
+    return () => {
+      clearTimeout(timeoutId);
+      // Cancel any in-flight request when rules change or component unmounts
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [rules, configurationId, fetchPreview]);
 
   return (
     <LegacyCard sectioned>
