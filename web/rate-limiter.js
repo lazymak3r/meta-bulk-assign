@@ -162,16 +162,17 @@ export async function processWithThrottling(items, processor, options = {}) {
 export async function throttledQuery(client, query, variables = {}, options = {}) {
   return withRetry(
     async () => {
-      // Support both .query() and .request() methods
-      if (typeof client.query === 'function') {
+      // Prefer .request() for consistent response format ({ data: { ... } })
+      // .query() wraps response in { body: { data: { ... } } } which causes mismatches
+      if (typeof client.request === 'function') {
+        return client.request(query, { variables });
+      } else if (typeof client.query === 'function') {
         return client.query({
           data: {
             query,
             variables,
           },
         });
-      } else if (typeof client.request === 'function') {
-        return client.request(query, { variables });
       }
       throw new Error('GraphQL client must have query() or request() method');
     },
