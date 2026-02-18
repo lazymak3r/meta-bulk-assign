@@ -101,6 +101,70 @@ class PostgreSQLDatabase {
       CREATE INDEX IF NOT EXISTS idx_configuration_rules_parent_id ON configuration_rules(parent_id)
     `);
 
+    // Create sync_mappings table
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS sync_mappings (
+        id SERIAL PRIMARY KEY,
+        shop TEXT NOT NULL,
+        source_namespace TEXT NOT NULL,
+        source_key TEXT NOT NULL,
+        target_display_type TEXT NOT NULL,
+        target_namespace TEXT NOT NULL,
+        target_key TEXT NOT NULL,
+        target_metafield_type TEXT NOT NULL DEFAULT 'list.file_reference',
+        enabled BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create sync_jobs table
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS sync_jobs (
+        id SERIAL PRIMARY KEY,
+        shop TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+        total_products INTEGER DEFAULT 0,
+        processed_products INTEGER DEFAULT 0,
+        successful_products INTEGER DEFAULT 0,
+        failed_products INTEGER DEFAULT 0,
+        skipped_products INTEGER DEFAULT 0,
+        total_files_uploaded INTEGER DEFAULT 0,
+        total_files_skipped INTEGER DEFAULT 0,
+        errors TEXT DEFAULT '[]',
+        mapping_snapshot TEXT NOT NULL,
+        started_at TIMESTAMP,
+        completed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create sync_file_cache table
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS sync_file_cache (
+        id SERIAL PRIMARY KEY,
+        shop TEXT NOT NULL,
+        external_url TEXT NOT NULL,
+        shopify_file_gid TEXT NOT NULL,
+        filename TEXT,
+        mime_type TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(shop, external_url)
+      )
+    `);
+
+    await this.query(`
+      CREATE INDEX IF NOT EXISTS idx_sync_mappings_shop ON sync_mappings(shop)
+    `);
+
+    await this.query(`
+      CREATE INDEX IF NOT EXISTS idx_sync_jobs_shop ON sync_jobs(shop)
+    `);
+
+    await this.query(`
+      CREATE INDEX IF NOT EXISTS idx_sync_file_cache_shop_url ON sync_file_cache(shop, external_url)
+    `);
+
     console.log("[Database] PostgreSQL initialized successfully");
   }
 
@@ -299,6 +363,9 @@ class Database {
       [shop]
     );
 
+    // Delete sync data
+    await this.deleteSyncData(shop);
+
     console.log(`[Database] Deleted ${result.rowCount || 0} configurations for shop: ${shop}`);
     return result.rowCount || 0;
   }
@@ -340,6 +407,155 @@ class Database {
       createdRules.push(created);
     }
     return createdRules;
+  }
+
+  // Sync Mapping operations
+  async createSyncMapping(shop, sourceNamespace, sourceKey, targetDisplayType, targetNamespace, targetKey, targetMetafieldType = 'list.file_reference') {
+    const result = await this.query(
+      `INSERT INTO sync_mappings (shop, source_namespace, source_key, target_display_type, target_namespace, target_key, target_metafield_type)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       RETURNING *`,
+      [shop, sourceNamespace, sourceKey, targetDisplayType, targetNamespace, targetKey, targetMetafieldType]
+    );
+    return result.rows[0];
+  }
+
+  async getSyncMappings(shop) {
+    const result = await this.query(
+      "SELECT * FROM sync_mappings WHERE shop = ? ORDER BY created_at DESC",
+      [shop]
+    );
+    return result.rows;
+  }
+
+  async getSyncMappingById(id) {
+    const result = await this.query(
+      "SELECT * FROM sync_mappings WHERE id = ?",
+      [id]
+    );
+    return result.rows[0];
+  }
+
+  async updateSyncMapping(id, updates) {
+    const fields = [];
+    const values = [];
+    for (const [key, value] of Object.entries(updates)) {
+      fields.push(`${key} = ?`);
+      values.push(value);
+    }
+    fields.push("updated_at = CURRENT_TIMESTAMP");
+    values.push(id);
+
+    await this.query(
+      `UPDATE sync_mappings SET ${fields.join(", ")} WHERE id = ?`,
+      values
+    );
+  }
+
+  async deleteSyncMapping(id) {
+    await this.query("DELETE FROM sync_mappings WHERE id = ?", [id]);
+  }
+
+  // Sync Job operations
+  async createSyncJob(shop, mappingSnapshot) {
+    const result = await this.query(
+      `INSERT INTO sync_jobs (shop, mapping_snapshot)
+       VALUES (?, ?)
+       RETURNING *`,
+      [shop, JSON.stringify(mappingSnapshot)]
+    );
+    return result.rows[0];
+  }
+
+  async updateSyncJobStatus(id, updates) {
+    const fields = [];
+    const values = [];
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === 'errors') {
+        fields.push(`${key} = ?`);
+        values.push(JSON.stringify(value));
+      } else {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+    }
+    values.push(id);
+
+    await this.query(
+      `UPDATE sync_jobs SET ${fields.join(", ")} WHERE id = ?`,
+      values
+    );
+  }
+
+  async getSyncJob(id) {
+    const result = await this.query(
+      "SELECT * FROM sync_jobs WHERE id = ?",
+      [id]
+    );
+    const job = result.rows[0];
+    if (job) {
+      job.errors = typeof job.errors === 'string' ? JSON.parse(job.errors) : job.errors;
+      job.mapping_snapshot = typeof job.mapping_snapshot === 'string' ? JSON.parse(job.mapping_snapshot) : job.mapping_snapshot;
+    }
+    return job;
+  }
+
+  async getLatestSyncJob(shop) {
+    const result = await this.query(
+      "SELECT * FROM sync_jobs WHERE shop = ? ORDER BY created_at DESC LIMIT 1",
+      [shop]
+    );
+    const job = result.rows[0];
+    if (job) {
+      job.errors = typeof job.errors === 'string' ? JSON.parse(job.errors) : job.errors;
+      job.mapping_snapshot = typeof job.mapping_snapshot === 'string' ? JSON.parse(job.mapping_snapshot) : job.mapping_snapshot;
+    }
+    return job;
+  }
+
+  async getActiveSyncJob(shop) {
+    const result = await this.query(
+      "SELECT * FROM sync_jobs WHERE shop = ? AND status = 'running' LIMIT 1",
+      [shop]
+    );
+    return result.rows[0];
+  }
+
+  // File Cache operations
+  async getCachedFile(shop, externalUrl) {
+    const result = await this.query(
+      "SELECT * FROM sync_file_cache WHERE shop = ? AND external_url = ?",
+      [shop, externalUrl]
+    );
+    return result.rows[0];
+  }
+
+  async cacheFile(shop, externalUrl, shopifyFileGid, filename, mimeType) {
+    const result = await this.query(
+      `INSERT INTO sync_file_cache (shop, external_url, shopify_file_gid, filename, mime_type)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (shop, external_url) DO UPDATE SET shopify_file_gid = EXCLUDED.shopify_file_gid
+       RETURNING *`,
+      [shop, externalUrl, shopifyFileGid, filename, mimeType]
+    );
+    return result.rows[0];
+  }
+
+  async getCachedFiles(shop, externalUrls) {
+    if (!externalUrls || externalUrls.length === 0) return [];
+    const placeholders = externalUrls.map((_, i) => `$${i + 2}`).join(", ");
+    const result = await this.db.pool.query(
+      `SELECT * FROM sync_file_cache WHERE shop = $1 AND external_url IN (${placeholders})`,
+      [shop, ...externalUrls]
+    );
+    return result.rows;
+  }
+
+  // Extend deleteShopData to clean up sync tables
+  async deleteSyncData(shop) {
+    await this.query("DELETE FROM sync_file_cache WHERE shop = ?", [shop]);
+    await this.query("DELETE FROM sync_jobs WHERE shop = ?", [shop]);
+    await this.query("DELETE FROM sync_mappings WHERE shop = ?", [shop]);
   }
 
   close() {

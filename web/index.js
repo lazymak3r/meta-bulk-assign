@@ -8,6 +8,7 @@ import serveStatic from "serve-static";
 
 import configurationRoutes from "./configuration-routes.js";
 import resourceRoutes from "./resource-routes.js";
+import syncRoutes from "./sync-routes.js";
 import shopify from "./shopify.js";
 import database from "./database.js";
 import AppWebhookHandlers from "./webhooks.js";
@@ -667,6 +668,9 @@ app.use("/api/configurations", configurationRoutes);
 
 // Resource routes (vendors, collections, categories, products)
 app.use("/api", resourceRoutes);
+
+// Sync routes (file sync feature)
+app.use("/api/sync", syncRoutes);
 
 // Metafield definitions endpoint - fetches ALL definitions with pagination
 app.get("/api/metafield-definitions", async (_req, res) => {
