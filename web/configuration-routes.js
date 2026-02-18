@@ -367,10 +367,6 @@ router.post("/:id/apply", async (req, res) => {
 
     const matchingProducts = await findMatchingProducts(client, id, session.shop);
 
-    console.log(
-      `[Configurations] Applying configuration ${id} to ${matchingProducts.length} products`
-    );
-
     // Process metafield configs (create metaobjects if needed)
     const metafieldConfigs = await processMetafieldConfigs(
       session,
