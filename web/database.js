@@ -16,11 +16,12 @@ class PostgreSQLDatabase {
     const isProduction = process.env.NODE_ENV === "production";
     const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
 
+    const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+
     const poolConfig = {
       connectionString,
-      // Optimal settings for serverless
-      max: 20,
-      idleTimeoutMillis: 30000,
+      max: isServerless ? 3 : 20,
+      idleTimeoutMillis: isServerless ? 10000 : 30000,
       connectionTimeoutMillis: 10000,
     };
 
@@ -36,135 +37,9 @@ class PostgreSQLDatabase {
   }
 
   async initialize() {
-    // Create configurations table
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS configurations (
-        id SERIAL PRIMARY KEY,
-        shop TEXT NOT NULL,
-        name TEXT,
-        type TEXT NOT NULL CHECK (type IN ('vendor', 'category', 'collection', 'product', 'combined')),
-        metafield_configs TEXT NOT NULL,
-        priority INTEGER NOT NULL DEFAULT 0,
-        show_on_storefront BOOLEAN DEFAULT false,
-        storefront_position TEXT DEFAULT 'after_price',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Add new columns to existing table if they don't exist
-    try {
-      await this.query(`
-        ALTER TABLE configurations
-        ADD COLUMN IF NOT EXISTS show_on_storefront BOOLEAN DEFAULT false
-      `);
-      await this.query(`
-        ALTER TABLE configurations
-        ADD COLUMN IF NOT EXISTS storefront_position TEXT DEFAULT 'after_price'
-      `);
-    } catch (err) {
-      console.log('[Database] Columns may already exist:', err.message);
-    }
-
-    // Create configuration_rules table
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS configuration_rules (
-        id SERIAL PRIMARY KEY,
-        configuration_id INTEGER NOT NULL,
-        parent_id INTEGER,
-        rule_type TEXT NOT NULL CHECK (rule_type IN ('vendor', 'collection', 'category', 'product')),
-        rule_value TEXT NOT NULL,
-        rule_id TEXT,
-        operator TEXT NOT NULL CHECK (operator IN ('AND', 'OR')),
-        level INTEGER NOT NULL DEFAULT 0,
-        position INTEGER NOT NULL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (configuration_id) REFERENCES configurations (id) ON DELETE CASCADE,
-        FOREIGN KEY (parent_id) REFERENCES configuration_rules (id) ON DELETE CASCADE
-      )
-    `);
-
-    // Create indexes
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_configurations_shop ON configurations(shop)
-    `);
-
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_configurations_priority ON configurations(priority DESC)
-    `);
-
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_configuration_rules_config_id ON configuration_rules(configuration_id)
-    `);
-
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_configuration_rules_parent_id ON configuration_rules(parent_id)
-    `);
-
-    // Create sync_mappings table
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS sync_mappings (
-        id SERIAL PRIMARY KEY,
-        shop TEXT NOT NULL,
-        source_namespace TEXT NOT NULL,
-        source_key TEXT NOT NULL,
-        target_display_type TEXT NOT NULL,
-        target_namespace TEXT NOT NULL,
-        target_key TEXT NOT NULL,
-        target_metafield_type TEXT NOT NULL DEFAULT 'list.file_reference',
-        enabled BOOLEAN DEFAULT true,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create sync_jobs table
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS sync_jobs (
-        id SERIAL PRIMARY KEY,
-        shop TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
-        total_products INTEGER DEFAULT 0,
-        processed_products INTEGER DEFAULT 0,
-        successful_products INTEGER DEFAULT 0,
-        failed_products INTEGER DEFAULT 0,
-        skipped_products INTEGER DEFAULT 0,
-        total_files_uploaded INTEGER DEFAULT 0,
-        total_files_skipped INTEGER DEFAULT 0,
-        errors TEXT DEFAULT '[]',
-        mapping_snapshot TEXT NOT NULL,
-        started_at TIMESTAMP,
-        completed_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create sync_file_cache table
-    await this.query(`
-      CREATE TABLE IF NOT EXISTS sync_file_cache (
-        id SERIAL PRIMARY KEY,
-        shop TEXT NOT NULL,
-        external_url TEXT NOT NULL,
-        shopify_file_gid TEXT NOT NULL,
-        filename TEXT,
-        mime_type TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(shop, external_url)
-      )
-    `);
-
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_sync_mappings_shop ON sync_mappings(shop)
-    `);
-
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_sync_jobs_shop ON sync_jobs(shop)
-    `);
-
-    await this.query(`
-      CREATE INDEX IF NOT EXISTS idx_sync_file_cache_shop_url ON sync_file_cache(shop, external_url)
-    `);
-
+    // Schema is managed by Prisma migrations — no CREATE TABLE needed here.
+    // Just verify the connection works.
+    await this.query('SELECT 1');
     console.log("[Database] PostgreSQL initialized successfully");
   }
 

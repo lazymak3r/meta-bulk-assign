@@ -134,7 +134,7 @@ async function fetchAllProducts(graphqlClient, shopDomain = null) {
       // Use throttled query with automatic retry on throttle errors
       const response = await throttledQuery(graphqlClient, query, { cursor });
 
-      const { edges, pageInfo } = response.body.data.products;
+      const { edges, pageInfo } = response.data.products;
 
       for (const edge of edges) {
         allProducts.push(edge.node);

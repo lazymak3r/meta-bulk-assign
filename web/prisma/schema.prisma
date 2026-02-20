@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model configurations {
+  id                  Int                   @id @default(autoincrement())
+  shop                String
+  name                String?
+  type                String
+  metafield_configs   String
+  priority            Int                   @default(0)
+  show_on_storefront  Boolean?              @default(false)
+  storefront_position String?               @default("after_price")
+  created_at          DateTime?             @default(now())
+  updated_at          DateTime?             @default(now())
+  configuration_rules configuration_rules[]
+
+  @@index([shop], name: "idx_configurations_shop")
+  @@index([priority(sort: Desc)], name: "idx_configurations_priority")
+}
+
+model configuration_rules {
+  id               Int                  @id @default(autoincrement())
+  configuration_id Int
+  parent_id        Int?
+  rule_type        String
+  rule_value       String
+  rule_id          String?
+  operator         String
+  level            Int                  @default(0)
+  position         Int                  @default(0)
+  created_at       DateTime?            @default(now())
+  configuration    configurations       @relation(fields: [configuration_id], references: [id], onDelete: Cascade)
+  parent           configuration_rules? @relation("RuleSelfRelation", fields: [parent_id], references: [id], onDelete: Cascade)
+  children         configuration_rules[] @relation("RuleSelfRelation")
+
+  @@index([configuration_id], name: "idx_configuration_rules_config_id")
+  @@index([parent_id], name: "idx_configuration_rules_parent_id")
+}
+
+model sync_mappings {
+  id                   Int       @id @default(autoincrement())
+  shop                 String
+  source_namespace     String
+  source_key           String
+  target_display_type  String
+  target_namespace     String
+  target_key           String
+  target_metafield_type String   @default("list.file_reference")
+  enabled              Boolean?  @default(true)
+  created_at           DateTime? @default(now())
+  updated_at           DateTime? @default(now())
+
+  @@index([shop], name: "idx_sync_mappings_shop")
+}
+
+model sync_jobs {
+  id                   Int       @id @default(autoincrement())
+  shop                 String
+  status               String    @default("pending")
+  total_products       Int?      @default(0)
+  processed_products   Int?      @default(0)
+  successful_products  Int?      @default(0)
+  failed_products      Int?      @default(0)
+  skipped_products     Int?      @default(0)
+  total_files_uploaded Int?      @default(0)
+  total_files_skipped  Int?      @default(0)
+  errors               String?   @default("[]")
+  mapping_snapshot     String
+  started_at           DateTime?
+  completed_at         DateTime?
+  created_at           DateTime? @default(now())
+
+  @@index([shop], name: "idx_sync_jobs_shop")
+}
+
+model sync_file_cache {
+  id              Int       @id @default(autoincrement())
+  shop            String
+  external_url    String
+  shopify_file_gid String
+  filename        String?
+  mime_type       String?
+  created_at      DateTime? @default(now())
+
+  @@unique([shop, external_url])
+  @@index([shop, external_url], name: "idx_sync_file_cache_shop_url")
+}

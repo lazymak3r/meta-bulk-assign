@@ -1,4 +1,5 @@
 roles = ["backend"]
 
 [commands]
-dev = "npm run dev"
+predev = "npx prisma generate"
+dev = "npx prisma migrate deploy && npm run dev"
