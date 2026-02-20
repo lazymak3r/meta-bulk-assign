@@ -8,7 +8,8 @@
 import express from "express";
 import shopify from "./shopify.js";
 import database from "./database.js";
-import { processSyncJob, cancelSyncJob, isJobActive } from "./sync-processor.js";
+import { processSyncJob, cancelSyncJob, isJobActive, fetchProductPage, processProduct, createConfigurationsFromMappings } from "./sync-processor.js";
+import { syncStorefrontConfig } from "./storefront-config-sync.js";
 import { throttledQuery } from "./rate-limiter.js";
 
 const router = express.Router();
@@ -281,7 +282,7 @@ router.get("/source-metafields", async (req, res) => {
 
 /**
  * POST /api/sync/start
- * Start a new sync job. Runs async — returns jobId immediately.
+ * Create a new sync job. Returns jobId for the frontend to drive batch processing.
  */
 router.post("/start", async (req, res) => {
   try {
@@ -310,18 +311,122 @@ router.post("/start", async (req, res) => {
     // Create job record
     const job = await database.createSyncJob(shop, enabledMappings);
 
-    // Start async processing (not awaited)
-    processSyncJob(session, job.id, enabledMappings).catch((error) => {
-      console.error(`[Sync Routes] Unhandled error in job ${job.id}:`, error);
+    await database.updateSyncJobStatus(job.id, {
+      status: "running",
+      started_at: new Date().toISOString(),
     });
 
     res.status(202).json({
       jobId: job.id,
-      status: "pending",
+      status: "running",
       mappings: enabledMappings.length,
     });
   } catch (error) {
     console.error("[Sync Routes] Error starting sync:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/sync/jobs/:id/process-batch
+ * Process the next batch of products. Called repeatedly by the frontend.
+ * Accepts { cursor } in body (null for first batch).
+ * Returns { hasMore, nextCursor, job }.
+ */
+router.post("/jobs/:id/process-batch", async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const jobId = parseInt(req.params.id, 10);
+    const { cursor } = req.body;
+
+    const job = await database.getSyncJob(jobId);
+    if (!job) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+    if (job.shop !== session.shop) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    if (job.status === "cancelled") {
+      return res.json({ hasMore: false, nextCursor: null, job });
+    }
+
+    const client = new shopify.api.clients.Graphql({ session });
+    const mappings = job.mapping_snapshot;
+    const PAGE_SIZE = 100;
+
+    // Fetch one page of products
+    const { products, nextCursor, hasNextPage } = await fetchProductPage(client, mappings, cursor, PAGE_SIZE);
+
+    // Process each product in this batch
+    let batchSuccessful = 0;
+    let batchFailed = 0;
+    let batchSkipped = 0;
+    let batchFilesUploaded = 0;
+    let batchFilesSkipped = 0;
+    const batchErrors = [];
+
+    for (const product of products) {
+      // Re-check cancellation mid-batch
+      const freshJob = await database.getSyncJob(jobId);
+      if (freshJob.status === "cancelled") {
+        break;
+      }
+
+      try {
+        const result = await processProduct(session, session.shop, product, mappings);
+        if (result.skipped) {
+          batchSkipped++;
+        } else {
+          batchSuccessful++;
+        }
+        batchFilesUploaded += result.filesUploaded;
+        batchFilesSkipped += result.filesSkipped;
+      } catch (error) {
+        batchFailed++;
+        batchErrors.push({
+          productId: product.id,
+          productTitle: product.title,
+          error: error.message,
+        });
+      }
+    }
+
+    // Update job with cumulative progress
+    const updates = {
+      processed_products: (job.processed_products || 0) + products.length,
+      successful_products: (job.successful_products || 0) + batchSuccessful,
+      failed_products: (job.failed_products || 0) + batchFailed,
+      skipped_products: (job.skipped_products || 0) + batchSkipped,
+      total_files_uploaded: (job.total_files_uploaded || 0) + batchFilesUploaded,
+      total_files_skipped: (job.total_files_skipped || 0) + batchFilesSkipped,
+      errors: [...(job.errors || []), ...batchErrors],
+    };
+
+    if (!hasNextPage) {
+      updates.status = "completed";
+      updates.completed_at = new Date().toISOString();
+    }
+
+    await database.updateSyncJobStatus(jobId, updates);
+
+    // On completion, create configs and sync storefront
+    if (!hasNextPage) {
+      try {
+        await createConfigurationsFromMappings(session, session.shop, mappings);
+        await syncStorefrontConfig(session);
+      } catch (err) {
+        console.error("[Sync Routes] Error syncing storefront config after batch completion:", err);
+      }
+    }
+
+    const updatedJob = await database.getSyncJob(jobId);
+    res.json({
+      hasMore: hasNextPage,
+      nextCursor: hasNextPage ? nextCursor : null,
+      job: updatedJob,
+    });
+  } catch (error) {
+    console.error("[Sync Routes] Error processing batch:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -410,8 +515,12 @@ router.post("/jobs/:id/cancel", async (req, res) => {
 
     const cancelled = cancelSyncJob(jobId);
     if (!cancelled) {
-      // Job may have already finished between the DB check and the cancel attempt
-      return res.status(400).json({ error: "Job is not currently active in memory" });
+      // Job is not active in memory — mark as cancelled directly in DB
+      await database.updateSyncJobStatus(jobId, {
+        status: "cancelled",
+        completed_at: new Date().toISOString(),
+      });
+      return res.json({ success: true, message: "Job marked as cancelled" });
     }
 
     res.json({ success: true, message: "Cancellation requested" });
