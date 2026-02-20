@@ -410,8 +410,13 @@ router.post("/jobs/:id/cancel", async (req, res) => {
 
     const cancelled = cancelSyncJob(jobId);
     if (!cancelled) {
-      // Job may have already finished between the DB check and the cancel attempt
-      return res.status(400).json({ error: "Job is not currently active in memory" });
+      // Job is not active in memory (server restarted or serverless cold start)
+      // Mark it as cancelled directly in the database
+      await database.updateSyncJobStatus(jobId, {
+        status: "cancelled",
+        completed_at: new Date().toISOString(),
+      });
+      return res.json({ success: true, message: "Job marked as cancelled (was not active in memory)" });
     }
 
     res.json({ success: true, message: "Cancellation requested" });
