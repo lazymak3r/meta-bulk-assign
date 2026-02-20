@@ -150,24 +150,18 @@ router.delete("/mappings/:id", async (req, res) => {
 
 /**
  * GET /api/sync/source-metafields
- * Fetch product metafield definitions that could contain URLs
- * (single_line_text_field, multi_line_text_field, url, json types)
+ * Fetch ALL product metafield definitions (both structured and unstructured).
+ * 1. Fetches formal metafieldDefinitions from the API
+ * 2. Scans a sample of products to discover unstructured metafields
+ * Combines and deduplicates both lists.
  */
 router.get("/source-metafields", async (req, res) => {
   try {
     const session = res.locals.shopify.session;
     const client = new shopify.api.clients.Graphql({ session });
 
-    const URL_CAPABLE_TYPES = [
-      "single_line_text_field",
-      "multi_line_text_field",
-      "url",
-      "json",
-      "list.single_line_text_field",
-      "list.url",
-    ];
-
-    const query = `
+    // Step 1: Fetch all formal metafield definitions
+    const definitionsQuery = `
       query GetMetafieldDefinitions($cursor: String) {
         metafieldDefinitions(first: 250, after: $cursor, ownerType: PRODUCT) {
           edges {
@@ -188,24 +182,95 @@ router.get("/source-metafields", async (req, res) => {
       }
     `;
 
-    let allDefinitions = [];
+    const definitionsMap = new Map(); // key: "namespace.key" → definition object
     let hasNextPage = true;
     let cursor = null;
 
     while (hasNextPage) {
-      const response = await throttledQuery(client, query, { cursor });
+      const response = await throttledQuery(client, definitionsQuery, { cursor });
       const { edges, pageInfo } = response.data.metafieldDefinitions;
 
-      const definitions = edges
-        .map((edge) => edge.node)
-        .filter((def) => URL_CAPABLE_TYPES.includes(def.type.name));
+      for (const edge of edges) {
+        const def = edge.node;
+        definitionsMap.set(`${def.namespace}.${def.key}`, {
+          id: def.id,
+          name: def.name,
+          namespace: def.namespace,
+          key: def.key,
+          type: def.type,
+          description: def.description,
+          source: "definition",
+        });
+      }
 
-      allDefinitions = allDefinitions.concat(definitions);
       hasNextPage = pageInfo.hasNextPage;
       cursor = pageInfo.endCursor;
     }
 
-    res.json(allDefinitions);
+    // Step 2: Scan products to discover unstructured metafields
+    const productsQuery = `
+      query GetProductMetafields($cursor: String) {
+        products(first: 50, after: $cursor) {
+          edges {
+            node {
+              metafields(first: 100) {
+                edges {
+                  node {
+                    namespace
+                    key
+                    type
+                  }
+                }
+              }
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    `;
+
+    // Scan up to 250 products (5 pages of 50) to discover unstructured metafields
+    let productCursor = null;
+    let productPages = 0;
+    const MAX_PRODUCT_PAGES = 5;
+
+    while (productPages < MAX_PRODUCT_PAGES) {
+      const response = await throttledQuery(client, productsQuery, { cursor: productCursor });
+      const { edges, pageInfo } = response.data.products;
+
+      for (const productEdge of edges) {
+        for (const mfEdge of productEdge.node.metafields.edges) {
+          const mf = mfEdge.node;
+          const mapKey = `${mf.namespace}.${mf.key}`;
+
+          if (!definitionsMap.has(mapKey)) {
+            definitionsMap.set(mapKey, {
+              id: null,
+              name: `${mf.namespace}.${mf.key}`,
+              namespace: mf.namespace,
+              key: mf.key,
+              type: { name: mf.type },
+              description: null,
+              source: "unstructured",
+            });
+          }
+        }
+      }
+
+      if (!pageInfo.hasNextPage) break;
+      productCursor = pageInfo.endCursor;
+      productPages++;
+    }
+
+    // Return all metafields sorted by namespace.key
+    const allMetafields = Array.from(definitionsMap.values()).sort((a, b) =>
+      `${a.namespace}.${a.key}`.localeCompare(`${b.namespace}.${b.key}`)
+    );
+
+    res.json(allMetafields);
   } catch (error) {
     console.error("[Sync Routes] Error fetching source metafields:", error);
     res.status(500).json({ error: error.message });

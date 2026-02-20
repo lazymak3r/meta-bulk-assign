@@ -280,6 +280,7 @@ async function processProduct(session, shop, product, mappings) {
     }
 
     if (fileGids.length > 0) {
+      console.log(`[Sync] Product ${product.id}: Setting ${mapping.target_namespace}.${mapping.target_key} with GIDs:`, fileGids);
       metafieldConfigs.push({
         namespace: mapping.target_namespace,
         key: mapping.target_key,

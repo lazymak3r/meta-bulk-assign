@@ -58,7 +58,7 @@ export function SyncMappingEditor({ open, onClose, onSave, editingMapping }) {
   const sourceMetafieldOptions = [
     { label: "Select source metafield...", value: "" },
     ...(sourceMetafields || []).map((def) => ({
-      label: `${def.namespace}.${def.key} (${def.name || def.type.name})`,
+      label: `${def.namespace}.${def.key} — ${def.type.name}${def.source === "unstructured" ? " (unstructured)" : ""}`,
       value: `${def.namespace}.${def.key}`,
     })),
   ];
@@ -71,7 +71,9 @@ export function SyncMappingEditor({ open, onClose, onSave, editingMapping }) {
       return;
     }
 
-    const [source_namespace, source_key] = sourceMetafield.split(".");
+    const dotIndex = sourceMetafield.indexOf(".");
+    const source_namespace = sourceMetafield.substring(0, dotIndex);
+    const source_key = sourceMetafield.substring(dotIndex + 1);
     setSaving(true);
 
     try {

@@ -410,12 +410,12 @@ class Database {
   }
 
   // Sync Mapping operations
-  async createSyncMapping(shop, sourceNamespace, sourceKey, targetDisplayType, targetNamespace, targetKey, targetMetafieldType = 'list.file_reference') {
+  async createSyncMapping(shop, { source_namespace, source_key, target_display_type, target_namespace, target_key, target_metafield_type = 'list.file_reference' }) {
     const result = await this.query(
       `INSERT INTO sync_mappings (shop, source_namespace, source_key, target_display_type, target_namespace, target_key, target_metafield_type)
        VALUES (?, ?, ?, ?, ?, ?, ?)
        RETURNING *`,
-      [shop, sourceNamespace, sourceKey, targetDisplayType, targetNamespace, targetKey, targetMetafieldType]
+      [shop, source_namespace, source_key, target_display_type, target_namespace, target_key, target_metafield_type]
     );
     return result.rows[0];
   }
