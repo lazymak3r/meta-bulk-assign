@@ -478,8 +478,52 @@ async function createConfigurationsFromMappings(session, shop, mappings) {
   }
 }
 
+/**
+ * Fetch a single page of products with source metafield aliases
+ */
+export async function fetchProductPage(client, mappings, cursor, pageSize = 100) {
+  const metafieldAliases = mappings.map((m, i) =>
+    `mf${i}: metafield(namespace: "${m.source_namespace}", key: "${m.source_key}") { value type }`
+  ).join("\n        ");
+
+  const query = `
+    query GetProductsForSync($cursor: String, $first: Int!) {
+      products(first: $first, after: $cursor) {
+        edges {
+          node {
+            id
+            title
+            ${metafieldAliases}
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  `;
+
+  const response = await throttledQuery(client, query, { cursor, first: pageSize });
+  const { edges, pageInfo } = response.data.products;
+
+  return {
+    products: edges.map(e => e.node),
+    nextCursor: pageInfo.endCursor,
+    hasNextPage: pageInfo.hasNextPage,
+  };
+}
+
+/**
+ * Process a single product (exported for batch endpoint)
+ */
+export { processProduct, createConfigurationsFromMappings };
+
 export default {
   processSyncJob,
   cancelSyncJob,
   isJobActive,
+  fetchProductPage,
+  processProduct,
+  createConfigurationsFromMappings,
 };

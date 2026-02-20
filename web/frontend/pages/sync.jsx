@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   Page,
   Layout,
@@ -34,6 +34,10 @@ export default function SyncPage() {
   const [editingMapping, setEditingMapping] = useState(null);
   const [error, setError] = useState(null);
   const [activeJobId, setActiveJobId] = useState(null);
+  const [activeJob, setActiveJob] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const cursorRef = useRef(null);
+  const cancelledRef = useRef(false);
 
   // Fetch mappings
   const {
@@ -49,7 +53,7 @@ export default function SyncPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch latest job
+  // Fetch latest job (on mount only)
   const {
     data: latestJob,
   } = useQuery({
@@ -62,24 +66,45 @@ export default function SyncPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Poll active job
-  const { data: activeJobData } = useQuery({
-    queryKey: ["sync-job", activeJobId],
-    queryFn: async () => {
-      const response = await authenticatedFetch(`/api/sync/jobs/${activeJobId}`);
-      if (!response.ok) throw new Error("Failed to fetch job");
-      return response.json();
-    },
-    enabled: !!activeJobId,
-    refetchInterval: activeJobId ? 2500 : false,
-    onSuccess: (data) => {
-      if (data && data.status !== "running" && data.status !== "pending") {
-        setActiveJobId(null);
-        queryClient.invalidateQueries(["sync-job-latest"]);
+  // Drive the batch processing loop
+  const processBatches = useCallback(async (jobId) => {
+    setIsSyncing(true);
+    cursorRef.current = null;
+    cancelledRef.current = false;
+    let hasMore = true;
+
+    while (hasMore && !cancelledRef.current) {
+      try {
+        const response = await authenticatedFetch(`/api/sync/jobs/${jobId}/process-batch`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cursor: cursorRef.current }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Batch processing failed");
+        }
+
+        const data = await response.json();
+        setActiveJob(data.job);
+        hasMore = data.hasMore;
+        cursorRef.current = data.nextCursor;
+
+        if (data.job.status === "cancelled") {
+          break;
+        }
+      } catch (err) {
+        console.error("Batch processing error:", err);
+        setError(err.message);
+        break;
       }
-    },
-    refetchOnWindowFocus: false,
-  });
+    }
+
+    setIsSyncing(false);
+    setActiveJobId(null);
+    queryClient.invalidateQueries(["sync-job-latest"]);
+  }, [authenticatedFetch, queryClient]);
 
   // Start sync mutation
   const startSyncMutation = useMutation({
@@ -95,7 +120,10 @@ export default function SyncPage() {
     },
     onSuccess: (data) => {
       setActiveJobId(data.jobId);
+      setActiveJob({ id: data.jobId, status: "running" });
       setError(null);
+      // Start the batch processing loop
+      processBatches(data.jobId);
     },
     onError: (err) => {
       setError(err.message);
@@ -123,6 +151,9 @@ export default function SyncPage() {
   const handleCancel = useCallback(async () => {
     const jobId = activeJobId || latestJob?.id;
     if (!jobId) return;
+
+    // Stop the batch loop
+    cancelledRef.current = true;
 
     try {
       const response = await authenticatedFetch(`/api/sync/jobs/${jobId}/cancel`, {
@@ -154,15 +185,8 @@ export default function SyncPage() {
   }, []);
 
   // Determine which job to show
-  const displayJob = activeJobData || latestJob;
-  const isRunning = displayJob?.status === "running" || displayJob?.status === "pending";
-
-  // If latest job is active, auto-poll it
-  useEffect(() => {
-    if (latestJob && !activeJobId && (latestJob.status === "running" || latestJob.status === "pending")) {
-      setActiveJobId(latestJob.id);
-    }
-  }, [latestJob, activeJobId]);
+  const displayJob = activeJob || latestJob;
+  const isRunning = isSyncing || displayJob?.status === "running" || displayJob?.status === "pending";
 
   // Build mapping table rows
   const mappingRows = mappings.map((m) => [
