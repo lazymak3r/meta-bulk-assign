@@ -1,4 +1,4 @@
-import {useState, useCallback, useEffect} from "react";
+import {useState, useCallback} from "react";
 import {
     Page,
     Layout,
@@ -29,75 +29,22 @@ export default function NewConfiguration() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState(null);
 
-    // Fetch vendors
-    const {data: vendorsData, isLoading: loadingVendors} = useQuery({
-        queryKey: ["vendors"],
+    // Single fetch for all resources
+    const {data: resources, isLoading} = useQuery({
+        queryKey: ["resources"],
         queryFn: async () => {
-            const response = await fetch("/api/products/vendors");
-            if (!response.ok) {
-                // If endpoint doesn't exist, fetch products and extract vendors
-                const productsRes = await fetch("/api/products/count");
-                return {vendors: []};
-            }
+            const response = await fetch("/api/resources");
+            if (!response.ok) throw new Error("Failed to load resources");
             return await response.json();
         },
         refetchOnWindowFocus: false,
     });
 
-    // Fetch collections
-    const {data: collectionsData, isLoading: loadingCollections} = useQuery({
-        queryKey: ["collections"],
-        queryFn: async () => {
-            const response = await fetch("/api/collections");
-            if (!response.ok) {
-                return {collections: []};
-            }
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    // Fetch categories
-    const {data: categoriesData, isLoading: loadingCategories} = useQuery({
-        queryKey: ["categories"],
-        queryFn: async () => {
-            const response = await fetch("/api/categories");
-            if (!response.ok) {
-                return {categories: []};
-            }
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    // Fetch products
-    const {data: productsData, isLoading: loadingProducts} = useQuery({
-        queryKey: ["products"],
-        queryFn: async () => {
-            const response = await fetch("/api/products");
-            if (!response.ok) {
-                return {products: []};
-            }
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    // Fetch metafield definitions
-    const {data: metafieldDefsData, isLoading: loadingMetafields} = useQuery({
-        queryKey: ["metafield-definitions"],
-        queryFn: async () => {
-            const response = await fetch("/api/metafield-definitions");
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    const vendors = vendorsData?.vendors || [];
-    const collections = collectionsData?.collections || [];
-    const categories = categoriesData?.categories || [];
-    const products = productsData?.products || [];
-    const metafieldDefinitions = metafieldDefsData?.definitions || [];
+    const vendors = resources?.vendors || [];
+    const collections = resources?.collections || [];
+    const categories = resources?.categories || [];
+    const products = resources?.products || [];
+    const metafieldDefinitions = resources?.definitions || [];
 
     const handleSave = useCallback(async () => {
         if (metafieldConfigs.length === 0) {
@@ -125,8 +72,6 @@ export default function NewConfiguration() {
                 throw new Error(errorData.error || "Failed to create configuration");
             }
 
-            const data = await response.json();
-
             // Invalidate configurations cache so the list updates
             queryClient.invalidateQueries(["configurations"]);
 
@@ -142,8 +87,6 @@ export default function NewConfiguration() {
     const handleCancel = useCallback(() => {
         navigate("/");
     }, [navigate]);
-
-    const isLoading = loadingVendors || loadingCollections || loadingCategories || loadingProducts || loadingMetafields;
 
     return (
         <Page

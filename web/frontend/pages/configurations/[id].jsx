@@ -47,6 +47,23 @@ export default function EditConfiguration() {
         refetchOnWindowFocus: false,
     });
 
+    // Single fetch for all resources (vendors, collections, categories, products, metafield defs)
+    const {data: resources} = useQuery({
+        queryKey: ["resources"],
+        queryFn: async () => {
+            const response = await fetch("/api/resources");
+            if (!response.ok) throw new Error("Failed to load resources");
+            return await response.json();
+        },
+        refetchOnWindowFocus: false,
+    });
+
+    const vendors = resources?.vendors || [];
+    const collections = resources?.collections || [];
+    const categories = resources?.categories || [];
+    const products = resources?.products || [];
+    const metafieldDefinitions = resources?.definitions || [];
+
     // Helper function to fetch metaobject data by GID
     const fetchMetaobjectData = useCallback(async (gid) => {
         try {
@@ -147,69 +164,6 @@ export default function EditConfiguration() {
 
         loadConfiguration();
     }, [configData, fetchMetaobjectData]);
-
-    // Fetch vendors, collections, categories, metafield definitions
-    const {data: vendorsData} = useQuery({
-        queryKey: ["vendors"],
-        queryFn: async () => {
-            const response = await fetch("/api/products/vendors");
-            if (!response.ok) {
-                return {vendors: []};
-            }
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    const {data: collectionsData} = useQuery({
-        queryKey: ["collections"],
-        queryFn: async () => {
-            const response = await fetch("/api/collections");
-            if (!response.ok) {
-                return {collections: []};
-            }
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    const {data: categoriesData} = useQuery({
-        queryKey: ["categories"],
-        queryFn: async () => {
-            const response = await fetch("/api/categories");
-            if (!response.ok) {
-                return {categories: []};
-            }
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    const {data: productsData} = useQuery({
-        queryKey: ["products"],
-        queryFn: async () => {
-            const response = await fetch("/api/products");
-            if (!response.ok) {
-                return {products: []};
-            }
-            return await response.json();
-        },
-        refetchOnWindowFocus: false,
-    });
-
-    const {data: metafieldDefsData} = useQuery({
-        queryKey: ["metafield-definitions"],
-        queryFn: async () => {
-            const response = await fetch("/api/metafield-definitions");
-            return await response.json();
-        },
-    });
-
-    const vendors = vendorsData?.vendors || [];
-    const collections = collectionsData?.collections || [];
-    const categories = categoriesData?.categories || [];
-    const products = productsData?.products || [];
-    const metafieldDefinitions = metafieldDefsData?.definitions || [];
 
     const handleSave = useCallback(async () => {
         if (metafieldConfigs.length === 0) {
