@@ -71,6 +71,7 @@ model sync_jobs {
   total_files_uploaded Int?      @default(0)
   total_files_skipped  Int?      @default(0)
   errors               String?   @default("[]")
+  file_product_map     String?   @default("{}")
   mapping_snapshot     String
   started_at           DateTime?
   completed_at         DateTime?

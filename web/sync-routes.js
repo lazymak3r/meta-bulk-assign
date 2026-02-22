@@ -8,7 +8,7 @@
 import express from "express";
 import shopify from "./shopify.js";
 import database from "./database.js";
-import { processSyncJob, cancelSyncJob, isJobActive, fetchProductPage, processProduct, createConfigurationsFromMappings } from "./sync-processor.js";
+import { processSyncJob, cancelSyncJob, isJobActive, fetchProductPage, processProduct, createConfigurationsFromMappings, createConfigurationsFromFileMap } from "./sync-processor.js";
 import { syncStorefrontConfig } from "./storefront-config-sync.js";
 import { throttledQuery } from "./rate-limiter.js";
 
@@ -382,6 +382,9 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
     let batchFilesSkipped = 0;
     const batchErrors = [];
 
+    // Read existing file→product map from the job
+    const fileProductMap = job.file_product_map || {};
+
     for (const product of relevantProducts) {
       // Re-check cancellation mid-batch
       const freshJob = await database.getSyncJob(jobId);
@@ -394,6 +397,25 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
         batchSuccessful++;
         batchFilesUploaded += result.filesUploaded;
         batchFilesSkipped += result.filesSkipped;
+
+        // Accumulate file→product map
+        for (const fa of result.fileAssignments) {
+          const mapping = mappings[fa.mappingIndex];
+          if (!fileProductMap[fa.fileGid]) {
+            fileProductMap[fa.fileGid] = {
+              filename: fa.filename,
+              displayType: mapping.target_display_type,
+              targetNamespace: mapping.target_namespace,
+              targetKey: mapping.target_key,
+              targetType: mapping.target_metafield_type,
+              products: [],
+            };
+          }
+          const entry = fileProductMap[fa.fileGid];
+          if (!entry.products.some(p => p.id === product.id)) {
+            entry.products.push({ id: product.id, title: product.title });
+          }
+        }
       } catch (error) {
         batchFailed++;
         batchErrors.push({
@@ -418,6 +440,7 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
       total_files_uploaded: (job.total_files_uploaded || 0) + batchFilesUploaded,
       total_files_skipped: (job.total_files_skipped || 0) + batchFilesSkipped,
       errors: [...(job.errors || []), ...batchErrors],
+      file_product_map: fileProductMap,
     };
 
     if (!hasNextPage) {
@@ -427,13 +450,14 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
 
     await database.updateSyncJobStatus(jobId, updates);
 
-    // On completion, create configs and sync storefront
+    // On completion, create per-file configurations and sync storefront
     if (!hasNextPage) {
       try {
-        await createConfigurationsFromMappings(session, session.shop, mappings);
+        const completedJob = await database.getSyncJob(jobId);
+        await createConfigurationsFromFileMap(session, session.shop, completedJob.file_product_map || {});
         await syncStorefrontConfig(session);
       } catch (err) {
-        console.error("[Sync Routes] Error syncing storefront config after batch completion:", err);
+        console.error("[Sync Routes] Error creating configs after batch completion:", err);
       }
     }
 

@@ -58,6 +58,7 @@ export async function processSyncJob(session, jobId, mappings) {
     let filesUploaded = 0;
     let filesSkipped = 0;
     const errors = [];
+    const fileProductMap = {};
 
     for (const product of products) {
       // Check cancellation
@@ -91,6 +92,25 @@ export async function processSyncJob(session, jobId, mappings) {
         }
         filesUploaded += result.filesUploaded;
         filesSkipped += result.filesSkipped;
+
+        // Accumulate file→product map
+        for (const fa of result.fileAssignments) {
+          const mapping = mappings[fa.mappingIndex];
+          if (!fileProductMap[fa.fileGid]) {
+            fileProductMap[fa.fileGid] = {
+              filename: fa.filename,
+              displayType: mapping.target_display_type,
+              targetNamespace: mapping.target_namespace,
+              targetKey: mapping.target_key,
+              targetType: mapping.target_metafield_type,
+              products: [],
+            };
+          }
+          const entry = fileProductMap[fa.fileGid];
+          if (!entry.products.some(p => p.id === product.id)) {
+            entry.products.push({ id: product.id, title: product.title });
+          }
+        }
       } catch (error) {
         failed++;
         errors.push({
@@ -122,9 +142,9 @@ export async function processSyncJob(session, jobId, mappings) {
       }
     }
 
-    // Step 3: Create configurations for each mapping
-    console.log(`[Sync] Job ${jobId}: Creating configurations`);
-    await createConfigurationsFromMappings(session, shop, mappings);
+    // Step 3: Create configurations for each unique file
+    console.log(`[Sync] Job ${jobId}: Creating configurations from file map (${Object.keys(fileProductMap).length} files)`);
+    await createConfigurationsFromFileMap(session, shop, fileProductMap);
 
     // Step 4: Sync storefront config
     await syncStorefrontConfig(session);
@@ -240,6 +260,7 @@ async function processProduct(session, shop, product, mappings) {
   let filesUploaded = 0;
   let filesSkipped = 0;
   let hasAnyData = false;
+  const fileAssignments = [];
 
   for (let i = 0; i < mappings.length; i++) {
     const mapping = mappings[i];
@@ -261,6 +282,11 @@ async function processProduct(session, shop, product, mappings) {
         if (cached) {
           fileGids.push(cached.shopify_file_gid);
           filesSkipped++;
+          fileAssignments.push({
+            fileGid: cached.shopify_file_gid,
+            filename: cached.filename || extractFilenameFromUrl(url),
+            mappingIndex: i,
+          });
           continue;
         }
 
@@ -269,6 +295,11 @@ async function processProduct(session, shop, product, mappings) {
         if (result) {
           fileGids.push(result.shopifyFileId);
           filesUploaded++;
+          fileAssignments.push({
+            fileGid: result.shopifyFileId,
+            filename: result.filename,
+            mappingIndex: i,
+          });
 
           // Cache the result
           await database.cacheFile(shop, url, result.shopifyFileId, result.filename, result.mimeType);
@@ -291,14 +322,14 @@ async function processProduct(session, shop, product, mappings) {
   }
 
   if (!hasAnyData) {
-    return { skipped: true, filesUploaded: 0, filesSkipped: 0 };
+    return { skipped: true, filesUploaded: 0, filesSkipped: 0, fileAssignments: [] };
   }
 
   if (metafieldConfigs.length > 0) {
     await applyMetafieldsToProduct(session, product.id, metafieldConfigs);
   }
 
-  return { skipped: false, filesUploaded, filesSkipped };
+  return { skipped: false, filesUploaded, filesSkipped, fileAssignments };
 }
 
 /**
@@ -344,6 +375,21 @@ function extractUrls(value) {
  */
 function isUrl(str) {
   return str.startsWith("http://") || str.startsWith("https://");
+}
+
+/**
+ * Extract a clean filename from a URL, stripping query params and UUID suffixes
+ */
+function extractFilenameFromUrl(url) {
+  try {
+    const urlPath = new URL(url).pathname;
+    let filename = path.basename(urlPath) || "file";
+    // Strip UUID suffixes like _1b49aac7-b2d3-4304-b2be-9ebd1fc3082a before the extension
+    filename = filename.replace(/_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/, "");
+    return filename;
+  } catch {
+    return "file";
+  }
 }
 
 /**
@@ -479,6 +525,76 @@ async function createConfigurationsFromMappings(session, shop, mappings) {
 }
 
 /**
+ * Create per-file configurations from the accumulated file→product map.
+ * Each unique file gets its own configuration named after the filename,
+ * with a product rule listing all products that reference that file.
+ */
+export async function createConfigurationsFromFileMap(session, shop, fileProductMap) {
+  const existingConfigs = await database.getAllConfigurations(shop);
+
+  for (const [fileGid, entry] of Object.entries(fileProductMap)) {
+    // Check if any existing configuration already references this file GID
+    const alreadyExists = existingConfigs.some(config => {
+      const mfConfigs = config.metafield_configs || [];
+      return mfConfigs.some(mf =>
+        Array.isArray(mf.value) && mf.value.includes(fileGid)
+      );
+    });
+
+    if (alreadyExists) {
+      console.log(`[Sync] Configuration for file ${fileGid} already exists, skipping`);
+      continue;
+    }
+
+    const { filename, displayType, targetNamespace, targetKey, targetType, products } = entry;
+
+    // Create the configuration
+    const metafieldConfigs = [{
+      id: `sync-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      namespace: targetNamespace,
+      key: targetKey,
+      type: targetType || "list.file_reference",
+      displayType: displayType,
+      value: [fileGid],
+    }];
+
+    const config = await database.createConfiguration(
+      shop,
+      filename || "Synced File",
+      "product",
+      metafieldConfigs,
+      0
+    );
+
+    // Create product rule matching the format expected by RuleNode.jsx
+    if (products && products.length > 0) {
+      // Deduplicate products by ID
+      const uniqueProducts = [];
+      const seenIds = new Set();
+      for (const p of products) {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          uniqueProducts.push(p);
+        }
+      }
+
+      await database.createConfigurationRule(
+        config.id,
+        null,                                                          // parent_id
+        "product",                                                     // rule_type
+        JSON.stringify(uniqueProducts.map(p => ({ id: p.id, title: p.title }))), // rule_value
+        JSON.stringify(uniqueProducts.map(p => p.id)),                 // rule_id
+        "OR",                                                          // operator
+        0,                                                             // level
+        0                                                              // position
+      );
+    }
+
+    console.log(`[Sync] Created configuration "${filename}" for file ${fileGid} with ${products?.length || 0} products`);
+  }
+}
+
+/**
  * Fetch a single page of products with source metafield aliases.
  * Used by the batch processing endpoint.
  */
@@ -515,7 +631,7 @@ export async function fetchProductPage(client, mappings, cursor, pageSize = 100)
   };
 }
 
-export { processProduct, createConfigurationsFromMappings };
+export { processProduct, createConfigurationsFromMappings, extractFilenameFromUrl };
 
 export default {
   processSyncJob,
@@ -524,4 +640,5 @@ export default {
   fetchProductPage,
   processProduct,
   createConfigurationsFromMappings,
+  createConfigurationsFromFileMap,
 };

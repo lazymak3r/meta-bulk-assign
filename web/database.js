@@ -346,7 +346,7 @@ class Database {
     const fields = [];
     const values = [];
     for (const [key, value] of Object.entries(updates)) {
-      if (key === 'errors') {
+      if (key === 'errors' || key === 'file_product_map') {
         fields.push(`${key} = ?`);
         values.push(JSON.stringify(value));
       } else {
@@ -371,6 +371,7 @@ class Database {
     if (job) {
       job.errors = typeof job.errors === 'string' ? JSON.parse(job.errors) : job.errors;
       job.mapping_snapshot = typeof job.mapping_snapshot === 'string' ? JSON.parse(job.mapping_snapshot) : job.mapping_snapshot;
+      job.file_product_map = typeof job.file_product_map === 'string' ? JSON.parse(job.file_product_map) : (job.file_product_map || {});
     }
     return job;
   }
@@ -384,6 +385,7 @@ class Database {
     if (job) {
       job.errors = typeof job.errors === 'string' ? JSON.parse(job.errors) : job.errors;
       job.mapping_snapshot = typeof job.mapping_snapshot === 'string' ? JSON.parse(job.mapping_snapshot) : job.mapping_snapshot;
+      job.file_product_map = typeof job.file_product_map === 'string' ? JSON.parse(job.file_product_map) : (job.file_product_map || {});
     }
     return job;
   }
