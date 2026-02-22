@@ -203,7 +203,7 @@ app.get(
             }
           }
         }
-        references(first: 50) {
+        references(first: 250) {
           nodes {
             ... on MediaImage {
               image {
@@ -242,7 +242,7 @@ app.get(
           id
           vendor
           productType
-          collections(first: 100) {
+          collections(first: 250) {
             edges {
               node {
                 id

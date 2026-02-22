@@ -185,34 +185,56 @@ router.get("/categories", async (req, res) => {
 
 /**
  * GET /api/products
- * Fetch all products (limited to first 100 for performance)
+ * Fetch all products using cursor-based pagination
  */
 router.get("/products", async (req, res) => {
   try {
     const session = res.locals.shopify.session;
     const client = new shopify.api.clients.Graphql({ session });
 
-    const query = `
-      query getProducts {
-        products(first: 100) {
-          edges {
-            node {
-              id
-              title
+    const products = [];
+    let hasNextPage = true;
+    let cursor = null;
+
+    while (hasNextPage) {
+      const query = `
+        query getProducts($cursor: String) {
+          products(first: 250, after: $cursor) {
+            edges {
+              node {
+                id
+                title
+              }
+              cursor
+            }
+            pageInfo {
+              hasNextPage
             }
           }
         }
+      `;
+
+      const response = await client.query({
+        data: {
+          query,
+          variables: { cursor },
+        },
+      });
+
+      const data = response.body.data.products;
+
+      data.edges.forEach((edge) => {
+        products.push({
+          id: edge.node.id,
+          title: edge.node.title,
+        });
+      });
+
+      hasNextPage = data.pageInfo.hasNextPage;
+      if (hasNextPage && data.edges.length > 0) {
+        cursor = data.edges[data.edges.length - 1].cursor;
       }
-    `;
-
-    const response = await client.query({
-      data: { query },
-    });
-
-    const products = response.body.data.products.edges.map((edge) => ({
-      id: edge.node.id,
-      title: edge.node.title,
-    }));
+    }
 
     res.json({ products: products.sort((a, b) => a.title.localeCompare(b.title)) });
   } catch (error) {
@@ -223,7 +245,7 @@ router.get("/products", async (req, res) => {
 
 /**
  * GET /api/products/search
- * Search products by title (for product selector)
+ * Search products by title (for product selector) with pagination
  */
 router.get("/products/search", async (req, res) => {
   try {
@@ -235,38 +257,57 @@ router.get("/products/search", async (req, res) => {
       return res.json({ products: [] });
     }
 
-    const query = `
-      query searchProducts($query: String!) {
-        products(first: 50, query: $query) {
-          edges {
-            node {
-              id
-              title
-              vendor
-              productType
-              category {
-                name
+    const products = [];
+    let hasNextPage = true;
+    let cursor = null;
+
+    while (hasNextPage) {
+      const query = `
+        query searchProducts($query: String!, $cursor: String) {
+          products(first: 250, query: $query, after: $cursor) {
+            edges {
+              node {
+                id
+                title
+                vendor
+                productType
+                category {
+                  name
+                }
               }
+              cursor
+            }
+            pageInfo {
+              hasNextPage
             }
           }
         }
+      `;
+
+      const response = await client.query({
+        data: {
+          query,
+          variables: { query: searchQuery, cursor },
+        },
+      });
+
+      const data = response.body.data.products;
+
+      data.edges.forEach((edge) => {
+        products.push({
+          id: edge.node.id,
+          title: edge.node.title,
+          vendor: edge.node.vendor,
+          productType: edge.node.productType,
+          category: edge.node.category,
+        });
+      });
+
+      hasNextPage = data.pageInfo.hasNextPage;
+      if (hasNextPage && data.edges.length > 0) {
+        cursor = data.edges[data.edges.length - 1].cursor;
       }
-    `;
-
-    const response = await client.query({
-      data: {
-        query,
-        variables: { query: searchQuery },
-      },
-    });
-
-    const products = response.body.data.products.edges.map((edge) => ({
-      id: edge.node.id,
-      title: edge.node.title,
-      vendor: edge.node.vendor,
-      productType: edge.node.productType,
-      category: edge.node.category,
-    }));
+    }
 
     res.json({ products });
   } catch (error) {

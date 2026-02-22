@@ -42,6 +42,8 @@ export function SyncProgress({ job, onCancel, onRefresh }) {
     ? Math.round((processed_products / total_products) * 100)
     : 0;
 
+  const matchedProducts = successful_products + failed_products;
+
   const isActive = status === "running" || status === "pending";
   const badgeProps = STATUS_BADGES[status] || { children: status };
 
@@ -64,19 +66,20 @@ export function SyncProgress({ job, onCancel, onRefresh }) {
           </HorizontalStack>
         </HorizontalStack>
 
-        {total_products > 0 && (
+        {(total_products > 0 || isActive) && (
           <>
-            <ProgressBar progress={progress} size="small" />
+            <ProgressBar progress={progress} size="small" tone={isActive ? undefined : "success"} />
             <Text as="p" variant="bodySm" tone="subdued">
-              {processed_products} / {total_products} products processed ({progress}%)
+              Scanned {processed_products}{total_products > 0 ? ` / ${total_products}` : ""} products ({progress}%)
+              {matchedProducts > 0 && ` — ${matchedProducts} matched with source data`}
             </Text>
           </>
         )}
 
         <HorizontalStack gap="4" wrap>
+          <StatBlock label="Matched" value={matchedProducts} />
           <StatBlock label="Successful" value={successful_products} />
           <StatBlock label="Failed" value={failed_products} />
-          <StatBlock label="Skipped" value={skipped_products} />
           <StatBlock label="Files Uploaded" value={total_files_uploaded} />
           <StatBlock label="Files Cached" value={total_files_skipped} />
         </HorizontalStack>

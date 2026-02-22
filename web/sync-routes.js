@@ -211,7 +211,7 @@ router.get("/source-metafields", async (req, res) => {
     // Step 2: Scan products to discover unstructured metafields
     const productsQuery = `
       query GetProductMetafields($cursor: String) {
-        products(first: 50, after: $cursor) {
+        products(first: 250, after: $cursor) {
           edges {
             node {
               metafields(first: 100) {
@@ -233,12 +233,11 @@ router.get("/source-metafields", async (req, res) => {
       }
     `;
 
-    // Scan up to 250 products (5 pages of 50) to discover unstructured metafields
+    // Scan all products to discover unstructured metafields
     let productCursor = null;
-    let productPages = 0;
-    const MAX_PRODUCT_PAGES = 5;
+    let productHasNextPage = true;
 
-    while (productPages < MAX_PRODUCT_PAGES) {
+    while (productHasNextPage) {
       const response = await throttledQuery(client, productsQuery, { cursor: productCursor });
       const { edges, pageInfo } = response.data.products;
 
@@ -261,9 +260,8 @@ router.get("/source-metafields", async (req, res) => {
         }
       }
 
-      if (!pageInfo.hasNextPage) break;
+      productHasNextPage = pageInfo.hasNextPage;
       productCursor = pageInfo.endCursor;
-      productPages++;
     }
 
     // Return all metafields sorted by namespace.key
@@ -308,18 +306,30 @@ router.post("/start", async (req, res) => {
       });
     }
 
+    // Count total products in the store for progress tracking
+    const client = new shopify.api.clients.Graphql({ session });
+    let totalProducts = 0;
+    try {
+      const countResponse = await throttledQuery(client, `{ productsCount { count } }`);
+      totalProducts = countResponse.data.productsCount.count;
+    } catch (err) {
+      console.warn("[Sync Routes] Could not count products:", err.message);
+    }
+
     // Create job record
     const job = await database.createSyncJob(shop, enabledMappings);
 
     await database.updateSyncJobStatus(job.id, {
       status: "running",
       started_at: new Date().toISOString(),
+      total_products: totalProducts,
     });
 
     res.status(202).json({
       jobId: job.id,
       status: "running",
       mappings: enabledMappings.length,
+      totalProducts,
     });
   } catch (error) {
     console.error("[Sync Routes] Error starting sync:", error);
@@ -357,15 +367,22 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
     // Fetch one page of products
     const { products, nextCursor, hasNextPage } = await fetchProductPage(client, mappings, cursor, PAGE_SIZE);
 
-    // Process each product in this batch
+    // Filter to only products that have at least one non-empty source metafield
+    const relevantProducts = products.filter((product) =>
+      mappings.some((_, i) => {
+        const mf = product[`mf${i}`];
+        return mf && mf.value && mf.value.trim() !== "";
+      })
+    );
+
+    // Process only relevant products
     let batchSuccessful = 0;
     let batchFailed = 0;
-    let batchSkipped = 0;
     let batchFilesUploaded = 0;
     let batchFilesSkipped = 0;
     const batchErrors = [];
 
-    for (const product of products) {
+    for (const product of relevantProducts) {
       // Re-check cancellation mid-batch
       const freshJob = await database.getSyncJob(jobId);
       if (freshJob.status === "cancelled") {
@@ -374,11 +391,7 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
 
       try {
         const result = await processProduct(session, session.shop, product, mappings);
-        if (result.skipped) {
-          batchSkipped++;
-        } else {
-          batchSuccessful++;
-        }
+        batchSuccessful++;
         batchFilesUploaded += result.filesUploaded;
         batchFilesSkipped += result.filesSkipped;
       } catch (error) {
@@ -392,11 +405,16 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
     }
 
     // Update job with cumulative progress
+    // processed_products = total products scanned (for progress bar against total_products)
+    // skipped_products = products in this page that had no relevant data
+    const scannedInBatch = products.length;
+    const skippedInBatch = products.length - relevantProducts.length;
+
     const updates = {
-      processed_products: (job.processed_products || 0) + products.length,
+      processed_products: (job.processed_products || 0) + scannedInBatch,
       successful_products: (job.successful_products || 0) + batchSuccessful,
       failed_products: (job.failed_products || 0) + batchFailed,
-      skipped_products: (job.skipped_products || 0) + batchSkipped,
+      skipped_products: (job.skipped_products || 0) + skippedInBatch,
       total_files_uploaded: (job.total_files_uploaded || 0) + batchFilesUploaded,
       total_files_skipped: (job.total_files_skipped || 0) + batchFilesSkipped,
       errors: [...(job.errors || []), ...batchErrors],
