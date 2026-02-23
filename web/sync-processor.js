@@ -335,23 +335,17 @@ async function processProduct(session, shop, product, mappings) {
 /**
  * Extract URLs from a metafield value. Handles:
  * - Single URL string
- * - JSON array of URLs
+ * - JSON array of URLs: ["url1", "url2"]
+ * - JSON object with URL values: {"image_url":"http://...","label":"A"}
+ * - JSON array of objects with URL values: [{"image_url":"http://..."}, ...]
  * - Comma-separated URLs
  */
 function extractUrls(value) {
-  const urls = [];
-
-  // Try JSON array first
+  // Try JSON first
   try {
     const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) {
-      for (const item of parsed) {
-        if (typeof item === "string" && isUrl(item)) {
-          urls.push(item.trim());
-        }
-      }
-      if (urls.length > 0) return urls;
-    }
+    const urls = collectUrlsFromJson(parsed);
+    if (urls.length > 0) return urls;
   } catch {
     // Not JSON
   }
@@ -367,6 +361,25 @@ function extractUrls(value) {
     return [value.trim()];
   }
 
+  return [];
+}
+
+/**
+ * Recursively collect all URL strings from a parsed JSON value
+ */
+function collectUrlsFromJson(data) {
+  const urls = [];
+  if (typeof data === "string" && isUrl(data.trim())) {
+    urls.push(data.trim());
+  } else if (Array.isArray(data)) {
+    for (const item of data) {
+      urls.push(...collectUrlsFromJson(item));
+    }
+  } else if (data && typeof data === "object") {
+    for (const val of Object.values(data)) {
+      urls.push(...collectUrlsFromJson(val));
+    }
+  }
   return urls;
 }
 
@@ -548,6 +561,18 @@ export async function createConfigurationsFromFileMap(session, shop, fileProduct
 
     const { filename, displayType, targetNamespace, targetKey, targetType, products } = entry;
 
+    // Build a human-readable label from the display type
+    const DISPLAY_TYPE_LABELS = {
+      warranty_document: "Warranty",
+      safety_document: "Safety",
+      product_detail_icon: "Icon",
+      energy_label: "Energy Label",
+    };
+    const typeLabel = DISPLAY_TYPE_LABELS[displayType] || displayType || "";
+    const configName = typeLabel
+      ? `${typeLabel} - ${filename || "Synced File"}`
+      : (filename || "Synced File");
+
     // Create the configuration
     const metafieldConfigs = [{
       id: `sync-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -560,7 +585,7 @@ export async function createConfigurationsFromFileMap(session, shop, fileProduct
 
     const config = await database.createConfiguration(
       shop,
-      filename || "Synced File",
+      configName,
       "product",
       metafieldConfigs,
       0
@@ -590,7 +615,7 @@ export async function createConfigurationsFromFileMap(session, shop, fileProduct
       );
     }
 
-    console.log(`[Sync] Created configuration "${filename}" for file ${fileGid} with ${products?.length || 0} products`);
+    console.log(`[Sync] Created configuration "${configName}" for file ${fileGid} with ${products?.length || 0} products`);
   }
 }
 
