@@ -35,6 +35,7 @@ export default function SyncPage() {
   const [error, setError] = useState(null);
   const [activeJob, setActiveJob] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const cursorRef = useRef(null);
   const cancelledRef = useRef(false);
 
@@ -129,6 +130,7 @@ export default function SyncPage() {
   // Delete mapping mutation
   const deleteMappingMutation = useMutation({
     mutationFn: async (id) => {
+      setDeletingId(id);
       const response = await authenticatedFetch(`/api/sync/mappings/${id}`, {
         method: "DELETE",
       });
@@ -136,9 +138,11 @@ export default function SyncPage() {
       return response.json();
     },
     onSuccess: () => {
+      setDeletingId(null);
       queryClient.invalidateQueries(["sync-mappings"]);
     },
     onError: (err) => {
+      setDeletingId(null);
       setError(err.message);
     },
   });
@@ -201,7 +205,7 @@ export default function SyncPage() {
         size="slim"
         tone="critical"
         onClick={() => deleteMappingMutation.mutate(m.id)}
-        loading={deleteMappingMutation.isLoading}
+        loading={deletingId === m.id}
         accessibilityLabel="Delete"
       />
     </HorizontalStack>,
