@@ -23,6 +23,32 @@ class CustomPostgresSessionStorage {
   }
 
   async init() {
+    const timeout = (ms) =>
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Init timed out after ${ms}ms`)), ms)
+      );
+
+    try {
+      // Race init against a 8s timeout to prevent cold-start hangs
+      await Promise.race([this._doInit(), timeout(8000)]);
+    } catch (err) {
+      // Log but don't throw — the table likely already exists.
+      // Methods will work if the table is there; if not, they'll
+      // throw with a clear SQL error on first use.
+      console.warn("[Session Storage] Init warning (non-fatal):", err.message);
+    }
+  }
+
+  async _doInit() {
+    // Try a lightweight check first (works well through pgbouncer)
+    try {
+      await this.pool.query("SELECT 1 FROM shopify_sessions LIMIT 0");
+      console.log("[Session Storage] Table already exists");
+      return;
+    } catch {
+      // Table doesn't exist — create it
+    }
+
     await this.pool.query(`
       CREATE TABLE IF NOT EXISTS shopify_sessions (
         id VARCHAR(255) NOT NULL PRIMARY KEY,
@@ -35,7 +61,7 @@ class CustomPostgresSessionStorage {
         "accessToken" VARCHAR(255)
       )
     `);
-    console.log("[Session Storage] Table ready");
+    console.log("[Session Storage] Table created");
   }
 
   async storeSession(session) {
@@ -143,7 +169,9 @@ export async function createSessionStorage() {
   console.log("[Session Storage] Using custom PostgreSQL storage, SSL:", !!poolOptions.ssl);
 
   const storage = new CustomPostgresSessionStorage(process.env.DATABASE_URL, poolOptions);
-  await storage.ready;
-  console.log("[Session Storage] Connected successfully");
+  // DON'T await storage.ready here — let it initialize lazily on first use.
+  // Each method already does `await this.ready` before executing queries.
+  // Awaiting here blocks the entire module on cold start, causing Vercel timeouts.
+  console.log("[Session Storage] Created (initializing in background)");
   return storage;
 }
