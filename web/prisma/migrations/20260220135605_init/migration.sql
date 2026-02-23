@@ -60,6 +60,7 @@ CREATE TABLE "sync_jobs" (
     "total_files_uploaded" INTEGER DEFAULT 0,
     "total_files_skipped" INTEGER DEFAULT 0,
     "errors" TEXT DEFAULT '[]',
+    "file_product_map" TEXT DEFAULT '{}',
     "mapping_snapshot" TEXT NOT NULL,
     "started_at" TIMESTAMP(3),
     "completed_at" TIMESTAMP(3),
