@@ -268,9 +268,15 @@ export function MetafieldConfigEditor({
       ) : (
         <VerticalStack gap="3">
           {metafieldConfigs.map((config, index) => {
+            // Resolve definition by ID first, then fall back to namespace+key match
             const definition = metafieldDefinitions.find(
               (d) => d.id === config.definitionId
-            );
+            ) || (config.namespace && config.key
+              ? metafieldDefinitions.find(
+                  (d) => d.namespace === config.namespace && d.key === config.key
+                )
+              : null);
+            const effectiveDefinitionId = config.definitionId || definition?.id || "";
             const isMetaobject = config.type === "metaobject_reference";
             const isListMetaobject = config.type === "list.metaobject_reference";
             const isListFile = config.type === "list.file_reference";
@@ -301,7 +307,7 @@ export function MetafieldConfigEditor({
                   <Select
                     label="Metafield Definition"
                     options={definitionOptions}
-                    value={config.definitionId}
+                    value={effectiveDefinitionId}
                     onChange={(value) => handleDefinitionChange(index, value)}
                     placeholder="Select a metafield"
                   />
@@ -322,7 +328,7 @@ export function MetafieldConfigEditor({
                     helpText="How this metafield should be displayed on product pages (optional)"
                   />
 
-                  {config.definitionId && (
+                  {effectiveDefinitionId && (
                     <>
                       {isListMetaobject && metaobjectDefinitionId ? (
                         <div>
