@@ -91,14 +91,18 @@ export async function applyMetafieldsToProduct(
       type: config.type,
     };
 
-    // Log for debugging file references
-    if (config.type === 'file_reference') {
-      console.log(`Applying file_reference metafield:`, {
-        namespace: config.namespace,
-        key: config.key,
-        value: config.value,
-        type: config.type
+    // For file_reference (single), handle array values by taking the first GID
+    if (config.type === 'file_reference' && Array.isArray(config.value)) {
+      const firstGid = config.value.find(gid => {
+        const g = String(gid);
+        return g.startsWith('gid://shopify/MediaImage/') || g.startsWith('gid://shopify/GenericFile/');
       });
+      if (!firstGid) {
+        console.log(`Skipping metafield ${config.namespace}.${config.key} - no valid file GID in array`);
+        continue;
+      }
+      metafield.value = String(firstGid);
+      console.log(`[file_reference] Using first GID for ${config.namespace}.${config.key}: ${firstGid} (${config.value.length} total)`);
     }
 
     metafields.push(metafield);

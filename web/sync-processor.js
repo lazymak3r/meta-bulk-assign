@@ -311,11 +311,18 @@ async function processProduct(session, shop, product, mappings) {
     }
 
     if (fileGids.length > 0) {
-      console.log(`[Sync] Product ${product.id}: Setting ${mapping.target_namespace}.${mapping.target_key} with GIDs:`, fileGids);
+      // Auto-upgrade file_reference → list.file_reference when multiple files
+      let targetType = mapping.target_metafield_type;
+      if (fileGids.length > 1 && targetType === "file_reference") {
+        console.log(`[Sync] Product ${product.id}: Auto-upgrading ${mapping.target_namespace}.${mapping.target_key} to list.file_reference (${fileGids.length} files)`);
+        targetType = "list.file_reference";
+      }
+
+      console.log(`[Sync] Product ${product.id}: Setting ${mapping.target_namespace}.${mapping.target_key} (${targetType}) with GIDs:`, fileGids);
       metafieldConfigs.push({
         namespace: mapping.target_namespace,
         key: mapping.target_key,
-        type: mapping.target_metafield_type,
+        type: targetType,
         value: fileGids,
       });
     }
