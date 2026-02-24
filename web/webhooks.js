@@ -102,6 +102,39 @@ async function getMetaobjectDefinitionIdFromMetafield(session, metafieldDefiniti
 }
 
 /**
+ * Merge metafield configs that target the same namespace+key.
+ * For list types (list.file_reference, list.metaobject_reference),
+ * combines values into a single deduplicated array.
+ * For non-list types, last config wins.
+ */
+function mergeMetafieldConfigs(configs) {
+  const mergedConfigs = [];
+  const configMap = new Map();
+
+  for (const config of configs) {
+    const mapKey = `${config.namespace}.${config.key}`;
+    const isListType = config.type === 'list.file_reference' || config.type === 'list.metaobject_reference';
+
+    if (configMap.has(mapKey)) {
+      const existing = configMap.get(mapKey);
+      if (isListType && Array.isArray(config.value) && Array.isArray(existing.value)) {
+        // Merge and deduplicate list values
+        existing.value = [...new Set([...existing.value, ...config.value])];
+      } else {
+        // Non-list type: last config wins (overwrite in place)
+        Object.assign(existing, config);
+      }
+    } else {
+      const entry = { ...config, value: Array.isArray(config.value) ? [...config.value] : config.value };
+      configMap.set(mapKey, entry);
+      mergedConfigs.push(entry);
+    }
+  }
+
+  return mergedConfigs;
+}
+
+/**
  * Helper function to process metafield configs and create metaobjects if needed
  */
 async function processMetafieldConfigs(session, metafieldConfigs) {
@@ -207,31 +240,35 @@ async function handleProductCreate(topic, shop, body, webhookId) {
 
     console.log(`[Webhook] Found ${configurations.length} configurations, checking matches`);
 
-    // Check each configuration by priority and apply if matches
-    let appliedCount = 0;
+    // Collect all matching configurations and merge their metafield configs
+    const allMetafieldConfigs = [];
+    let matchedCount = 0;
     for (const config of configurations) {
       const rules = await database.getConfigurationRules(config.id);
 
       if (productMatchesRules(payload, rules)) {
-        console.log(`[Webhook] Product matches configuration ${config.id} (${config.name || 'Unnamed'}), applying metafields`);
+        console.log(`[Webhook] Product matches configuration ${config.id} (${config.name || 'Unnamed'})`);
+        matchedCount++;
 
         try {
-          // Process metafield configs (create metaobjects if needed)
           const metafieldConfigs = await processMetafieldConfigs(session, config.metafield_configs);
-
-          await applyMetafieldsToProduct(session, productId, metafieldConfigs);
-          appliedCount++;
-          console.log(`[Webhook] Successfully applied configuration ${config.id}`);
+          allMetafieldConfigs.push(...metafieldConfigs);
         } catch (error) {
-          console.error(`[Webhook] Failed to apply configuration ${config.id}:`, error.message);
+          console.error(`[Webhook] Failed to process configuration ${config.id}:`, error.message);
         }
       }
     }
 
-    if (appliedCount === 0) {
+    if (allMetafieldConfigs.length > 0) {
+      try {
+        const mergedConfigs = mergeMetafieldConfigs(allMetafieldConfigs);
+        await applyMetafieldsToProduct(session, productId, mergedConfigs);
+        console.log(`[Webhook] Applied ${matchedCount} merged configuration(s) to product ${productId}`);
+      } catch (error) {
+        console.error(`[Webhook] Failed to apply merged configurations:`, error.message);
+      }
+    } else if (matchedCount === 0) {
       console.log('[Webhook] Product did not match any configurations');
-    } else {
-      console.log(`[Webhook] Applied ${appliedCount} configuration(s) to product ${productId}`);
     }
   } catch (error) {
     console.error("[Webhook] Error handling product create:", error);
@@ -276,31 +313,35 @@ async function handleProductUpdate(topic, shop, body, webhookId) {
 
     console.log(`[Webhook] Found ${configurations.length} configurations, checking matches`);
 
-    // Check each configuration by priority and apply if matches
-    let appliedCount = 0;
+    // Collect all matching configurations and merge their metafield configs
+    const allMetafieldConfigs = [];
+    let matchedCount = 0;
     for (const config of configurations) {
       const rules = await database.getConfigurationRules(config.id);
 
       if (productMatchesRules(payload, rules)) {
-        console.log(`[Webhook] Product matches configuration ${config.id} (${config.name || 'Unnamed'}), applying metafields`);
+        console.log(`[Webhook] Product matches configuration ${config.id} (${config.name || 'Unnamed'})`);
+        matchedCount++;
 
         try {
-          // Process metafield configs (create metaobjects if needed)
           const metafieldConfigs = await processMetafieldConfigs(session, config.metafield_configs);
-
-          await applyMetafieldsToProduct(session, productId, metafieldConfigs);
-          appliedCount++;
-          console.log(`[Webhook] Successfully applied configuration ${config.id}`);
+          allMetafieldConfigs.push(...metafieldConfigs);
         } catch (error) {
-          console.error(`[Webhook] Failed to apply configuration ${config.id}:`, error.message);
+          console.error(`[Webhook] Failed to process configuration ${config.id}:`, error.message);
         }
       }
     }
 
-    if (appliedCount === 0) {
+    if (allMetafieldConfigs.length > 0) {
+      try {
+        const mergedConfigs = mergeMetafieldConfigs(allMetafieldConfigs);
+        await applyMetafieldsToProduct(session, productId, mergedConfigs);
+        console.log(`[Webhook] Applied ${matchedCount} merged configuration(s) to product ${productId}`);
+      } catch (error) {
+        console.error(`[Webhook] Failed to apply merged configurations:`, error.message);
+      }
+    } else if (matchedCount === 0) {
       console.log('[Webhook] Product did not match any configurations');
-    } else {
-      console.log(`[Webhook] Applied ${appliedCount} configuration(s) to product ${productId}`);
     }
   } catch (error) {
     console.error("[Webhook] Error handling product update:", error);

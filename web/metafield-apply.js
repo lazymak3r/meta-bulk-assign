@@ -1,15 +1,64 @@
 import shopify from "./shopify.js";
-import { throttledMutation, sleep, processWithThrottling } from "./rate-limiter.js";
+import { throttledMutation, throttledQuery, sleep, processWithThrottling } from "./rate-limiter.js";
 
 /**
  * Applies metafield configurations to a product
+ * @param {Object} options
+ * @param {boolean} options.mergeExistingLists - When true, reads existing list metafield values
+ *   and merges new values into them instead of replacing. Use this when applying a single
+ *   configuration that should coexist with values from other configurations.
  */
 export async function applyMetafieldsToProduct(
   session,
   productId,
-  metafieldConfigs
+  metafieldConfigs,
+  { mergeExistingLists = false } = {}
 ) {
   const client = new shopify.api.clients.Graphql({ session });
+
+  // If mergeExistingLists, fetch current values for list-type metafields and merge
+  if (mergeExistingLists) {
+    const listConfigs = metafieldConfigs.filter(c =>
+      c.type === 'list.file_reference' || c.type === 'list.metaobject_reference'
+    );
+
+    if (listConfigs.length > 0) {
+      const aliases = listConfigs.map((c, i) =>
+        `_mf${i}: metafield(namespace: "${c.namespace}", key: "${c.key}") { value }`
+      ).join("\n        ");
+
+      const readQuery = `
+        query ReadProductMetafields($id: ID!) {
+          product(id: $id) {
+            ${aliases}
+          }
+        }
+      `;
+
+      try {
+        const readResp = await throttledQuery(client, readQuery, { id: productId });
+        const product = readResp.data.product;
+
+        if (product) {
+          for (let i = 0; i < listConfigs.length; i++) {
+            const existing = product[`_mf${i}`];
+            if (existing && existing.value) {
+              try {
+                const existingValues = JSON.parse(existing.value);
+                if (Array.isArray(existingValues) && Array.isArray(listConfigs[i].value)) {
+                  const merged = [...new Set([...existingValues, ...listConfigs[i].value])];
+                  listConfigs[i].value = merged;
+                }
+              } catch { /* ignore parse errors */ }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[MetafieldApply] Could not read existing metafields for merge: ${err.message}`);
+        // Continue without merging — will still set the new values
+      }
+    }
+  }
 
   // Build metafields input array
   const metafields = [];

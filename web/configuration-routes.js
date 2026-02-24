@@ -377,7 +377,7 @@ router.post("/:id/apply", async (req, res) => {
     const results = await processWithThrottling(
       matchingProducts,
       async (product) => {
-        await applyMetafieldsToProduct(session, product.id, metafieldConfigs);
+        await applyMetafieldsToProduct(session, product.id, metafieldConfigs, { mergeExistingLists: true });
       },
       {
         delayBetweenRequests: 100, // 100ms delay between products
