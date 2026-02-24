@@ -332,8 +332,33 @@ async function processProduct(session, shop, product, mappings) {
     return { skipped: true, filesUploaded: 0, filesSkipped: 0, fileAssignments: [] };
   }
 
-  if (metafieldConfigs.length > 0) {
-    await applyMetafieldsToProduct(session, product.id, metafieldConfigs);
+  // Merge metafield configs that target the same namespace+key
+  // This happens when multiple source mappings point to the same target metafield
+  const mergedConfigs = [];
+  const configMap = new Map();
+  for (const config of metafieldConfigs) {
+    const mapKey = `${config.namespace}.${config.key}`;
+    if (configMap.has(mapKey)) {
+      const existing = configMap.get(mapKey);
+      existing.value.push(...config.value);
+    } else {
+      const merged = { ...config, value: [...config.value] };
+      configMap.set(mapKey, merged);
+      mergedConfigs.push(merged);
+    }
+  }
+
+  // Deduplicate GIDs and auto-upgrade type after merging
+  for (const config of mergedConfigs) {
+    config.value = [...new Set(config.value)];
+    if (config.value.length > 1 && config.type === "file_reference") {
+      console.log(`[Sync] Product ${product.id}: Auto-upgrading merged ${config.namespace}.${config.key} to list.file_reference (${config.value.length} files)`);
+      config.type = "list.file_reference";
+    }
+  }
+
+  if (mergedConfigs.length > 0) {
+    await applyMetafieldsToProduct(session, product.id, mergedConfigs);
   }
 
   return { skipped: false, filesUploaded, filesSkipped, fileAssignments };
