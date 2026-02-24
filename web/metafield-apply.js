@@ -16,8 +16,14 @@ export async function applyMetafieldsToProduct(
 ) {
   const client = new shopify.api.clients.Graphql({ session });
 
-  // If mergeExistingLists, fetch current values for list-type metafields and merge
+  // If mergeExistingLists, deep-clone configs so we don't mutate the caller's objects,
+  // then fetch current values for list-type metafields and merge
   if (mergeExistingLists) {
+    metafieldConfigs = metafieldConfigs.map(c => ({
+      ...c,
+      value: Array.isArray(c.value) ? [...c.value] : c.value,
+    }));
+
     const listConfigs = metafieldConfigs.filter(c =>
       c.type === 'list.file_reference' || c.type === 'list.metaobject_reference'
     );
