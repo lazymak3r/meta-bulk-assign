@@ -39,7 +39,7 @@ export function SyncProgress({ job, onCancel, onRefresh }) {
   } = job;
 
   const progress = total_products > 0
-    ? Math.round((processed_products / total_products) * 100)
+    ? Math.min(100, Math.round((processed_products / total_products) * 100))
     : 0;
 
   const matchedProducts = successful_products + failed_products;

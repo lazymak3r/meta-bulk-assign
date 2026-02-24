@@ -432,8 +432,10 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
     const scannedInBatch = products.length;
     const skippedInBatch = products.length - relevantProducts.length;
 
+    const newProcessed = (job.processed_products || 0) + scannedInBatch;
+
     const updates = {
-      processed_products: (job.processed_products || 0) + scannedInBatch,
+      processed_products: newProcessed,
       successful_products: (job.successful_products || 0) + batchSuccessful,
       failed_products: (job.failed_products || 0) + batchFailed,
       skipped_products: (job.skipped_products || 0) + skippedInBatch,
@@ -443,9 +445,15 @@ router.post("/jobs/:id/process-batch", async (req, res) => {
       file_product_map: fileProductMap,
     };
 
+    // Correct total_products if the initial count was capped (Shopify caps productsCount at 10k)
+    if (newProcessed > (job.total_products || 0)) {
+      updates.total_products = hasNextPage ? newProcessed + PAGE_SIZE : newProcessed;
+    }
+
     if (!hasNextPage) {
       updates.status = "completed";
       updates.completed_at = new Date().toISOString();
+      updates.total_products = newProcessed;
     }
 
     await database.updateSyncJobStatus(jobId, updates);
