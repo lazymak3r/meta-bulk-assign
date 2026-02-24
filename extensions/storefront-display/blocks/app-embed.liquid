@@ -6,6 +6,7 @@
 {% comment %} Mark app as loaded and cancel fallback timer {% endcomment %}
 <script>
   document.documentElement.classList.add('mba-app-loaded');
+  document.documentElement.classList.add('mba-app-active');
   if (window.__mbaFallbackTimer) {
     clearTimeout(window.__mbaFallbackTimer);
   }

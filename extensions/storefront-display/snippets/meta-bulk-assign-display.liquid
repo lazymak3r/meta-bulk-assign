@@ -267,6 +267,24 @@
     return 'No product safety documents available.';
   }
 
+  // Map from displayType to theme-default attribute selectors to hide
+  const themeDefaultSelectors = {
+    'energy_label': ['[data-mba-theme-energy-labels]', '[data-mba-theme-default="energy_label"]'],
+    'product_detail_icon': ['[data-mba-theme-icons]', '[data-mba-theme-default="product_detail_icon"]'],
+    'safety_document': ['[data-mba-theme-safety-docs]', '[data-mba-theme-default="safety_document"]'],
+    'warranty_document': ['[data-mba-theme-warranty-docs]', '[data-mba-theme-default="warranty_document"]']
+  };
+
+  function hideThemeDefaults(displayType) {
+    const selectors = themeDefaultSelectors[displayType];
+    if (!selectors) return;
+    selectors.forEach(function(sel) {
+      document.querySelectorAll(sel).forEach(function(el) {
+        el.style.display = 'none';
+      });
+    });
+  }
+
   function render() {
     const groups = groupByDisplayType();
     const configuredTypes = getConfiguredDisplayTypes();
@@ -278,6 +296,7 @@
       if (html) {
         container.innerHTML = html;
         container.classList.add('mba-loaded');
+        hideThemeDefaults(displayType);
       }
     }
 
@@ -287,6 +306,7 @@
       if (container) {
         container.innerHTML = `<div class="mba-no-documents">${getNoDocumentsMessage()}</div>`;
         container.classList.add('mba-loaded');
+        hideThemeDefaults('safety_document');
       }
     }
   }
@@ -307,23 +327,35 @@
    When app embed is active, hide theme defaults
    ======================================== */
 
-/* Hide theme's default energy labels section when app is active */
-html.mba-app-active [data-mba-theme-energy-labels] {
+/* Hide theme's default sections when app embed is active.
+   Supports both specific attributes (data-mba-theme-*) and the
+   generic data-mba-theme-default="type" pattern used by some themes. */
+
+html.mba-app-active [data-mba-theme-energy-labels],
+html.mba-app-loaded [data-mba-theme-energy-labels],
+html.mba-app-active [data-mba-theme-default="energy_label"],
+html.mba-app-loaded [data-mba-theme-default="energy_label"] {
   display: none !important;
 }
 
-/* Hide theme's default product icons section when app is active */
-html.mba-app-active [data-mba-theme-icons] {
+html.mba-app-active [data-mba-theme-icons],
+html.mba-app-loaded [data-mba-theme-icons],
+html.mba-app-active [data-mba-theme-default="product_detail_icon"],
+html.mba-app-loaded [data-mba-theme-default="product_detail_icon"] {
   display: none !important;
 }
 
-/* Hide theme's default safety documents when app is active */
-html.mba-app-active [data-mba-theme-safety-docs] {
+html.mba-app-active [data-mba-theme-safety-docs],
+html.mba-app-loaded [data-mba-theme-safety-docs],
+html.mba-app-active [data-mba-theme-default="safety_document"],
+html.mba-app-loaded [data-mba-theme-default="safety_document"] {
   display: none !important;
 }
 
-/* Hide theme's default warranty/download documents when app is active */
-html.mba-app-active [data-mba-theme-warranty-docs] {
+html.mba-app-active [data-mba-theme-warranty-docs],
+html.mba-app-loaded [data-mba-theme-warranty-docs],
+html.mba-app-active [data-mba-theme-default="warranty_document"],
+html.mba-app-loaded [data-mba-theme-default="warranty_document"] {
   display: none !important;
 }
 
